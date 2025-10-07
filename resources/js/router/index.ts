@@ -126,6 +126,11 @@ const routes: Array<RouteRecordRaw> = [
                 component: () => import("@/pages/admin/transaksilayanan.vue"),
             },
             {
+                path: "/admin/tambahpelanggan",
+                name: "tambahpelanggan",
+                component: () => import("@/pages/admin/tambahpelanggan.vue"),
+            },
+            {
                 path: "/dashboard/datapelanggan",
                 name: "datapelanggan",
                 component: () => import("@/pages/dashboard/datapelanggan/index.vue"),
@@ -152,6 +157,32 @@ const routes: Array<RouteRecordRaw> = [
                     breadcrumbs: ["Master", "Users"],
                 },
             },
+            // layanan
+            {
+                path: "/layanan/jenisitem",
+                name: "layanan.jenisitem",
+                component: () =>
+                    import("@/pages/layanan/jenisitem.vue"),
+            },
+            {
+                path: "/layanan/jenislayanan",
+                name: "layanan.jenislayanan",
+                component: () =>
+                    import("@/pages/layanan/jenislayanan.vue"),
+            },
+            {
+                path: "/layanan/hargajenislayanan",
+                name: "layanan.hargajenislayanan",
+                component: () =>
+                    import("@/pages/layanan/hargajenislayanan.vue"),
+            },
+            {
+                path: "/layanan/layananprioritas",
+                name: "layanan.layananprioritas",
+                component: () =>
+                    import("@/pages/layanan/layananprioritas.vue"),
+            },
+           
         ],
     },
     {

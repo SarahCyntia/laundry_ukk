@@ -20,10 +20,10 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $menuMaster = ['master', 'master-user', 'master-role'];
-        $menuWebsite = ['website', 'setting', 'beranda', 'pelanggan', 'antar', 'jemput', 'riwayat', 'antar-jemput', 'datapelanggan', 'pendapatan', 'transaksilayanan'];
-
+        $menuWebsite = ['website', 'setting', 'beranda', 'pelanggan', 'antar', 'jemput', 'riwayat', 'antar-jemput', 'datapelanggan', 'pendapatan', 'transaksilayanan', 'tambahpelanggan'];
+        $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas'];
         $permissionsByRole = [
-            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite],
+            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite, ...$menuLayanan],
             'pelanggan' => ['beranda', 'pelanggan', 'antar', 'jemput', 'riwayat'],
         ];
 

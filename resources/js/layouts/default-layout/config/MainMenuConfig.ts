@@ -125,8 +125,51 @@ const MainMenuConfig: Array<MenuItem> = [
                 name: "transaksilayanan",
                 keenthemesIcon: "bi bi-truck",
             },
+            {
+                heading: "Data Pelanggan",
+                route: "/admin/tambahpelanggan",
+                name: "tambahpelanggan",
+                keenthemesIcon: "bi bi-truck",
+            },
+            
         ],
+        
     },
+    {
+        heading: "Layanan",
+        route: "/layanan",
+        name: "layanan",
+        pages: [
+            
+            {
+                heading: "Jenis Item",
+                route: "/layanan/jenisitem",
+                name: "jenisitem",
+                keenthemesIcon: "bi bi-truck",
+            },
+            {
+                heading: "Jenis Layanan",
+                route: "/layanan/jenislayanan",
+                name: "jenislayanan",
+                keenthemesIcon: "bi bi-truck",
+            },
+            {
+                heading: "Harga Jenis Layanan",
+                route: "/layanan/hargajenislayanan",
+                name: "hargajenislayanan",
+                keenthemesIcon: "bi bi-truck",
+            },
+            {
+                heading: "Layanan Prioritas",
+                route: "/layanan/layananprioritas",
+                name: "layananprioritas",
+                keenthemesIcon: "bi bi-truck",
+            },
+            
+        ],
+        
+    },
+    
 ];
 
 export default MainMenuConfig;

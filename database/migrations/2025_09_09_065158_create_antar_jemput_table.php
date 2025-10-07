@@ -35,8 +35,8 @@ return new class extends Migration {
             $table->enum('layanan_laundry', ['daily_kiloan', 'cuci_setrika', 'laundry_sepatu', 'laundry_tas', 'laundry_sarung_bantal', 'laundry_bed_cover', 'laundry_sprei', 'laundry_boneka'])->default('daily_kiloan');
             
 
-            // $table->enum('status', ['baru', 'proses', 'siap_ambil', 'antar', 'jemput', 'selesai', 'batal'])->default('baru');
-            $table->enum('status', ['menunggu', 'dalam_perjalanan', 'selesai'])->default('menunggu');
+            $table->enum('status', ['baru', 'proses', 'siap_ambil', 'antar', 'jemput', 'selesai', 'batal'])->default('baru');
+            // $table->enum('status', ['menunggu', 'dalam_perjalanan', 'selesai'])->default('menunggu');
             $table->dateTime('selesai_at')->nullable();
             $table->dateTime('waktu_antar')->nullable();
             $table->dateTime('waktu_jemput')->nullable();
