@@ -15,7 +15,7 @@ return new class extends Migration
         $table->id();
         
         $table->string('nama_laundry');
-        $table->string('user_id')->contrained('users')->onDelete('cascade');
+        $table->foreignId('user_id')->contrained('users')->onDelete('cascade');
         
         $table->enum('status_validasi', ['menunggu', 'diterima', 'ditolak'])->default('menunggu');
        $table->string('alamat_laundry');

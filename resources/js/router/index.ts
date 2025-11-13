@@ -59,6 +59,16 @@ const routes: Array<RouteRecordRaw> = [
     ],
   },
   {
+    path: "/menunggu-verifikasi",
+    name: "menunggu-verifikasi",
+    component: () => import("@/pages/dashboard/menunggu-verifikasi.vue"),
+    meta: { pageTitle: "Sign Up", middleware: "guest" },
+    // meta: {
+    //     pageTitle: "Beranda",
+    //     breadcrumbs: ["Beranda"],
+    // },
+  },
+  {
     path: "/pelanggan",
     name: "pelanggan",
     component: () => import("@/pages/pelanggan/index.vue"),
@@ -216,6 +226,7 @@ const routes: Array<RouteRecordRaw> = [
         component: () =>
           import("@/pages/dashboard/LaundryDetail.vue"),
       },
+     
 
     ],
   },

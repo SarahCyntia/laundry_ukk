@@ -477,19 +477,65 @@ export default defineComponent({
 
             axios
                 .post(
-                    formData.value.role === "mitra" ?
-                    "/auth/register-mitra" : "/auth/register"
-                    , data, {
-                    headers: { "Content-Type": "multipart/form-data" },
-                })
+                    formData.value.role === "mitra"
+                        ? "/auth/register-mitra"
+                        : "/auth/register",
+                    data,
+                    {
+                        headers: { "Content-Type": "multipart/form-data" },
+                    }
+                )
                 .then((res) => {
                     toast.success("Akun berhasil dibuat");
-                    router.push({ name: "sign-in" });
+
+                    if (formData.value.role === "mitra") {;
+                        // Simpan id mitra sementara untuk cek status verifikasi
+                        localStorage.setItem("mitra_id", res.data.user.id);
+                        console.log("mitra id disimpan:", localStorage.getItem("mitra_id"));
+
+                        // Arahkan ke halaman menunggu verifikasi
+                        setTimeout(() => {
+                            unblockBtn("#submit-form");
+                            router.push({ name: "menunggu-verifikasi" });
+                        }, 10000);
+                    } else {
+                        // User biasa tetap ke halaman login
+                        router.push({ name: "sign-in" });
+                    }
                 })
                 .catch((err) => {
-                    toast.error(err.response.data.message);
+                    toast.error(err.response?.data?.message || "Terjadi kesalahan");
                     unblockBtn("#submit-form");
                 });
+
+            // axios
+            //     .post(
+            //         formData.value.role === "mitra" ?
+            //             "/auth/register-mitra" : "/auth/register"
+            //         , data, {
+            //         headers: { "Content-Type": "multipart/form-data" },
+            //     })
+            //     .then((res) => {
+            //         toast.success("Akun berhasil dibuat");
+
+            //         if (formData.value.role === "mitra") {
+            //             // arahkan ke halaman menunggu verifikasi
+            //             router.push({ name: "menunggu-verifikasi" });
+            //         } else {
+            //             // arahkan ke halaman login biasa
+            //             router.push({ name: "sign-in" });
+            //         }
+            //     })
+
+            //     //[pertaman]
+            //     // .then((res) => {
+            //     //     toast.success("Akun berhasil dibuat");
+            //     //     router.push({ name: "sign-in" });
+            //     // })
+            //     .catch((err) => {
+            //         toast.error(err.response.data.message);
+            //         unblockBtn("#submit-form");
+            //     });
         };
 
 

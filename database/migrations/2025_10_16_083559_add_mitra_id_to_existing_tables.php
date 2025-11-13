@@ -11,7 +11,7 @@ return new class extends Migration
      */
    public function up()
 {
-    Schema::table('data_pelanggan', function (Blueprint $table) {
+    Schema::table('pelanggan', function (Blueprint $table) {
         $table->foreignId('mitra_id')->constrained('mitra')->onDelete('cascade');
     });
 

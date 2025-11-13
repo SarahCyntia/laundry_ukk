@@ -54,9 +54,13 @@ use Illuminate\Http\Request;
 // });
 
 // routes/api.php
-Route::get('/cek-status-mitra/{email}', [AuthController::class, 'cekStatusMitra']);
+Route::put('/cek-status-mitra/{id}', [AuthController::class, 'updateStatusMitra']);
 
-Route::post('/mitra/{id}/status',  [AuthController::class, 'registerMitra']);
+
+Route::get('/cek-status-mitra/{email}', [AuthController::class, 'cekStatusMitra']);
+// Route::get('/mitra/status/{id}', [MitraController::class, 'checkStatus']);
+
+// Route::post('/mitra/{id}/status',  [AuthController::class, 'registerMitra']);
 Route::post('/mitra/{id}/update-status', [AuthController::class, 'updateStatus']);
 Route::post('/mitra/{id}/approve', [AuthController::class, 'approveMitra']);
 

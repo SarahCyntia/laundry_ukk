@@ -3,18 +3,18 @@ import { h, ref, watch } from "vue";
 import { useDelete } from "@/libs/hooks";
 import Form from "./form.vue";
 import { createColumnHelper } from "@tanstack/vue-table";
-import type { Mitra } from "@/types";
+import type { mitra } from "@/types";
 import axios from "axios";
 import Swal from "sweetalert2";
 
-const column = createColumnHelper<Mitra>();
+const column = createColumnHelper<mitra>();
 const paginateRef = ref<any>(null);
 const trashRef = ref<any>(null);
 const selected = ref<string>("");
 const openForm = ref<boolean>(false);
-const mitraData = ref<Mitra | null>(null);
+const mitraData = ref<mitra | null>(null);
 
-// Hapus data aktif
+// Hapus data diterima
 const { delete: deleteMitra } = useDelete({
   onSuccess: () => refresh(),
 });
@@ -52,10 +52,10 @@ const restoreMitra = (url: string) => {
   });
 };
 
-// 🔹 Update status mitra (aktif / ditolak)
+// 🔹 Update status mitra (diterima / ditolak)
 const updateStatus = (id: number, status: string) => {
   const label =
-    status === "aktif" ? "Terima" : status === "ditolak" ? "Tolak" : "Ubah";
+    status === "diterima" ? "Terima" : status === "ditolak" ? "Tolak" : "Ubah";
 
   Swal.fire({
     title: `${label} mitra ini?`,
@@ -67,11 +67,15 @@ const updateStatus = (id: number, status: string) => {
   }).then(async (result) => {
     if (result.isConfirmed) {
       try {
-        await axios.put(`/mitra/${id}/status`, { status }); // 👈 hanya update di tabel mitra
+        // ✅ gunakan PUT + kirim data dengan nama kolom yang sesuai
+        await axios.put(`/cek-status-mitra/${id}`, { status_validasi: status });
+
         Swal.fire({
           icon: "success",
           title: "Berhasil!",
-          text: `Mitra berhasil di${status === "aktif" ? "terima" : "tolak"}.`,
+          text: `Mitra berhasil di${
+            status === "diterima" ? "terima" : "tolak"
+          }.`,
           timer: 1500,
           showConfirmButton: false,
         });
@@ -86,6 +90,40 @@ const updateStatus = (id: number, status: string) => {
     }
   });
 };
+
+// const updateStatus = (id: number, status: string) => {
+//   const label =
+//     status === "diterima" ? "Terima" : status === "ditolak" ? "Tolak" : "Ubah";
+
+//   Swal.fire({
+//     title: `${label} mitra ini?`,
+//     text: `Status akan diubah menjadi ${status}.`,
+//     icon: "question",
+//     showCancelButton: true,
+//     confirmButtonText: `Ya, ${label}`,
+//     cancelButtonText: "Batal",
+//   }).then(async (result) => {
+//     if (result.isConfirmed) {
+//       try {
+//         await axios.get(`/cek-status-mitra`, { status }); // 👈 hanya update di tabel mitra
+//         Swal.fire({
+//           icon: "success",
+//           title: "Berhasil!",
+//           text: `Mitra berhasil di${status === "diterima" ? "terima" : "tolak"}.`,
+//           timer: 1500,
+//           showConfirmButton: false,
+//         });
+//         refresh();
+//       } catch (err) {
+//         Swal.fire({
+//           icon: "error",
+//           title: "Gagal!",
+//           text: "Terjadi kesalahan saat mengubah status.",
+//         });
+//       }
+//     }
+//   });
+// };
 
 // 🔹 Kolom tabel utama
 const columns = [
@@ -109,43 +147,88 @@ const columns = [
     },
   }),
 
-  column.accessor("status", {
-    header: "Status",
-    cell: (cell) => {
-      const status = cell.getValue();
-      const id = cell.row.original.id;
+  column.accessor("status_validasi", {
+  header: "Status Validasi",
+  cell: (cell) => {
+    const status = cell.getValue();
+    const id = cell.row.original.id;
 
-      if (status === "pending") {
-        return h("div", { class: "d-flex gap-2" }, [
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-success",
-              onClick: () => updateStatus(id, "aktif"),
-            },
-            "Terima"
-          ),
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-danger",
-              onClick: () => updateStatus(id, "ditolak"),
-            },
-            "Tolak"
-          ),
-        ]);
-      }
+    // Kalau masih menunggu
+   if (status === "menunggu") {
+  return h("div", { class: "d-flex gap-2" }, [
+    h(
+      "button",
+      {
+        class: "btn btn-sm btn-success",
+        onClick: () => updateStatus(id, "diterima"),
+      },
+      "Terima"
+    ),
+    h(
+      "button",
+      {
+        class: "btn btn-sm btn-danger",
+        onClick: () => updateStatus(id, "ditolak"),
+      },
+      "Tolak"
+    ),
+  ]);
+}
 
-      const color =
-        status === "aktif"
-          ? "badge-success"
-          : status === "ditolak"
-          ? "badge-danger"
-          : "badge-secondary";
 
-      return h("span", { class: `badge ${color}` }, status.toUpperCase());
-    },
-  }),
+    // Kalau sudah diterima atau ditolak
+    const color =
+      status === "diterima"
+        ? "badge-success"
+        : status === "ditolak"
+        ? "badge-danger"
+        : "badge-secondary";
+
+    return h(
+      "span",
+      { class: `badge ${color}` },
+      status.toUpperCase()
+    );
+  },
+}),
+
+  // column.accessor("status_validasi", {
+  //   header: "Status Validasi",
+  //   cell: (cell) => {
+  //     const status = cell.getValue();
+  //     const id = cell.row.original.id;
+
+  //     if (status === "pending") {
+  //       return h("div", { class: "d-flex gap-2" }, [
+  //         h(
+  //           "button",
+  //           {
+  //             class: "btn btn-sm btn-success",
+  //             onClick: () => updateStatus(id, "diterima"),
+  //           },
+  //           "Terima"
+  //         ),
+  //         h(
+  //           "button",
+  //           {
+  //             class: "btn btn-sm btn-danger",
+  //             onClick: () => updateStatus(id, "ditolak"),
+  //           },
+  //           "Tolak"
+  //         ),
+  //       ]);
+  //     }
+
+  //     const color =
+  //       status === "diterima"
+  //         ? "badge-success"
+  //         : status === "ditolak"
+  //         ? "badge-danger"
+  //         : "badge-secondary";
+
+  //     return h("span", { class: `badge ${color}` }, status.toUpperCase());
+  //   },
+  // }),
 
   column.accessor("status_toko", {
     header: "Status Toko",

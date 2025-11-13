@@ -108,7 +108,7 @@ export default defineComponent({
             this.router.push("/admin/dashboard");
             break;
           default:
-            this.router.push("/pengguna/home");
+            this.router.push("/pengguna/beranda");
         }
 
         toast.success("Login berhasil!");

@@ -240,6 +240,20 @@ class MitraController extends Controller
         return response()->json(['message' => 'Pendaftaran mitra telah ditolak.']);
     }
 
+    public function checkStatus($id)
+{
+    $mitra = Mitra::find($id);
+
+    if (!$mitra) {
+        return response()->json(['message' => 'Mitra tidak ditemukan'], 404);
+    }
+
+    return response()->json([
+        'status_validasi' => $mitra->status_validasi
+    ]);
+}
+
+
     // public function store(Request $request)
     // {
     //     $validated = $request->validate([

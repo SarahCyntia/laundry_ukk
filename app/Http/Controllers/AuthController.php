@@ -17,23 +17,23 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     public function cekStatusMitra($email)
-{
-    $user = User::where('email', $email)->first();
-    if (!$user) {
-        return response()->json(['status' => 'tidak_ditemukan'], 404);
+    {
+        $user = User::find($email);
+        if (!$user) {
+            return response()->json(['status' => 'tidak_ditemukan'], 404);
+        }
+
+        // $mitra = Mitra::where('name', $user->id)->first();
+        $mitra = Mitra::where('user_id', $user->id)->first();
+
+        if (!$mitra) {
+            return response()->json(['status' => 'tidak_ditemukan'], 404);
+        }
+
+        return response()->json(['status_validasi' => $mitra->status_validasi]);
     }
 
-    // $mitra = Mitra::where('name', $user->id)->first();
-    $mitra = Mitra::where('user_id', auth()->id())->first();
-
-    if (!$mitra) {
-        return response()->json(['status' => 'tidak_ditemukan'], 404);
-    }
-
-    return response()->json(['status_validasi' => $mitra->status_validasi]);
-}
-
-//   public function registerMitra(Request $request)
+    //   public function registerMitra(Request $request)
 // {
 //     $validated = $request->validate([
 //         'name' => 'required|string|max:255',     // nama pemilik laundry
@@ -47,7 +47,7 @@ class AuthController extends Controller
 //         'status_toko' => 'required|string',
 //     ]);
 
-//     // Simpan ke tabel users
+    //     // Simpan ke tabel users
 //     $user = User::create([
 //         'name' => $validated['name'],
 //         'email' => $validated['email'],
@@ -57,7 +57,7 @@ class AuthController extends Controller
 //         'status' => 'pending',  // menunggu validasi admin
 //     ]);
 
-//     // Simpan ke tabel mitra
+    //     // Simpan ke tabel mitra
 //     $mitra = Mitra::create([
 //         'name'    => $user->id, // relasi user_id / pemilik_id
 //         'nama_laundry' => $validated['nama_laundry'],
@@ -67,7 +67,7 @@ class AuthController extends Controller
 //         'status_toko' => 'buka', // misalnya enum di tabel mitra
 //     ]);
 
-//     return response()->json([
+    //     return response()->json([
 //         'message' => 'Pendaftaran mitra berhasil! Silakan tunggu persetujuan admin.',
 //         'user' => $user,
 //         'mitra' => $mitra
@@ -75,74 +75,89 @@ class AuthController extends Controller
 // }
 
 
-public function registerMitra(Request $request)
-{
-    $validated = $request->validate([
-        'name'           => 'required|string|max:255',
-        'email'          => 'required|email|unique:users,email',
-        'phone'          => 'required|string',
-        'password'       => 'required|min:6',
-        'nama_laundry'   => 'required|string',
-        'alamat_laundry' => 'required|string',
-        'foto_ktp'       => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // ✅ validasi file
-    ]);
+    public function registerMitra(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'required|string',
+            'password' => 'required|min:6',
+            'nama_laundry' => 'required|string',
+            'alamat_laundry' => 'required|string',
+            'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // ✅ validasi file
+        ]);
 
-    // Simpan user
-    $user = User::create([
-        'name'     => $validated['name'],
-        'email'    => $validated['email'],
-        'phone'    => $validated['phone'],
-        'password' => Hash::make($validated['password']),
-    ]);
+        // Simpan user
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'password' => Hash::make($validated['password']),
+        ]);
 
-    // Assign role mitra
-    $user->assignRole('mitra');
+        // Assign role mitra
+        $user->assignRole('mitra');
 
-    // ✅ Simpan file KTP ke folder storage/app/public/ktp
-    $path = $request->file('foto_ktp')->store('ktp', 'public');
-    // $path = $request->file('foto_ktp')->store('ktp', 'public');
+        // ✅ Simpan file KTP ke folder storage/app/public/ktp
+        $path = $request->file('foto_ktp')->store('ktp', 'public');
+        // $path = $request->file('foto_ktp')->store('ktp', 'public');
 
-    // Simpan data mitra
-    $mitra = Mitra::create([
-        'user_id'        => $user->id,
-        'nama_laundry'   => $validated['nama_laundry'],
-        'alamat_laundry' => $validated['alamat_laundry'],
-        'foto_ktp'       => $path, // hanya simpan path-nya
-        'status_validasi'=> 'menunggu',
-        'status_toko'    => 'buka',
-    ]);
+        // Simpan data mitra
+        $mitra = Mitra::create([
+            'user_id' => $user->id,
+            'nama_laundry' => $validated['nama_laundry'],
+            'alamat_laundry' => $validated['alamat_laundry'],
+            'foto_ktp' => $path, // hanya simpan path-nya
+            'status_validasi' => 'menunggu',
+            'status_toko' => 'buka',
+        ]);
 
-    $user->load('roles');
+        $user->load('roles');
 
-    return response()->json([
-        'message' => 'Pendaftaran berhasil, menunggu validasi admin.',
-        'user'    => $user,
-        'mitra'   => $mitra,
-        'role'    => $user->getRoleNames()->first(),
-        'foto_url'=> asset('storage/'.$path), // ✅ URL akses langsung ke gambar
-    ]);
-}
+        return response()->json([
+            'message' => 'Pendaftaran berhasil, menunggu validasi admin.',
+            'user' => $user,
+            'mitra' => $mitra,
+            'role' => $user->getRoleNames()->first(),
+            'foto_url' => asset('storage/' . $path), // ✅ URL akses langsung ke gambar
+        ]);
+    }
 
-
-
-    public function updateStatus($id, Request $request)
+    public function updateStatusMitra(Request $request, $id)
 {
     $request->validate([
-        'status' => 'required|in:pending,aktif,ditolak',
+        'status_validasi' => 'required|in:menunggu,diterima,ditolak',
     ]);
 
-    $mitra = User::findOrFail($id);
-    $mitra->status = $request->status;
+    $mitra = Mitra::findOrFail($id);
+
+    // Update kolom status_validasi
+    $mitra->status_validasi = $request->status_validasi;
     $mitra->save();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Status mitra berhasil diperbarui.',
-        'data' => $mitra
-    ]);
+    return response()->json(['message' => 'Status mitra berhasil diubah']);
 }
 
-//   public function registerMitra(Request $request)
+
+
+    // public function updateStatus($id, Request $request)
+    // {
+    //     $request->validate([
+    //         'status_validasi' => 'required|in:menunggu,diterima,ditolak',
+    //     ]);
+
+    //     $mitra = Mitra::findOrFail($id);
+    //     $mitra->status_validasi = $request->status_validasi;
+    //     $mitra->save();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Status mitra berhasil diperbarui.',
+    //         'data' => $mitra
+    //     ]);
+    // }
+
+    //   public function registerMitra(Request $request)
 //     {
 //         $validated = $request->validate([
 //             'name' => 'required|string|max:255',
@@ -153,7 +168,7 @@ public function registerMitra(Request $request)
 //             'alamat_laundry' => 'required',
 //         ]);
 
-//         $user = User::create([
+    //         $user = User::create([
 //             'name' => $validated['name'],
 //             'email' => $validated['email'],
 //             'phone' => $validated['phone'],
@@ -164,7 +179,7 @@ public function registerMitra(Request $request)
 //             'status' => 'pending', // menunggu disetujui admin
 //         ]);
 
-//         return response()->json([
+    //         return response()->json([
 //             'message' => 'Pendaftaran mitra berhasil! Menunggu persetujuan admin.',
 //             'user' => $user
 //         ]);
@@ -172,12 +187,12 @@ public function registerMitra(Request $request)
 
 
     public function approveMitra($id)
-{
-    $user = User::findOrFail($id);
-    $user->update(['role' => 'mitra', 'status' => 'aktif']);
+    {
+        $user = User::findOrFail($id);
+        $user->update(['role' => 'mitra', 'status' => 'aktif']);
 
-    return response()->json(['message' => 'Mitra telah disetujui dan diaktifkan.']);
-}
+        return response()->json(['message' => 'Mitra telah disetujui dan diaktifkan.']);
+    }
 
 
 

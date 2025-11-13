@@ -25,7 +25,7 @@ return new class extends Migration
             $table->double('kembalian');
             $table->string('status');
             $table->foreignId('layanan_prioritas_id')->constrained('layanan_prioritas', 'id');
-            $table->foreignId('pelanggan_id')->constrained('data_pelanggan', 'id');
+            $table->foreignId('pelanggan_id')->constrained('pelanggan', 'id');
             $table->foreignId('pegawai_id')->constrained('pegawai_laundry', 'id');
             $table->softDeletes();
             $table->timestamps();

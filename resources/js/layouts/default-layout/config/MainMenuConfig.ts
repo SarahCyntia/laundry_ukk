@@ -55,6 +55,16 @@ const MainMenuConfig: Array<MenuItem> = [
     {
         pages: [
             {
+                heading: "menunggu-verifikasi",
+                name: "menunggu-verifikasi",
+                route: "/menunggu-verifikasi",
+                keenthemesIcon: "element-11",
+            },
+        ],
+    },
+    {
+        pages: [
+            {
                 heading: "Jemput",
                 name: "jemput",
                 route: "/pelanggan/jemput",
