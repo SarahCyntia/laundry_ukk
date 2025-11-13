@@ -23,6 +23,7 @@ return new class extends Migration
             $table->date('mulai_kerja')->nullable();
             $table->date('selesai_kerja')->nullable();
             $table->foreignId('user_id')->constrained('users', 'id');
+            
             $table->timestamps();
         });
     }

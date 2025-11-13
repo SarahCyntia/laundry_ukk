@@ -23,5 +23,15 @@ class RoleSeeder extends Seeder
             'guard_name' => 'api',
             'full_name' => 'pelanggan',
         ]);
+        Role::create([
+            'name' => 'pegawai',
+            'guard_name' => 'api',
+            'full_name' => 'Pegawai',
+        ]);
+        Role::create([
+            'name' => 'mitra',
+            'guard_name' => 'api',
+            'full_name' => 'Mitra',
+        ]);
     }
 }

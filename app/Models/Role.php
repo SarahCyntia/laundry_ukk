@@ -26,4 +26,6 @@ class Role extends SpatieRole
             ->saveSlugsTo('name')
             ->doNotGenerateSlugsOnUpdate();
     }
+
+
 }

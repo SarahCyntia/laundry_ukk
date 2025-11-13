@@ -6,6 +6,7 @@ use App\Models\LayananPrioritas;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LayananPrioritasController extends Controller
 {
@@ -125,5 +126,10 @@ public function forceDelete($id)
     {
         $data = LayananPrioritas::select('id','nama as text')->get();
         return response()->json(['layanan_prioritas' => $data]);
+    }
+     public function all()
+    {
+        Log::info("masuk all");   
+        return LayananPrioritas::get();
     }
 }

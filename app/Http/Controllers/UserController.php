@@ -9,6 +9,7 @@ use App\Models\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -123,4 +124,8 @@ class UserController extends Controller
             'success' => true
         ]);
     }
+
+
+    
 }
+

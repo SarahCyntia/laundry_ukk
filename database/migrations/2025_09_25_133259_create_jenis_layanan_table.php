@@ -13,6 +13,7 @@ return new class extends Migration
     {
     Schema::create('jenis_layanan', function (Blueprint $table) {
         $table->id();
+        // $table->unsignedInteger('mitra_id');
         $table->string('nama_layanan');
         $table->text('deskripsi');
         $table->softDeletes();

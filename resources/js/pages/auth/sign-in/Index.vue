@@ -1,104 +1,78 @@
 <template>
   <div class="login-wrapper">
     <div class="login-card">
-      <!--begin::Form-->
+      <!-- Form -->
       <div class="w-100">
-        <!--begin::Heading-->
+        <!-- Header -->
         <div class="text-center mb-10">
           <router-link to="/">
             <img src="/storage/image/pelanggan.png" class="orang" />
           </router-link>
-          <!--begin::Title-->
           <h1 class="abc mb-3">
             Masuk ke <span class="text-primary">SLaundry</span>
           </h1>
-          <!--end::Title-->
         </div>
-        <!--end::Heading-->
 
+        <!-- Tab -->
         <ul class="nav nav-tabs nav-line-tabs mb-5 fs-6">
           <li class="nav-item">
-            <a
-              class="nav-link active"
-              data-bs-toggle="tab"
-              href="#with-email"
-              >Email</a
-            >
+            <a class="nav-link active" data-bs-toggle="tab" href="#with-email">Email</a>
           </li>
         </ul>
 
         <div class="tab-content" id="myTabContent">
-          <div
-            class="tab-pane fade show active"
-            id="with-email"
-            role="tabpanel"
-          >
+          <div class="tab-pane fade show active" id="with-email" role="tabpanel">
             <WithEmail />
           </div>
         </div>
-        <!-- <div> lupa password</div> -->
+
         <div class="border-bottom border-gray-300 w-100 mt-5 mb-10"></div>
-         <div class="text-center daftar">
-          Belum punya akun?  
+
+        <div class="text-center daftar">
+          Belum punya akun?
           <router-link to="/sign-up" class="link-daftar">Daftar</router-link>
         </div>
+        <div class="text-center daftar mt-5 ">
+          Daftar sebagai mitra?
+          <router-link to="/register-mitra" class="link-daftar">Daftar Mitra</router-link>
+        </div>
       </div>
-      <!--end::Form-->
     </div>
   </div>
 </template>
 
 <script>
-import { getAssetPath } from "@/core/helpers/assets";
 import { defineComponent, ref } from "vue";
-import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
-import * as Yup from "yup";
 import axios from "@/libs/axios";
 import { toast } from "vue3-toastify";
 import { blockBtn, unblockBtn } from "@/libs/utils";
-
+import { useAuthStore } from "@/stores/auth";
 import WithEmail from "./tabs/WithEmail.vue";
-import WithPhone from "./tabs/WithPhone.vue";
-import { useSetting } from "@/services";
+import * as Yup from "yup";
 
 export default defineComponent({
   name: "sign-in",
-  components: {
-    WithEmail,
-    WithPhone,
-  },
+  components: { WithEmail },
+
   setup() {
     const store = useAuthStore();
     const router = useRouter();
-    const { data: setting = {} } = useSetting();
     const submitButton = ref(null);
 
-    const login = Yup.object().shape({
-      identifier: Yup.string()
-        .email("Email/No. Telepon tidak valid")
-        .required("Harap masukkan Email/No. Telepon")
-        .label("Email"),
-      password: Yup.string()
-        .min(8, "Password minimal terdiri dari 8 karakter")
-        .required("Harap masukkan password")
-        .label("Password"),
+    const loginSchema = Yup.object().shape({
+      identifier: Yup.string().required("Masukkan email atau nomor telepon"),
+      password: Yup.string().min(8, "Password minimal 8 karakter").required("Masukkan password"),
     });
 
-    return {
-      login,
-      submitButton,
-      getAssetPath,
-      store,
-      router,
-      setting,
-    };
+    return { store, router, submitButton, loginSchema };
   },
+
   data() {
     return {
       data: {
-        identifier: null,
-        password: null,
+        identifier: "",
+        password: "",
       },
       check: {
         type: "",
@@ -106,31 +80,54 @@ export default defineComponent({
       },
     };
   },
+
   methods: {
-    submit() {
-      blockBtn(this.submitButton);
-      axios
-        .post("/auth/login", { ...this.data, type: this.check.type })
-        .then((res) => {
-          this.store.setAuth(res.data.user, res.data.token);
-          this.router.push("/dashboard");
-        })
-        .catch((error) => {
-          toast.error(error.response.data.message);
-        })
-        .finally(() => {
-          unblockBtn(this.submitButton);
+    async submit() {
+      try {
+        blockBtn(this.submitButton);
+
+        // tentukan jenis login (email / phone)
+        this.checkInput(this.data.identifier);
+
+        const res = await axios.post("/auth/login", {
+          ...this.data,
+          type: this.check.type,
         });
+
+        const { user, token } = res.data;
+
+        // simpan user + token di store
+        this.store.setAuth(user, token);
+
+        // 🔹 Redirect sesuai role
+        switch (user.role) {
+          case "mitra":
+            this.router.push("/mitra/beranda");
+            break;
+          case "admin":
+            this.router.push("/admin/dashboard");
+            break;
+          default:
+            this.router.push("/pengguna/home");
+        }
+
+        toast.success("Login berhasil!");
+      } catch (error) {
+        const msg = error.response?.data?.message || "Login gagal, periksa kembali data Anda.";
+        toast.error(msg);
+      } finally {
+        unblockBtn(this.submitButton);
+      }
     },
+
     checkInput(value) {
       this.check.type = "";
       if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
         this.check.type = "email";
-      } else {
+      } else if (!isNaN(value)) {
         this.check.type = "phone";
-        if (isNaN(this.data.identifier)) {
-          this.check.type = "Masukkan Email / No. Telepon Yang Valid!";
-        }
+      } else {
+        this.check.type = "invalid";
       }
     },
   },
@@ -139,21 +136,21 @@ export default defineComponent({
 
 <style scoped>
 .login-wrapper {
-  position: fixed;        /* biar ngunci di layar */
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
   display: flex;
-  justify-content: center; /* center kiri-kanan */
-  align-items: center;     /* center atas-bawah */
-  background: #466ee7 ;
+  justify-content: center;
+  align-items: center;
+  background: #466ee7;
 }
 
 .login-card {
   width: 500px;
   background: #ffffff;
-  padding: 30px 30px;
+  padding: 30px;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
@@ -162,15 +159,16 @@ export default defineComponent({
   width: 150px;
   margin-bottom: 15px;
 }
-.abc{ 
-    font-weight: 600;
-    font-size: 28px;
-    color: black;
+
+.abc {
+  font-weight: 600;
+  font-size: 28px;
+  color: black;
 }
 
 .nav-link {
-    font-weight: 500;
-    font-size: 16px;
-    color: black;
+  font-weight: 500;
+  font-size: 16px;
+  color: black;
 }
 </style>

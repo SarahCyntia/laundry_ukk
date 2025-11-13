@@ -1,7 +1,5 @@
 <template>
-    <div class="signup-wrapper">
-    <!--begin::Wrapper-->
-    <div class="signup-card">
+
     <div class="w-lg- w-100">
         <!--begin::Form-->
         <main class="form w-100 fv-plugins-bootstrap5 fv-plugins-framework">
@@ -23,18 +21,12 @@
             </div>
             <!--end::Heading-->
 
-            <div
-                class="stepper stepper-links d-flex flex-column"
-                id="kt_create_account_stepper"
-                ref="horizontalWizardRef"
-            >
+            <div class="stepper stepper-links d-flex flex-column" id="kt_create_account_stepper"
+                ref="horizontalWizardRef">
                 <!--begin::Nav-->
                 <div class="stepper-nav py-5 mt-5 d-none">
                     <!--begin::Step 1-->
-                    <div
-                        class="stepper-item current"
-                        data-kt-stepper-element="nav"
-                    >
+                    <div class="stepper-item current" data-kt-stepper-element="nav">
                         <h3 class="stepper-title">Akun</h3>
                     </div>
                     <!--end::Step 1-->
@@ -46,9 +38,9 @@
                     <!--end::Step 2-->
 
                     <!--begin::Step 2-->
-                    <div class="stepper-item" data-kt-stepper-element="nav">
-                        <h3 class="stepper-title">Verifikasi Telepon</h3>
-                    </div>
+                    <!-- <div class="stepper-item" data-kt-stepper-element="nav">
+                                <h3 class="stepper-title">Verifikasi Telepon</h3>
+                            </div> -->
                     <!--end::Step 2-->
 
                     <!--begin::Step 3-->
@@ -60,12 +52,8 @@
                 <!--end::Nav-->
 
                 <!--begin::Form-->
-                <form
-                    class="mx-auto mw-600px w-100 pt-15 pb-10"
-                    novalidate
-                    id="kt_create_account_form"
-                    @submit="handleStep"
-                >
+                <form class="mx-auto mw-600px w-100 pt-15 pb-10" novalidate id="kt_create_account_form"
+                    @submit="handleStep">
                     <!--begin::Step 1-->
                     <div class="current" data-kt-stepper-element="content">
                         <Credential :formData="formData"></Credential>
@@ -74,22 +62,19 @@
 
                     <!--begin::Step 2-->
                     <div data-kt-stepper-element="content">
-                        <VerifyEmail
-                            :formData="formData"
-                            @on-complete="handleOtpEmail"
-                            @send-otp="sendOtpEmail"
-                        ></VerifyEmail>
+                        <VerifyEmail :formData="formData" @on-complete="handleOtpEmail" @send-otp="sendOtpEmail">
+                        </VerifyEmail>
                     </div>
                     <!--end::Step 2-->
 
                     <!--begin::Step 3-->
-                    <div data-kt-stepper-element="content">
+                    <!-- <div data-kt-stepper-element="content">
                         <VerifyPhone
                             :formData="formData"
                             @on-complete="handleOtpPhone"
                             @send-otp="sendOtpPhone"
                         ></VerifyPhone>
-                    </div>
+                    </div> -->
                     <!--end::Step 3-->
 
                     <!--begin::Step 4-->
@@ -102,16 +87,9 @@
                     <div class="d-flex flex-stack pt-15">
                         <!--begin::Wrapper-->
                         <div class="mr-2">
-                            <button
-                                type="button"
-                                class="btn btn-lg btn-light-primary me-3"
-                                data-kt-stepper-action="previous"
-                                @click="previousStep"
-                            >
-                                <KTIcon
-                                    icon-name="arrow-left"
-                                    icon-class="fs-4 me-1"
-                                />
+                            <button type="button" class="btn btn-lg btn-light-primary me-3"
+                                data-kt-stepper-action="previous" @click="previousStep">
+                                <KTIcon icon-name="arrow-left" icon-class="fs-4 me-1" />
                                 Kembali
                             </button>
                         </div>
@@ -119,48 +97,29 @@
 
                         <!--begin::Wrapper-->
                         <div>
-                            <button
-                                type="submit"
-                                id="submit-form"
-                                class="btn btn-lg btn-primary me-3"
-                                data-kt-stepper-action="submit"
-                                v-if="currentStepIndex === totalSteps - 1"
-                            >
+                            <button type="submit" id="submit-form" class="btn btn-lg btn-primary me-3"
+                                data-kt-stepper-action="submit" v-if="currentStepIndex === totalSteps - 1">
                                 <span class="indicator-label">
                                     Daftar
-                                    <KTIcon
-                                        icon-name="arrow-right"
-                                        icon-class="fs-3 ms-2 me-0"
-                                    />
+                                    <KTIcon icon-name="arrow-right" icon-class="fs-3 ms-2 me-0" />
                                 </span>
                                 <span class="indicator-progress">
                                     Memproses...
-                                    <span
-                                        class="spinner-border spinner-border-sm align-middle ms-2"
-                                    ></span>
+                                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
                                 </span>
                             </button>
 
-                            <button
-                                v-else
-                                type="submit"
-                                id="next-form"
-                                class="btn btn-lg btn-primary"
-                            >
+                            <button v-else type="submit" id="next-form" class="btn btn-lg btn-primary">
                                 <span class="indicator-label">
                                     Selanjutnya
-                                    <KTIcon
-                                        icon-name="arrow-right"
-                                        icon-class="fs-4 ms-2 me-0"
-                                    />
+                                    <KTIcon icon-name="arrow-right" icon-class="fs-4 ms-2 me-0" />
                                 </span>
                                 <span class="indicator-progress">
-                                    <span
-                                        class="spinner-border spinner-border-sm align-middle ms-2"
-                                    ></span>
+                                    <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
                                 </span>
                             </button>
                         </div>
+
                         <!--end::Wrapper-->
                     </div>
                     <!--end::Actions-->
@@ -181,8 +140,6 @@
             <!--end::Link-->
         </main>
         <!--end::Form-->
-    </div>
-    </div>
     </div>
     <!--end::Wrapper-->
 </template>
@@ -206,18 +163,22 @@ import router from "@/router";
 import { useSetting } from "@/services";
 
 interface ICredential {
-    nama?: string;
+    name?: string;
     email?: string;
     phone?: string;
+    foto_ktp?: File | null;
+    nama_laundry?: string;
+    alamat_laundry?: string;
+    role?: string;
 }
 
 interface IVerifyEmail {
     otp_email?: string;
 }
 
-interface IVerifyPhone {
-    otp_phone?: string;
-}
+// interface IVerifyPhone {
+//     otp_phone?: string;
+// }
 
 interface IPassword {
     password?: string;
@@ -226,9 +187,9 @@ interface IPassword {
 
 interface CreateAccount
     extends ICredential,
-        IVerifyEmail,
-        IVerifyPhone,
-        IPassword {}
+    IVerifyEmail,
+    // IVerifyPhone,
+    IPassword { }
 
 interface IOtpInterval {
     otpInterval: number;
@@ -245,7 +206,7 @@ export default defineComponent({
     components: {
         Credential,
         VerifyEmail,
-        VerifyPhone,
+        // VerifyPhone,
         Password,
     },
     setup() {
@@ -256,11 +217,15 @@ export default defineComponent({
         const currentStepIndex = ref(0);
 
         const formData = ref<CreateAccount>({
-            nama: "",
+            name: "",
             email: "",
             phone: "",
             otp_email: "",
-            otp_phone: "",
+            role: "mitra",
+            // otp_phone: "",
+            foto_ktp: null,
+            nama_laundry: "",
+            alamat_laundry: "",
             password: "",
             password_confirmation: "",
         });
@@ -273,7 +238,7 @@ export default defineComponent({
 
         const createAccountSchema = [
             Yup.object({
-                nama: Yup.string()
+                name: Yup.string()
                     .required("Nama tidak boleh kosong")
                     .label("Nama"),
                 email: Yup.string()
@@ -307,7 +272,8 @@ export default defineComponent({
         });
 
         const { resetForm, handleSubmit } = useForm<
-            ICredential | IVerifyEmail | IVerifyPhone | IPassword
+            ICredential | IVerifyEmail | IPassword
+        // ICredential | IVerifyEmail | IVerifyPhone | IPassword
         >({
             validationSchema: currentSchema,
         });
@@ -328,7 +294,7 @@ export default defineComponent({
             axios
                 .post("/auth/register/get/email/otp", {
                     email: formData.value.email,
-                    nama: formData.value.nama,
+                    name: formData.value.name,
                 })
                 .then((res) => {
                     toast.success("Kode OTP berhasil dikirim ke Email Anda");
@@ -363,47 +329,47 @@ export default defineComponent({
                 });
         };
 
-        const sendOtpPhone = (callback: any) => {
-            blockBtn("#next-form");
+        // const sendOtpPhone = (callback: any) => {
+        //     blockBtn("#next-form");
 
-            axios
-                .post("/auth/register/get/phone/otp", {
-                    phone: formData.value.phone,
-                })
-                .then((res) => {
-                    toast.success(
-                        "Kode OTP berhasil dikirim ke No. Telepon Anda"
-                    );
-                    unblockBtn("#next-form");
-                    callback && callback();
+        //     axios
+        //         .post("/auth/register/get/phone/otp", {
+        //             phone: formData.value.phone,
+        //         })
+        //         .then((res) => {
+        //             toast.success(
+        //                 "Kode OTP berhasil dikirim ke No. Telepon Anda"
+        //             );
+        //             unblockBtn("#next-form");
+        //             callback && callback();
 
-                    setOtpInterval.value(30);
-                    handleOtpInterval();
-                })
-                .catch((err) => {
-                    toast.error(err.response.data.message);
-                    unblockBtn("#next-form");
-                });
-        };
+        //             setOtpInterval.value(30);
+        //             handleOtpInterval();
+        //         })
+        //         .catch((err) => {
+        //             toast.error(err.response.data.message);
+        //             unblockBtn("#next-form");
+        //         });
+        // };
 
-        const checkOtpPhone = (callback: any) => {
-            blockBtn("#next-form");
+        // const checkOtpPhone = (callback: any) => {
+        //     blockBtn("#next-form");
 
-            axios
-                .post("/auth/register/check/phone/otp", {
-                    phone: formData.value.phone,
-                    otp: formData.value.otp_phone,
-                })
-                .then((res) => {
-                    toast.success("No. Telepon berhasil diverifikasi");
-                    unblockBtn("#next-form");
-                    callback && callback();
-                })
-                .catch((err) => {
-                    toast.error(err.response.data.message);
-                    unblockBtn("#next-form");
-                });
-        };
+        //     axios
+        //         .post("/auth/register/check/phone/otp", {
+        //             phone: formData.value.phone,
+        //             otp: formData.value.otp_phone,
+        //         })
+        //         .then((res) => {
+        //             toast.success("No. Telepon berhasil diverifikasi");
+        //             unblockBtn("#next-form");
+        //             callback && callback();
+        //         })
+        //         .catch((err) => {
+        //             toast.error(err.response.data.message);
+        //             unblockBtn("#next-form");
+        //         });
+        // };
 
         const handleStep = handleSubmit((values) => {
             resetForm({
@@ -425,22 +391,7 @@ export default defineComponent({
                     _stepperObj.value.goNext();
                 });
             } else if (currentStepIndex.value === 1) {
-                checkOtpEmail(() =>
-                    sendOtpPhone(() => {
-                        formData.value = { ...values };
-
-                        currentStepIndex.value++;
-
-                        if (!_stepperObj.value) {
-                            return;
-                        }
-
-                        _stepperObj.value.goNext();
-                    })
-                );
-            } else if (currentStepIndex.value === 2) {
-                checkOtpPhone(() => {
-                    formData.value = { ...values };
+                checkOtpEmail(() => {
 
                     currentStepIndex.value++;
 
@@ -449,9 +400,37 @@ export default defineComponent({
                     }
 
                     _stepperObj.value.goNext();
-                });
-            } else if (currentStepIndex.value === 3) {
+                }
+                    // sendOtpPhone(() => {
+                    //     formData.value = { ...values };
+
+                    // })
+                );
+            }
+            // else if (currentStepIndex.value === 2) {
+
+            //     currentStepIndex.value++;
+
+            //     if (!_stepperObj.value) {
+            //         return;
+            //     }
+
+            //     _stepperObj.value.goNext();
+            //     // checkOtpPhone(() => {
+            //     //     formData.value = { ...values };
+
+            //     //     currentStepIndex.value++;
+
+            //     //     if (!_stepperObj.value) {
+            //     //         return;
+            //     //     }
+
+            //     //     _stepperObj.value.goNext();
+            //     // });
+            // } 
+            else if (currentStepIndex.value === 2) {
                 formData.value = { ...values };
+                console.log("form data sebelum submit:", formData.value);
 
                 formSubmit(values);
             } else {
@@ -480,8 +459,29 @@ export default defineComponent({
         const formSubmit = (values: CreateAccount) => {
             blockBtn("#submit-form");
 
+            const data = new FormData();
+
+            // masukkan semua field
+            data.append("name", values.name || "");
+            data.append("email", values.email || "");
+            data.append("phone", values.phone || "");
+            data.append("password", values.password || "");
+            data.append("password_confirmation", values.password_confirmation || "");
+            data.append("nama_laundry", values.nama_laundry || "");
+            data.append("alamat_laundry", values.alamat_laundry || "");
+
+            // tambahkan file KTP jika ada
+            if (formData.value.foto_ktp) {
+                data.append("foto_ktp", formData.value.foto_ktp);
+            }
+
             axios
-                .post("/auth/register", values)
+                .post(
+                    formData.value.role === "mitra" ?
+                    "/auth/register-mitra" : "/auth/register"
+                    , data, {
+                    headers: { "Content-Type": "multipart/form-data" },
+                })
                 .then((res) => {
                     toast.success("Akun berhasil dibuat");
                     router.push({ name: "sign-in" });
@@ -491,6 +491,7 @@ export default defineComponent({
                     unblockBtn("#submit-form");
                 });
         };
+
 
         const timeIntv = ref<any>(null);
         const handleOtpInterval = () => {
@@ -515,7 +516,7 @@ export default defineComponent({
             getAssetPath,
             formData,
             sendOtpEmail,
-            sendOtpPhone,
+            // sendOtpPhone,
             resetForm,
             setting,
         };
@@ -530,65 +531,76 @@ export default defineComponent({
             });
             this.formData.otp_email = value;
         },
-        handleOtpPhone(value: string) {
-            this.resetForm({
-                values: {
-                    ...this.formData,
-                    otp_phone: value,
-                },
-            });
-            this.formData.otp_phone = value;
-        },
+        // handleOtpPhone(value: string) {
+        //     this.resetForm({
+        //         values: {
+        //             ...this.formData,
+        //             otp_phone: value,
+        //         },
+        //     });
+        //     this.formData.otp_phone = value;
+        // },
     },
 });
 </script>
 <style scoped>
 .signup-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center; 
-  align-items: center;     
-  background: #466ee7; /* sama seperti login */
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #466ee7;
+    padding: 40px 15px;
+    /* biar ada ruang di atas & bawah */
+    overflow-y: auto;
+    /* scroll aktif saat konten tinggi */
 }
 
 .signup-card {
-  width: 600px;
-  background: #ffffff;
-  padding: 30px 30px;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 600px;
+    background: #ffffff;
+    padding: 40px 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .signup-card img.orang {
-  width: 140px;
-  margin-bottom: 15px;
+    width: 140px;
+    margin-bottom: 15px;
 }
 
 .signup-card h1 {
-  font-weight: 600;
-  font-size: 26px;
+    font-weight: 600;
+    font-size: 26px;
 }
 
 .stepper-nav {
-  margin-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 button.btn {
-  min-width: 120px;
+    min-width: 120px;
 }
 
 .link-primary {
-  color: #2ac1c4;
-  font-weight: 600;
-  margin-left: 5px;
-  text-decoration: none;
+    color: #2ac1c4;
+    font-weight: 600;
+    margin-left: 5px;
+    text-decoration: none;
 }
 
 .link-primary:hover {
-  text-decoration: underline;
+    text-decoration: underline;
+}
+
+/* Untuk tampilan kecil agar lebih responsif */
+@media (max-width: 768px) {
+    .signup-card {
+        padding: 25px 20px;
+    }
 }
 </style>

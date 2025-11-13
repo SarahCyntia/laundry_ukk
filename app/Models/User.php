@@ -27,6 +27,9 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'phone',
         'photo',
+        'status',
+        'nama_laundry',
+        'alamat_laundry',
     ];
 
     /**
@@ -87,19 +90,20 @@ class User extends Authenticatable implements JWTSubject
 
     public function getRoleAttribute()
     {
-        return $this->roles()->first();
+        return $this->roles()->pluck('name');
+        // return $this->roles()->first();
     }
 
     public function getPermissionAttribute()
     {
         return $this->getAllPermissions()->pluck('name');
     }
-     public function role()
-    {
-        return $this->belongsTo(Role::class, 'id_role', 'id');
-    }
+
     public function pelanggan()
     {
         return $this->hasOne(Pelanggan::class);
     }
+
+
 }
+

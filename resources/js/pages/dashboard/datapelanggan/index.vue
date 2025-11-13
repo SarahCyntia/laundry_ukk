@@ -3,16 +3,16 @@ import { h, ref, watch, onMounted } from "vue";
 import { useDelete } from "@/libs/hooks";
 import Form from "./Form.vue";
 import { createColumnHelper } from "@tanstack/vue-table";
-import type { pelanggan } from "@/types";
+import type { datapelanggan } from "@/types";
 import axios from "axios"; // Pastikan axios sudah terinstall
 
-const column = createColumnHelper<Pelanggan>();
+const column = createColumnHelper();
 const paginateRef = ref<any>(null);
 const selected = ref<string>("");
 const openForm = ref<boolean>(false);
-const pelangganData = ref<Pelanggan | null>(null); // Data pelanggan yang terkait dengan user login
+const datapelangganData = ref<datapelanggan | null>(null); // Data pelanggan yang terkait dengan user login
 
-const { delete: deletepelanggan } = useDelete({
+const { delete: deletedatapelanggan } = useDelete({
     onSuccess: () => paginateRef.value.refetch(),
 });
 
@@ -55,7 +55,7 @@ column.accessor("user.photo", {
                     "button",
                     {
                         class: "btn btn-sm btn-icon btn-danger",
-                        onClick: () => deletepelanggan(`pelanggan/${cell.getValue()}`),
+                        onClick: () => deletedatapelanggan(`datapelanggan/${cell.getValue()}`),
                     },
                     h("i", { class: "la la-trash fs-2" })
                 ),
@@ -88,8 +88,8 @@ watch(openForm, (val) => {
             <!-- <p v-if="pelangganData">Data pelanggan: {{ pelangganData }}</p> -->
             <paginate
                 ref="paginateRef"
-                id="table-pelanggan"
-                url="pelanggan"
+                id="table-datapelanggan"
+                url="datapelanggan"
                 :columns="columns"
             ></paginate>
         </div>

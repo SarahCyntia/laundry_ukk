@@ -21,6 +21,9 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        // 'role.redirect' => \App\Http\Middleware\RoleRedirect::class,
+        // 'role' => \App\Http\Middleware\RoleMiddleware::class,
+
     ];
 
     /**
@@ -42,6 +45,13 @@ class Kernel extends HttpKernel
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+
+        //     \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        // 'throttle:api',
+        // \Illuminate\Routing\Middleware\SubstituteBindings::class,
+
+        // // tambahkan middleware mitra di sini 👇
+        // \App\Http\Middleware\MitraMiddleware::class,
         ],
     ];
 

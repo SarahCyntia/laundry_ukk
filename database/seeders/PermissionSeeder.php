@@ -20,11 +20,13 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $menuMaster = ['master', 'master-user', 'master-role'];
-        $menuWebsite = ['website', 'setting', 'beranda', 'pelanggan', 'antar', 'jemput', 'riwayat', 'antar-jemput', 'datapelanggan', 'pendapatan', 'transaksilayanan', 'tambahpelanggan'];
-        $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas'];
+        $menuWebsite = ['website', 'setting', 'antar-jemput', 'datapelanggan', 'pendapatan', 'tambahpelanggan', 'mitra', "laundrydetail", 'pendaftaran'];
+        $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas', 'layanantambahan'];
+        $menuTransaksi = ['transaksi', 'transaksilayanan'];
         $permissionsByRole = [
-            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite, ...$menuLayanan],
-            'pelanggan' => ['beranda', 'pelanggan', 'antar', 'jemput', 'riwayat'],
+            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite, ...$menuLayanan, ...$menuTransaksi],
+            'pelangan' => ['beranda', 'pelanggan', 'antar', 'jemput', 'riwayat'],
+            'mitra' => [ ...$menuTransaksi],
         ];
 
         $insertPermissions = fn ($role) => collect($permissionsByRole[$role])
@@ -44,7 +46,8 @@ class PermissionSeeder extends Seeder
 
         $permissionIdsByRole = [
             'admin' => $insertPermissions('admin'),
-            // 'pelanggan' => $insertPermissions('pelanggan')
+            'pelangan' => $insertPermissions('pelangan'),
+            'mitra' => $insertPermissions('mitra')
         ];
 
          foreach ($permissionIdsByRole as $roleName => $permissionIds) {

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\datapelanggan;
 // use App\Models\datapelanggan;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DataPelangganController extends Controller
 {
@@ -26,6 +28,10 @@ class DataPelangganController extends Controller
      */
     public function index(Request $request)
     {
+
+        $mitraId = $request->user()->mitra_id;
+Model::where('mitra_id', $mitraId)->get();
+
         $per  = $request->per ?? 10;
         $page = $request->page ? $request->page - 1 : 0;
 
@@ -38,6 +44,7 @@ class DataPelangganController extends Controller
             })
             ->latest()
             ->paginate($per, ['*', DB::raw('@no := @no + 1 AS no')]);
+            
 
         return response()->json($data);
     }
@@ -119,4 +126,11 @@ class DataPelangganController extends Controller
             'success' => true
         ]);
     }
+
+     public function all()
+    {
+        Log::info("masuk all");   
+        return datapelanggan::get();
+    }
+
 }

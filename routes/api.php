@@ -22,6 +22,11 @@ use App\Http\Controllers\JenisLayananController;
 use App\Http\Controllers\DataPelangganController;
 use App\Http\Controllers\HargaJenisLayananController;
 use App\Http\Controllers\LayananPrioritasController;
+use App\Http\Controllers\LayananTambahanController;
+use App\Http\Controllers\MitraController;
+use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\TransaksiLayananController;
+use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +38,45 @@ use App\Http\Controllers\LayananPrioritasController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Route::get('/mitra', function (Request $request) {
+//     $status = $request->query('status');
+//     $query = \App\Models\User::where('role', 'mitra');
+    
+//     if ($status) {
+//         $query->where('status', $status);
+//     }
+
+//     return response()->json([
+//         'success' => true,
+//         'data' => $query->latest()->get()
+//     ]);
+// });
+
+// routes/api.php
+Route::get('/cek-status-mitra/{email}', [AuthController::class, 'cekStatusMitra']);
+
+Route::post('/mitra/{id}/status',  [AuthController::class, 'registerMitra']);
+Route::post('/mitra/{id}/update-status', [AuthController::class, 'updateStatus']);
+Route::post('/mitra/{id}/approve', [AuthController::class, 'approveMitra']);
+
+Route::prefix('auth')->group(function () {
+    Route::post('register/get/email/otp', [AuthController::class, 'getEmailOtp']);
+    Route::post('/register/get/email/otp', [AuthController::class, 'getEmailOtp']);
+    Route::post('/register/check/email/otp', [AuthController::class, 'verifyEmailOtp']);
+    // Route::post('auth/register/verify-otp ', [AuthController::class, 'verifyEmailOtp']);
+    // Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp']);
+    Route::post('/register/verify/email/otp', [AuthController::class, 'verifyEmailOtp']);
+    Route::post('/register', [AuthController::class, 'register']);
+    
+    Route::post('/register-mitra', [AuthController::class, 'registerMitra']);
+});
+
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::get('/mitra/pending', [MitraController::class, 'index']); // daftar calon mitra
+    Route::post('/mitra/{id}/approve', [MitraController::class, 'approve']); // setujui
+    Route::post('/mitra/{id}/reject', [MitraController::class, 'reject']);   // tolak
+});
 
 // Authentication Route
 Route::middleware(['auth', 'json'])->prefix('auth')->group(function () {
@@ -56,9 +100,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
             Route::post('users', [UserController::class, 'index']);
             Route::post('users/store', [UserController::class, 'store']);
             Route::apiResource('users', UserController::class)
-                ->except(['index', 'store'])->scoped(['user' => 'uuid']);
+            ->except(['index', 'store'])->scoped(['user' => 'uuid']);
         });
-
+        // Route::post('register-mitra', [UserController::class, 'registerMitra']);
+        
         Route::middleware('can:master-role')->group(function () {
             Route::get('roles', [RoleController::class, 'get'])->withoutMiddleware('can:master-role');
             Route::post('roles', [RoleController::class, 'index']);
@@ -141,7 +186,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::post('datapelanggan', [DataPelangganController::class, 'index']);
     Route::post('datapelanggan/store', [DataPelangganController::class, 'store']);
     Route::apiResource('datapelanggan', DataPelangganController::class)
-        ->except(['index', 'store'])->scoped(['datapelanggan' => 'uuid']);
+        ->except(['index', 'store']);
 
     Route::get('jenis_item', [JenisItemController::class, 'get']);
     Route::post('jenis_item', [JenisItemController::class, 'index']);
@@ -184,6 +229,9 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
     Route::get('/jenis_layana/all', [JenisLayananController::class, 'all']);
     Route::get('/jenis_ite/all', [JenisItemController::class, 'all']);
+    Route::get('/layanan_prioritas/all', [LayananPrioritasController::class, 'all']);
+    Route::get('/datapelangga/all', [DataPelangganController::class, 'all']);
+    Route::get('/layanan_tambahan/all', [LayananTambahanController::class, 'all']);
 
     // // Notifications
     // Route::get('/notifications', [NotificationController::class, 'index']);
@@ -200,6 +248,16 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     // Route::get('/orders/{order}/payment/status', [PaymentController::class, 'getPaymentStatus']);
 
 
+    Route::get('layanan_tambahan', [LayananTambahanController::class, 'get']);
+    Route::post('layanan_tambahan', [LayananTambahanController::class, 'index']);
+    Route::post('layanan_tambahan/store', [LayananTambahanController::class, 'store']);
+    Route::delete('layanan_tambahan/{id}', [LayananTambahanController::class, 'destroy']);
+    Route::apiResource('layanan_tambahan', LayananTambahanController::class)->except(['index', 'store']);
+
+    Route::post('layanan_tambahan/trash', [LayananTambahanController::class, 'trash']);
+    Route::post('layanan_tambahan/{id}/restore', [LayananTambahanController::class, 'restore']);
+    Route::delete('layanan_tambahan/{id}/force-delete', [LayananTambahanController::class, 'forceDelete']);
+
     Route::get('layanan_prioritas', [LayananPrioritasController::class, 'get']);
     Route::post('layanan_prioritas', [LayananPrioritasController::class, 'index']);
     Route::post('layanan_prioritas/store', [LayananPrioritasController::class, 'store']);
@@ -209,6 +267,50 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::post('layanan_prioritas/trash', [LayananPrioritasController::class, 'trash']);
     Route::post('layanan_prioritas/{id}/restore', [LayananPrioritasController::class, 'restore']);
     Route::delete('layanan_prioritas/{id}/force-delete', [LayananPrioritasController::class, 'forceDelete']);
+    
+    // Transaksi Layanan
+    Route::get('transaksi_layanan', [TransaksiLayananController::class, 'get']);
+    Route::post('transaksi_layanan', [TransaksiLayananController::class, 'index']);
+    Route::post('transaksi_layanan/store', [TransaksiLayananController::class, 'store']);
+    Route::delete('transaksi_layanan/{id}', [TransaksiLayananController::class, 'destroy']);
+    Route::apiResource('transaksi_layanan', TransaksiLayananController::class)->except(['index', 'store']);
+
+    Route::post('transaksi_layanan/trash', [TransaksiLayananController::class, 'trash']);
+    Route::post('transaksi_layanan/{id}/restore', [TransaksiLayananController::class, 'restore']);
+    Route::delete('transaksi_layanan/{id}/force-delete', [TransaksiLayananController::class, 'forceDelete']);
+
+
+
+
+
+
+    Route::get('mitra', [MitraController::class, 'get']);
+    Route::post('mitra', [MitraController::class, 'index']);
+    Route::post('mitra/store', [MitraController::class, 'store']);
+    Route::delete('mitra/{id}', [MitraController::class, 'destroy']);
+    Route::apiResource('mitra', MitraController::class)->except(['index', 'store']);
+    
+    Route::post('mitra/trash', [MitraController::class, 'trash']);
+    Route::post('mitra/{id}/restore', [MitraController::class, 'restore']);
+    Route::delete('mitra/{id}/force-delete', [MitraController::class, 'forceDelete']);
+
+
+// routes/api.php
+Route::get('/mitra/{id}', [MitraController::class, 'show']);
+
+Route::get('/mitra', [MitraController::class, 'publicList']); // untuk halaman pilih laundry
+Route::get('/mitra/all', [MitraController::class, 'all']);
+
+
+
+
+
+
+
+// Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+//     Route::get('/admin/dashboard', [AdminController::class, 'index']);
+// });
+
 
 
 });

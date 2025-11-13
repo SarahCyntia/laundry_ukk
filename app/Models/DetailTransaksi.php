@@ -30,4 +30,15 @@ class DetailTransaksi extends Model
     {
         return $this->belongsTo(Transaksi::class);
     }
+
+    public function jenisItem()
+{
+    return $this->belongsTo(JenisItem::class, 'jenis_item_id');
+}
+
+public function jenisLayanan()
+{
+    return $this->belongsTo(JenisLayanan::class, 'jenis_layanan_id');
+}
+
 }

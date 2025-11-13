@@ -4,6 +4,7 @@ namespace App\Listeners;
 
 use App\Events\UserRoleUpdated;
 use App\Models\Kurir;
+use App\Models\Mitra;
 use App\Models\Pelanggan;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -30,12 +31,12 @@ class UserRoleUpdatedListener
 
         Log::info('Trigger');
         // Jika user menjadi Dokter dan belum ada di tabel dokter, tambahkan
-        // if ($currentRole === 'kurir' && !$user->kurir) {
-        //     Kurir::create([
-        //         'user_id' => $user->id,
-        //         // 'status' => 'nonaktif', // atur
-        //     ]);  
-        // }
+        if ($currentRole === 'mitra' && !$user->mitra) {
+            Mitra::create([
+                'user_id' => $user->id,
+                // 'status' => 'nonaktif', // atur
+            ]);  
+        }
         if ($currentRole === 'pelangan' && !$user->pelanggan) {
             Pelanggan::create([
                 'user_id' => $user->id,
@@ -45,9 +46,9 @@ class UserRoleUpdatedListener
 
         
         // Jika user tidak lagi menjadi Dokter, hapus dari tabel dokter
-        // if ($currentRole !== 'kurir' && $user->kurir) {
-        //     $user->kurir->delete();
-        // }
+        if ($currentRole !== 'mitra' && $user->mitra) {
+            $user->mitra->delete();
+        }
         if ($currentRole !== 'pelangan' && $user->pelanggan) {
             $user->pelanggan->delete();
         }
