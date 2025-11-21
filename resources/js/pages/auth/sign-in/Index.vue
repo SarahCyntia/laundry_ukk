@@ -32,10 +32,11 @@
           Belum punya akun?
           <router-link to="/sign-up" class="link-daftar">Daftar</router-link>
         </div>
-        <div class="text-center daftar mt-5 ">
-          Daftar sebagai mitra?
-          <router-link to="/register-mitra" class="link-daftar">Daftar Mitra</router-link>
-        </div>
+
+        <div class="text-center daftar">
+  <router-link to="/beranda" class="kembali-link">← Kembali</router-link>
+</div>
+
       </div>
     </div>
   </div>
@@ -98,17 +99,21 @@ export default defineComponent({
 
         // simpan user + token di store
         this.store.setAuth(user, token);
+        console.log("User Role", user.role[0]);
 
         // 🔹 Redirect sesuai role
-        switch (user.role) {
+        switch (user.role[0]) {
           case "mitra":
-            this.router.push("/mitra/beranda");
+            console.log("mitra");
+            this.router.push("/dashboard-mitra");
             break;
           case "admin":
-            this.router.push("/admin/dashboard");
+            console.log("admin");
+            this.router.push("/dashboard");
             break;
           default:
-            this.router.push("/pengguna/beranda");
+            console.log("pelanggan");
+            this.router.push("/beranda");
         }
 
         toast.success("Login berhasil!");
@@ -170,5 +175,21 @@ export default defineComponent({
   font-weight: 500;
   font-size: 16px;
   color: black;
+}
+
+
+
+.kembali-link {
+  display: inline-block;
+  color: #1e40af; /* biru elegan */
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.kembali-link:hover {
+  color: #1d4ed8; /* biru lebih gelap */
+  text-decoration: underline;
+  transform: scale(1.05);
 }
 </style>

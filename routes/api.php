@@ -19,13 +19,20 @@ use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\AntarJemputController;
 use App\Http\Controllers\PenjemputanController;
 use App\Http\Controllers\JenisLayananController;
-use App\Http\Controllers\DataPelangganController;
-use App\Http\Controllers\HargaJenisLayananController;
+use App\Http\Controllers\KecamatanController;
 use App\Http\Controllers\LayananPrioritasController;
 use App\Http\Controllers\LayananTambahanController;
+use App\Http\Controllers\Mitra\TransaksiMitraController;
 use App\Http\Controllers\MitraController;
+use App\Http\Controllers\MitraDashboardController;
+use App\Http\Controllers\MitraOrderController;
+use App\Http\Controllers\MitraPendaftaranController;
+use App\Http\Controllers\MitraTransaksiController;
+use App\Http\Controllers\PelangganTransaksiController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TransaksiLayananController;
+use App\Http\Controllers\WilayahController;
 use Illuminate\Http\Request;
 
 /*
@@ -42,7 +49,7 @@ use Illuminate\Http\Request;
 // Route::get('/mitra', function (Request $request) {
 //     $status = $request->query('status');
 //     $query = \App\Models\User::where('role', 'mitra');
-    
+
 //     if ($status) {
 //         $query->where('status', $status);
 //     }
@@ -53,11 +60,27 @@ use Illuminate\Http\Request;
 //     ]);
 // });
 
+
+
+Route::get('kecamatan', [KecamatanController::class, 'get']);
+Route::post('kecamatan/store', [KecamatanController::class, 'store']);
+Route::delete('kecamatan/{id}', [KecamatanController::class, 'destroy']);
+Route::apiResource('kecamatan', KecamatanController::class)->except(['index', 'store']);
+
+Route::post('kecamatan/trash', [KecamatanController::class, 'trash']);
+Route::post('kecamatan/{id}/restore', [KecamatanController::class, 'restore']);
+Route::delete('kecamatan/{id}/force-delete', [KecamatanController::class, 'forceDelete']);
+// Route::post('/kecamatan/all', [KecamatanController::class, 'all']);
+Route::post('/kecamatan', [KecamatanController::class, 'index']);
+Route::get('/kecamatan', [KecamatanController::class, 'get']);
+
+
+
+
 // routes/api.php
-Route::put('/cek-status-mitra/{id}', [AuthController::class, 'updateStatusMitra']);
+Route::get('/mitra/me', [MitraController::class, 'me']);
 
 
-Route::get('/cek-status-mitra/{email}', [AuthController::class, 'cekStatusMitra']);
 // Route::get('/mitra/status/{id}', [MitraController::class, 'checkStatus']);
 
 // Route::post('/mitra/{id}/status',  [AuthController::class, 'registerMitra']);
@@ -72,9 +95,14 @@ Route::prefix('auth')->group(function () {
     // Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/register/verify/email/otp', [AuthController::class, 'verifyEmailOtp']);
     Route::post('/register', [AuthController::class, 'register']);
-    
+
     Route::post('/register-mitra', [AuthController::class, 'registerMitra']);
 });
+Route::get('/cek-status-mitra/{id}', [AuthController::class, 'cekStatusMitra']);
+Route::put('/cek-status-mitra/{id}', [AuthController::class, 'updateStatusMitra']);
+Route::post('/mitra', [authController::class, 'index']);
+Route::post('/mitra/verifikasi/{id}/diterima', [authController::class, 'verifikasiDiterima']);
+Route::post('/mitra/verifikasi/{id}/ditolak', [authController::class, 'verifikasiDitolak']);
 
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/mitra/pending', [MitraController::class, 'index']); // daftar calon mitra
@@ -93,6 +121,28 @@ Route::prefix('setting')->group(function () {
     Route::get('', [SettingController::class, 'index']);
 });
 
+// Route::middleware('auth')->group(function () {
+
+// List semua layanan milik mitra
+Route::get('/jenis-layanan', [JenisLayananController::class, 'get']);
+Route::post('/jenis-layanan', [JenisLayananController::class, 'index']);
+
+// Simpan layanan baru
+Route::post('/jenis-layanan/store', [JenisLayananController::class, 'store']);
+
+// Tampilkan 1 layanan
+Route::get('/jenis-layanan/{id}', [JenisLayananController::class, 'show']);
+
+// Update layanan
+Route::put('/jenis-layanan/{id}', [JenisLayananController::class, 'update']);
+
+// Hapus layanan
+Route::delete('/jenis-layanan/{id}', [JenisLayananController::class, 'destroy']);
+// });
+
+
+
+
 Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::prefix('setting')->middleware('can:setting')->group(function () {
         Route::post('', [SettingController::class, 'update']);
@@ -104,10 +154,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
             Route::post('users', [UserController::class, 'index']);
             Route::post('users/store', [UserController::class, 'store']);
             Route::apiResource('users', UserController::class)
-            ->except(['index', 'store'])->scoped(['user' => 'uuid']);
+                ->except(['index', 'store'])->scoped(['user' => 'uuid']);
         });
         // Route::post('register-mitra', [UserController::class, 'registerMitra']);
-        
+
         Route::middleware('can:master-role')->group(function () {
             Route::get('roles', [RoleController::class, 'get'])->withoutMiddleware('can:master-role');
             Route::post('roles', [RoleController::class, 'index']);
@@ -124,60 +174,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::post('/update-status', [DashboardController::class, 'updateStatus']);
 
 
-    Route::post('order', [OrderController::class, 'index']);
-    Route::post('order', [OrderController::class, 'store']);
-    Route::apiResource('customers', CustomerController::class);
-    Route::apiResource('services', ServiceController::class);
-    Route::apiResource('orders', OrderController::class);
-    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
-
-
-
-    Route::post('/antar-jemput', [PenjemputanController::class, 'store']);
-
-    Route::middleware('can:penjemputan')->group(function () {
-        // kalau mau tetap bisa diakses publik untuk create
-        Route::post('penjemputan/store', [PenjemputanController::class, 'store']);
-
-        // resource API (show, update, destroy, dll)
-        Route::apiResource('penjemputan', PenjemputanController::class)
-            ->except(['store']);
-    });
-
-
-    Route::get('/jemput', [JemputController::class, 'create']);
-    Route::post('/jemput', [JemputController::class, 'store']);
-    Route::get('/tracking/{trackingCode}', [JemputController::class, 'checkStatus']);
-
-    // Route::get('/jemput', [JemputController::class, 'create']);
-
-    // // Submit form jemput
-    // Route::post('/jemput', [JemputController::class, 'store']);
-
-    // // Cek status tracking
-    // Route::get('/tracking/{trackingCode}', [JemputController::class, 'checkStatus']);
-
-    //  Route::middleware('can:kurir')->group(function () {
-//         Route::get('kurir', [KurirController::class, 'get'])->withoutMiddleware('can:kurir');
-//         Route::post('kurir', [KurirController::class, 'index']);
-//         Route::post('kurir/store', [KurirController::class, 'store']);
-//         Route::apiResource('kurir', KurirController::class)
-//             ->except(['index', 'store']);
-//         // Route::delete('/kurirs', [KurirController::class, 'destroy']); hapus
-
-    //     });
-
-    Route::apiResource('orders', OrderController::class);
-    Route::get('/orders/{order}/track', [OrderController::class, 'trackOrder']);
-    Route::put('/orders/{order}/cancel', [OrderController::class, 'cancelOrder']);
-    // Route::get('/cek-status/{tracking_code}', [PesananController::class, 'cekStatus']);
-    Route::get('/pesanan/{tracking_code}', [PesananController::class, 'getPesananByTracking']);
-
-
-
+ 
     Route::middleware('can:pelanggan')->group(function () {
-        Route::get('pelanggan', [PelangganController::class, 'get'])->withoutMiddleware('can:pelanggan');
-        Route::post('pelanggan', [PelangganController::class, 'index']);
+        Route::get('pelanggan', [PelangganController::class, 'get']);
+        Route::post('pelanggan', [PelangganController::class, 'index'])->withoutMiddleware('can:pelanggan');
         Route::post('pelanggan/store', [PelangganController::class, 'store']);
         // Route::apiResource('pelanggan', PelangganController::class)
         //     ->except(['index', 'store']);
@@ -186,92 +186,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
         // Route::delete('pelanggan', [PelangganController::class, 'destroy']);
     });
 
-    Route::get('datapelanggan', [DataPelangganController::class, 'get']);
-    Route::post('datapelanggan', [DataPelangganController::class, 'index']);
-    Route::post('datapelanggan/store', [DataPelangganController::class, 'store']);
-    Route::apiResource('datapelanggan', DataPelangganController::class)
-        ->except(['index', 'store']);
-
-    Route::get('jenis_item', [JenisItemController::class, 'get']);
-    Route::post('jenis_item', [JenisItemController::class, 'index']);
-    Route::post('jenis_item/store', [JenisItemController::class, 'store']);
-    Route::delete('jenis_item/{id}', [JenisItemController::class, 'destroy']);
-    Route::apiResource('jenis_item', JenisItemController::class)->except(['index', 'store']);
-
-    Route::post('jenis_item/trash', [JenisItemController::class, 'trash']);
-    // Route::get('jenis_item/trash', [JenisItemController::class, 'trash']);
-    Route::post('jenis_item/{id}/restore', [JenisItemController::class, 'restore']);
-    Route::delete('jenis_item/{id}/force-delete', [JenisItemController::class, 'forceDelete']);
-    
 
 
 
-    Route::get('jenis_layanan', [JenisLayananController::class, 'get']);
-    Route::post('jenis_layanan', [JenisLayananController::class, 'index']);
-    Route::post('jenis_layanan/store', [JenisLayananController::class, 'store']);
-    Route::delete('jenis_layanan/{id}', [JenisLayananController::class, 'destroy']);
-    Route::apiResource('jenis_layanan', JenisLayananController::class)->except(['index', 'store']);
 
-    Route::post('jenis_layanan/trash', [JenisLayananController::class, 'trash']);
-    // Route::get('jenis_layanan/trash', [JenisLayananController::class, 'trash']);
-    Route::post('jenis_layanan/{id}/restore', [JenisLayananController::class, 'restore']);
-    Route::delete('jenis_layanan/{id}/force-delete', [JenisLayananController::class, 'forceDelete']);
-    
-    
-    Route::get('harga_jenis_layanan', [HargaJenisLayananController::class, 'get']);
-    Route::post('harga_jenis_layanan', [HargaJenisLayananController::class, 'index']);
-    Route::post('harga_jenis_layanan/store', [HargaJenisLayananController::class, 'store']);
-    Route::delete('harga_jenis_layanan/{id}', [HargaJenisLayananController::class, 'destroy']);
-    Route::apiResource('harga_jenis_layanan', HargaJenisLayananController::class)->except(['index', 'store']);
-
-    Route::post('harga_jenis_layanan/trash', [HargaJenisLayananController::class, 'trash']);
-    Route::post('harga_jenis_layanan/{id}/restore', [HargaJenisLayananController::class, 'restore']);
-    Route::delete('harga_jenis_layanan/{id}/force-delete', [HargaJenisLayananController::class, 'forceDelete']);
-
-//     Route::get('/jenis_layanan/all', [JenisLayananController::class, 'all']);
-// Route::get('/jenis_item/all', [JenisItemController::class, 'all']);
-
-    Route::get('/jenis_layana/all', [JenisLayananController::class, 'all']);
-    Route::get('/jenis_ite/all', [JenisItemController::class, 'all']);
-    Route::get('/layanan_prioritas/all', [LayananPrioritasController::class, 'all']);
-    Route::get('/datapelangga/all', [DataPelangganController::class, 'all']);
-    Route::get('/layanan_tambahan/all', [LayananTambahanController::class, 'all']);
-
-    // // Notifications
-    // Route::get('/notifications', [NotificationController::class, 'index']);
-    // Route::put('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
-    // Route::put('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
-    // Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
-
-    // // Laundry Services
-    // Route::get('/services', [ServiceController::class, 'index']);
-    // Route::get('/services/{service}', [ServiceController::class, 'show']);
-
-    // // Payment
-    // Route::post('/orders/{order}/payment', [PaymentController::class, 'processPayment']);
-    // Route::get('/orders/{order}/payment/status', [PaymentController::class, 'getPaymentStatus']);
-
-
-    Route::get('layanan_tambahan', [LayananTambahanController::class, 'get']);
-    Route::post('layanan_tambahan', [LayananTambahanController::class, 'index']);
-    Route::post('layanan_tambahan/store', [LayananTambahanController::class, 'store']);
-    Route::delete('layanan_tambahan/{id}', [LayananTambahanController::class, 'destroy']);
-    Route::apiResource('layanan_tambahan', LayananTambahanController::class)->except(['index', 'store']);
-
-    Route::post('layanan_tambahan/trash', [LayananTambahanController::class, 'trash']);
-    Route::post('layanan_tambahan/{id}/restore', [LayananTambahanController::class, 'restore']);
-    Route::delete('layanan_tambahan/{id}/force-delete', [LayananTambahanController::class, 'forceDelete']);
-
-    Route::get('layanan_prioritas', [LayananPrioritasController::class, 'get']);
-    Route::post('layanan_prioritas', [LayananPrioritasController::class, 'index']);
-    Route::post('layanan_prioritas/store', [LayananPrioritasController::class, 'store']);
-    Route::delete('layanan_prioritas/{id}', [LayananPrioritasController::class, 'destroy']);
-    Route::apiResource('layanan_prioritas', LayananPrioritasController::class)->except(['index', 'store']);
-
-    Route::post('layanan_prioritas/trash', [LayananPrioritasController::class, 'trash']);
-    Route::post('layanan_prioritas/{id}/restore', [LayananPrioritasController::class, 'restore']);
-    Route::delete('layanan_prioritas/{id}/force-delete', [LayananPrioritasController::class, 'forceDelete']);
-    
     // Transaksi Layanan
     Route::get('transaksi_layanan', [TransaksiLayananController::class, 'get']);
     Route::post('transaksi_layanan', [TransaksiLayananController::class, 'index']);
@@ -285,36 +203,136 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
 
 
+    Route::get('/transaksi', [TransaksiController::class, 'index']);
+    Route::post('/transaksi', [TransaksiController::class, 'store']);
+    Route::get('/transaksi/{id}', [TransaksiController::class, 'show']);
+    Route::put('/transaksi/{id}', [TransaksiController::class, 'update']);
+    Route::delete('/transaksi/{id}', [TransaksiController::class, 'destroy']);
+
+
+
+
+
+    Route::put('/transaksi/{id}/status', function (Request $request, $id) {
+        $request->validate([
+            'status' => 'required|string'
+        ]);
+
+        $transaksi = \App\Models\Transaksi::findOrFail($id);
+        $transaksi->update(['status' => $request->status]);
+
+        // Auto tracking
+        \App\Models\TransaksiTracking::create([
+            'transaksi_id' => $id,
+            'status' => $request->status,
+            'keterangan' => $request->keterangan ?? 'Status diperbarui'
+        ]);
+
+        return response()->json(['message' => 'Status updated']);
+    });
+   
+    Route::get('/transaksi/{id}/tracking', function ($id) {
+        return \App\Models\TransaksiTracking::where('transaksi_id', $id)
+            ->orderBy('id', 'asc')
+            ->get();
+    });
 
 
 
     Route::get('mitra', [MitraController::class, 'get']);
-    Route::post('mitra', [MitraController::class, 'index']);
+    Route::post('mitra', [MitraController::class, 'index'])->withoutMiddleware('can:mitra');
     Route::post('mitra/store', [MitraController::class, 'store']);
     Route::delete('mitra/{id}', [MitraController::class, 'destroy']);
     Route::apiResource('mitra', MitraController::class)->except(['index', 'store']);
-    
+
     Route::post('mitra/trash', [MitraController::class, 'trash']);
     Route::post('mitra/{id}/restore', [MitraController::class, 'restore']);
     Route::delete('mitra/{id}/force-delete', [MitraController::class, 'forceDelete']);
 
 
-// routes/api.php
-Route::get('/mitra/{id}', [MitraController::class, 'show']);
-
-Route::get('/mitra', [MitraController::class, 'publicList']); // untuk halaman pilih laundry
-Route::get('/mitra/all', [MitraController::class, 'all']);
-
-
-
-
-
-
-
-// Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-//     Route::get('/admin/dashboard', [AdminController::class, 'index']);
+    //     Route::get('/mitra/verifikasi', [MitraVerifikasiController::class, 'index']);
+//     Route::post('/mitra/verifikasi/{id}/diterima', [MitraVerifikasiController::class, 'verifikasiDiterima']);
+//     Route::post('/mitra/verifikasi/{id}/ditolak', [MitraVerifikasiController::class, 'verifikasiDitolak']);
 // });
 
 
+    // routes/api.php
+    Route::get('/mitra/{id}', [MitraController::class, 'show']);
+
+    // Route::get('/mitra', [MitraController::class, 'publicList']); // untuk halaman pilih laundry
+    Route::get('/mitra/all', [MitraController::class, 'all']);
+
+
+    // Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+//     Route::get('/admin/dashboard', [AdminController::class, 'index']);
+// });
+
+    Route::get('/transaksi', [MitraTransaksiController::class, 'index']);
+    Route::put('/transaksi/{id}/status', [MitraTransaksiController::class, 'updateStatus']);
+    Route::get('/transaksi/{id}/print-resi', [MitraTransaksiController::class, 'printResi']);
+    Route::get('/transaksi/{id}', [MitraTransaksiController::class, 'show']);
+
+
+
+
+
+    // Transaksi khusus Pelanggan
+    Route::middleware(['auth:sanctum', 'role:pelanggan'])->prefix('pelanggan')->group(function () {
+        Route::get('/transaksi', [PelangganTransaksiController::class, 'index']); // daftar transaksi pelanggan
+        Route::get('/transaksi/{id}/print-resi', [PelangganTransaksiController::class, 'printResi']); // print resi
+        Route::get('/transaksi/{id}', [PelangganTransaksiController::class, 'show']); // detail transaksi
+    });
+
+
+
+
+
+    // Route::prefix('mitra')->middleware('auth:sanctum')->group(function () {
+
+    // Order Masuk
+    Route::post('/order-masuk', [MitraOrderController::class, 'orderMasuk']);
+    Route::post('/order/{id}/accept', [MitraOrderController::class, 'accept']);
+    Route::post('/order/{id}/reject', [MitraOrderController::class, 'reject']);
+// Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
+
+    // Order Diproses
+    Route::get('/order/proses', [MitraOrderController::class, 'orderDiproses']);
+    Route::post('/order/{id}/update-status', [MitraOrderController::class, 'updateStatus']);
+    Route::get('/order/siap-diambil', [MitraOrderController::class, 'orderSiapDiambil']);
+    Route::post('/order/{id}/selesai', [MitraOrderController::class, 'TandaiSebagaiSelesai']);
+
+    Route::get('/order/selesai', [MitraOrderController::class, 'orderSelesai']);
+    // Summary Dashboard
+    Route::get('/summary', [MitraDashboardController::class, 'summary']);
+    Route::get('/mitra/notif-order', [MitraOrderController::class, 'notifOrderBaru']);
+    Route::post('/mitra/pelanggan-datang', [MitraOrderController::class, 'pelangganDatang']);
+
+//    Route::post('order', [OrderController::class, 'store']);
+Route::post('order', [OrderController::class, 'index']);
+// Route::post('order', [OrderController::class, 'show']);
+ Route::get('/order/pelanggan', [OrderController::class, 'getOrderPelanggan']);
+    Route::post('/order', [OrderController::class, 'store']);
+// Route::patch('order/{order}/status', [OrderController::class, 'updateStatus']);
+// Route::get('order/{id}/accept', [OrderController::class, 'accept']);
+// Route::put('order/{id}/reject', [OrderController::class, 'reject']);
+
+
+
+    // Pelanggan melihat detail laundry
+    Route::get('/pelanggan/mitra/{id}', [PelangganController::class, 'detail']);
+
+    Route::post('/pelanggan/order', [PelangganController::class, 'tambahOrder']);
+    Route::get('/pelanggan/order', [PelangganController::class, 'orderanSaya']);
+    Route::get('/pelanggan/order/{id}', [PelangganController::class, 'detail']);
+
 
 });
+Route::get('/mitra', [MitraController::class, 'listMitra'])->withoutMiddleware('can:mitra');
+Route::get('/mitra/search', [MitraController::class, 'search']);
+Route::get('/mitraa/{id}', [MitraController::class, 'showdashboard']);
+
+
+
+
+Route::get('/transaksi/user', [TransaksiController::class, 'getUserTransaksi'])
+    ->middleware('auth:sanctum');

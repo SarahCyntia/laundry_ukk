@@ -20,13 +20,14 @@ class PermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $menuMaster = ['master', 'master-user', 'master-role'];
-        $menuWebsite = ['website', 'setting', 'antar-jemput', 'datapelanggan', 'pendapatan', 'tambahpelanggan', 'mitra', "laundrydetail", 'pendaftaran'];
-        $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas', 'layanantambahan'];
-        $menuTransaksi = ['transaksi', 'transaksilayanan', 'menunggu-verifikasi'];
+        $menuWebsite = ['mitra','website', 'setting', 'antar-jemput', 'datapelanggan', 'pendapatan', 'tambahpelanggan', "laundrydetail", 'pendaftaran', 'kecamatan'];
+        // $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas', 'layanantambahan'];
+        $menuTransaksi = ['menunggu-verifikasi'];
+        $menuMitra = [ 'transaksi', 'profil', 'layanan', 'order-masuk', 'order-proses', 'order-siap-ambil', 'order-selesai'];
         $permissionsByRole = [
-            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite, ...$menuLayanan, ...$menuTransaksi],
+            'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite, ...$menuMitra],
             'pelangan' => ['beranda', 'pelanggan', 'antar', 'jemput', 'riwayat'],
-            'mitra' => [ ...$menuTransaksi],
+            'mitra' => [ 'dashboard-mitra',...$menuMitra],
         ];
 
         $insertPermissions = fn ($role) => collect($permissionsByRole[$role])

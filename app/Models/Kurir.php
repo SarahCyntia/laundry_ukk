@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Kurir extends Model
+{
+    protected $fillable = [
+        'user_id',
+        'nama',
+        'telepon',
+        'kendaraan',
+        'plat_nomor',
+        'status'
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function transaksi()
+    {
+        return $this->hasMany(Transaksi::class, 'kurir_id');
+    }
+}

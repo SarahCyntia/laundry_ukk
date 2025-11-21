@@ -7,7 +7,10 @@ export interface mitra {
   // no_hp?: string | null;
   alamat_laundry?: string | null;
   foto_ktp: string;
-  // password: string;
+  foto_toko: string;
+  jam_buka: string;
+  jam_tutup: string;
+  deskripsi: string;
   status_validasi: "menunggu" | "diterima" | "ditolak";
   status_toko: "buka" | "tutup";
   created_at?: string;

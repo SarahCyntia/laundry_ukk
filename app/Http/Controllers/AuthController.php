@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Cache;
 use App\Mail\SendOtpMail; // ✅ ini penting!
 use App\Models\Mitra;
+use App\Models\MitraPendaftaran;
+use App\Models\Pelanggan;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -16,21 +18,30 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    public function cekStatusMitra($email)
+public function cekStatusMitra($id)
+{
+    $user = User::where('id', $id)->first();
+    if (!$user) {
+        return response()->json(['status_validasi' => 'ditolak'], 200);
+    }
+
+    $mitra = Mitra::where('user_id', $user->id)->first();
+
+    if (!$mitra) {
+        return response()->json(['status_validasi' => 'ditolak'], 200);
+    }
+
+    return response()->json(['status_validasi' => $mitra->status_validasi]);
+}
+
+
+        public function index()
     {
-        $user = User::find($email);
-        if (!$user) {
-            return response()->json(['status' => 'tidak_ditemukan'], 404);
-        }
+        $mitra = Mitra::with('user')
+            ->where('status_validasi', 'menunggu')
+            ->get();
 
-        // $mitra = Mitra::where('name', $user->id)->first();
-        $mitra = Mitra::where('user_id', $user->id)->first();
-
-        if (!$mitra) {
-            return response()->json(['status' => 'tidak_ditemukan'], 404);
-        }
-
-        return response()->json(['status_validasi' => $mitra->status_validasi]);
+        return response()->json($mitra);
     }
 
     //   public function registerMitra(Request $request)
@@ -74,69 +85,310 @@ class AuthController extends Controller
 //     ], 201);
 // }
 
+public function register(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:100',
+        'email' => 'required|email|unique:users,email',
+        'phone' => 'required|string|max:15|unique:users,phone',
+        'password' => 'required|min:6|confirmed',
+        'alamat' => 'nullable|string',
+    ]);
 
-    public function registerMitra(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string',
-            'password' => 'required|min:6',
-            'nama_laundry' => 'required|string',
-            'alamat_laundry' => 'required|string',
-            'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // ✅ validasi file
-        ]);
+    if ($validator->fails()) {
+        return response()->json([
+            'message' => 'Validasi gagal',
+            'errors' => $validator->errors(),
+        ], 422);
+    }
 
-        // Simpan user
+    // Buat user
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'phone' => $request->phone,
+        'password' => bcrypt($request->password),
+    ]);
+
+    $user->assignRole('pelanggan');
+
+    // Buat pelanggan
+    Pelanggan::create([
+        'user_id' => $user->id,
+        'alamat' => $request->alamat ?? '-',
+    ]);
+
+    $user->load('roles', 'pelanggan');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Akun pelanggan berhasil dibuat.',
+        'user' => $user
+    ]);
+}
+
+// public function registerMitra(Request $request)
+// {
+//     $validated = $request->validate([
+//         'name' => 'required|string|max:255',
+//         'email' => 'required|email|unique:users,email',
+//         'phone' => 'required|string|unique:users,phone',
+//         'password' => 'required|min:6|confirmed',
+//         'nama_laundry' => 'required|string',
+//         'alamat_laundry' => 'required|string',
+//         'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+//     ]);
+
+//     // Simpan user
+//     $user = User::create([
+//         'name' => $validated['name'],
+//         'email' => $validated['email'],
+//         'phone' => $validated['phone'],
+//         'password' => Hash::make($validated['password']),
+//     ]);
+
+//     $user->assignRole('mitra');
+
+//     // Upload KTP jika ada
+//     $path = null;
+//     if ($request->hasFile('foto_ktp')) {
+//         $path = $request->file('foto_ktp')->store('ktp', 'public');
+//     }
+
+//     // Simpan ke tabel mitra
+//     $mitra = Mitra::create([
+//         'user_id' => $user->id,
+//         'nama_laundry' => $validated['nama_laundry'],
+//         'alamat_laundry' => $validated['alamat_laundry'],
+//         'foto_ktp' => $path,
+//         'status_validasi' => 'menunggu',
+//         'status_toko' => 'tutup',
+//         'jam_buka' => null,
+//         'jam_tutup' => null,
+//     ]);
+
+//     return response()->json([
+//         'message' => 'Pendaftaran mitra berhasil!',
+//         'user' => $user,
+//         'mitra' => $mitra,
+//         'role' => $user->getRoleNames()->first(),
+//         'foto_url' => $path ? asset('storage/'.$path) : null,
+//     ]);
+// }
+
+//sebelumnya
+
+public function registerMitra(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email',
+        'phone' => 'required|string',
+        'password' => 'required|min:6',
+        'nama_laundry' => 'required|string',
+        'alamat_laundry' => 'required|string',
+        'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    // Simpan user
+    $user = User::create([
+        'name' => $validated['name'],
+        'email' => $validated['email'],
+        'phone' => $validated['phone'],
+        'password' => Hash::make($validated['password']),
+    ]);
+
+    // role mitra
+    $user->assignRole('mitra');
+
+    // upload foto KTP
+    $path = $request->hasFile('foto_ktp')
+        ? $request->file('foto_ktp')->store('ktp', 'public')
+        : null;
+
+    // Simpan mitra (status menunggu)
+    $mitra = Mitra::create([
+        'user_id' => $user->id,
+        'nama_laundry' => $validated['nama_laundry'],
+        'alamat_laundry' => $validated['alamat_laundry'],
+        'foto_ktp' => $path,
+        'status_validasi' => 'menunggu', // default
+        'status_toko' => 'buka',
+    ]);
+
+    return response()->json([
+        'message' => 'Pendaftaran berhasil! Akun menunggu verifikasi admin.',
+        'user' => $user,
+        'mitra' => $mitra,
+        'foto_url' => $path ? asset('storage/' . $path) : null,
+    ]);
+}
+public function verifikasiDiterima($id)
+{
+    $mitra = Mitra::findOrFail($id);
+    $mitra->status_validasi = 'diterima';
+    $mitra->save();
+
+    return response()->json(['message' => 'Mitra berhasil diverifikasi!']);
+}
+public function verifikasiDitolak($id)
+{
+    $mitra = Mitra::findOrFail($id);
+
+    // Hapus user juga
+    $user = $mitra->user;
+    
+    $mitra->delete();  // hapus data mitra
+    $user->delete();   // hapus akun agar tidak bisa login
+
+    return response()->json(['message' => 'Pendaftaran mitra ditolak dan akun dihapus.']);
+}
+
+
+    // public function registerMitra(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'email' => 'required|email|unique:users,email',
+    //         'phone' => 'required|string',
+    //         'password' => 'required|min:6',
+    //         'nama_laundry' => 'required|string',
+    //         'alamat_laundry' => 'required|string',
+    //         'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // ✅ validasi file
+    //     ]);
+
+    //     // Simpan user
+    //     $user = User::create([
+    //         'name' => $validated['name'],
+    //         'email' => $validated['email'],
+    //         'phone' => $validated['phone'],
+    //         'password' => Hash::make($validated['password']),
+    //         // 'mitra_id' => null, // akan diupdate setelah mitra dibuat
+    //     ]);
+
+    //     // Assign role mitra
+    //     $user->assignRole('mitra');
+
+    //     // ✅ Simpan file KTP ke folder storage/app/public/ktp
+    //     $path = $request->file('foto_ktp')->store('ktp', 'public');
+    //     // $path = $request->file('foto_ktp')->store('ktp', 'public');
+
+    //     // Simpan data mitra
+    //     $mitra = Mitra::create([
+    //         'user_id' => $user->id,
+    //         'nama_laundry' => $validated['nama_laundry'],
+    //         'alamat_laundry' => $validated['alamat_laundry'],
+    //         'foto_ktp' => $path, // hanya simpan path-nya
+    //         'status_validasi' => 'menunggu',
+    //         'status_toko' => 'buka',
+    //     ]);
+
+    //     $user->load('roles');
+
+    //     return response()->json([
+    //         'message' => 'Pendaftaran berhasil, menunggu validasi admin.',
+    //         'user' => $user,
+    //         'mitra' => $mitra,
+    //         'role' => $user->getRoleNames()->first(),
+    //         'foto_url' => asset('storage/' . $path), // ✅ URL akses langsung ke gambar
+    //     ]);
+    // }
+
+//buat besok
+//     public function registerMitra(Request $request)
+// {
+//     $validated = $request->validate([
+//         'name' => 'required|string|max:255',
+//         'email' => 'required|email|unique:mitra_pendaftaran,email',
+//         'phone' => 'required|string|unique:mitra_pendaftaran,phone',
+//         'password' => 'required|min:6|confirmed',
+//         'nama_laundry' => 'required|string',
+//         'alamat_laundry' => 'required|string',
+//         'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+//     ]);
+
+//     $path = null;
+//     if ($request->hasFile('foto_ktp')) {
+//         $path = $request->file('foto_ktp')->store('ktp', 'public');
+//     }
+
+//     $pendaftaran = \App\Models\MitraPendaftaran::create([
+//         'name' => $validated['name'],
+//         'email' => $validated['email'],
+//         'phone' => $validated['phone'],
+//         'password' => Hash::make($validated['password']),
+//         'nama_laundry' => $validated['nama_laundry'],
+//         'alamat_laundry' => $validated['alamat_laundry'],
+//         'foto_ktp' => $path,
+//         'status_validasi' => 'menunggu',
+//     ]);
+
+//     return response()->json([
+//         'message' => 'Pendaftaran berhasil! Menunggu verifikasi admin.',
+//         'pendaftaran' => $pendaftaran
+//     ]);
+// }
+
+
+//buat besok
+public function verifikasi($id, Request $request)
+{
+    $pendaftar = MitraPendaftaran::findOrFail($id);
+
+    if ($request->status == 'diterima') {
+
+        // Buat user baru
         $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
+            'name' => $pendaftar->name,
+            'email' => $pendaftar->email,
+            'phone' => $pendaftar->phone,
+            'password' => $pendaftar->password, // sudah hash
         ]);
 
-        // Assign role mitra
         $user->assignRole('mitra');
 
-        // ✅ Simpan file KTP ke folder storage/app/public/ktp
-        $path = $request->file('foto_ktp')->store('ktp', 'public');
-        // $path = $request->file('foto_ktp')->store('ktp', 'public');
-
-        // Simpan data mitra
-        $mitra = Mitra::create([
+        // Masukkan ke tabel mitra
+        Mitra::create([
             'user_id' => $user->id,
-            'nama_laundry' => $validated['nama_laundry'],
-            'alamat_laundry' => $validated['alamat_laundry'],
-            'foto_ktp' => $path, // hanya simpan path-nya
-            'status_validasi' => 'menunggu',
-            'status_toko' => 'buka',
+            'nama_laundry' => $pendaftar->nama_laundry,
+            'alamat_laundry' => $pendaftar->alamat_laundry,
+            'foto_ktp' => $pendaftar->foto_ktp,
+            'status_validasi' => 'diterima',
+            'status_toko' => 'tutup',
         ]);
 
-        $user->load('roles');
+        $pendaftar->status_validasi = 'diterima';
+        $pendaftar->save();
 
         return response()->json([
-            'message' => 'Pendaftaran berhasil, menunggu validasi admin.',
-            'user' => $user,
-            'mitra' => $mitra,
-            'role' => $user->getRoleNames()->first(),
-            'foto_url' => asset('storage/' . $path), // ✅ URL akses langsung ke gambar
+            "message" => "Mitra berhasil diverifikasi & dibuatkan akun",
         ]);
     }
 
-    public function updateStatusMitra(Request $request, $id)
-{
-    $request->validate([
-        'status_validasi' => 'required|in:menunggu,diterima,ditolak',
+    // jika ditolak
+    $pendaftar->status_validasi = 'ditolak';
+    $pendaftar->save();
+
+    return response()->json([
+        "message" => "Pendaftaran mitra ditolak"
     ]);
-
-    $mitra = Mitra::findOrFail($id);
-
-    // Update kolom status_validasi
-    $mitra->status_validasi = $request->status_validasi;
-    $mitra->save();
-
-    return response()->json(['message' => 'Status mitra berhasil diubah']);
 }
+
+
+    public function updateStatusMitra(Request $request, $id)
+    {
+        $request->validate([
+            'status_validasi' => 'required|in:menunggu,diterima,ditolak',
+        ]);
+
+        $mitra = Mitra::findOrFail($id);
+
+        // Update kolom status_validasi
+        $mitra->status_validasi = $request->status_validasi;
+        $mitra->save();
+
+        return response()->json(['message' => 'Status mitra berhasil diubah']);
+    }
 
 
 
@@ -204,85 +456,93 @@ class AuthController extends Controller
         ]);
     }
 
-    public function login(Request $request)
-    {
-        $validator = Validator::make($request->post(), [
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+    // public function login(Request $request)
+    // {
+    //     $validator = Validator::make($request->post(), [
+    //         'email' => 'required|email',
+    //         'password' => 'required',
+    //     ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => $validator->errors()->first()
-            ]);
-        }
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => $validator->errors()->first()
+    //         ]);
+    //     }
 
-        if (!$token = auth()->attempt($validator->validated())) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Email / Password salah!'
-            ], 401);
-        }
+    //     if (!$token = auth()->attempt($validator->validated())) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Email / Password salah!'
+    //         ], 401);
+    //     }
 
-        $user = auth()->user();
+    //     $user = auth()->user();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Login berhasil',
-            'user' => auth()->user(),
-            'token' => $token,
-            'token_type' => 'bearer',
-        ]);
-    }
+    //     return response()->json([
+    //         'status' => true,
+    //         'message' => 'Login berhasil',
+    //         'user' => auth()->user(),
+    //         'token' => $token,
+    //         'token_type' => 'bearer',
+    //     ]);
+    // }
 
-    public function register(Request $request)
-    {
-        Log::info('Register request: ', $request->all());
+    // public function register(Request $request)
+    // {
+    //     Log::info('Register request: ', $request->all());
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:100',
-            'email' => 'required|email',
-            'phone' => 'required|string|max:15',
-            'password' => 'required|min:6|confirmed',
-        ]);
+    //     $validator = Validator::make($request->all(), [
+    //         'name' => 'required|string|max:100',
+    //         'email' => 'required|email',
+    //         'phone' => 'required|string|max:15',
+    //         'password' => 'required|min:6|confirmed',
+    //     ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'message' => 'Validasi gagal',
+    //             'errors' => $validator->errors(),
+    //         ], 422);
+    //     }
 
-        $email = $request->email;
+    //     $email = $request->email;
 
-        // ✅ Pastikan OTP sudah diverifikasi sebelumnya
-        // (bisa juga simpan flag di Cache setelah verify OTP)
-        // Di sini kita lanjutkan langsung ke pembuatan user
+    //     // ✅ Pastikan OTP sudah diverifikasi sebelumnya
+    //     // (bisa juga simpan flag di Cache setelah verify OTP)
+    //     // Di sini kita lanjutkan langsung ke pembuatan user
 
-        // 🔹 Cek apakah user sudah ada
-        $existing = User::where('email', $email)->first();
-        if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Email sudah terdaftar!'
-            ], 400);
-        }
+    //     // 🔹 Cek apakah user sudah ada
+    //     $existing = User::where('email', $email)->first();
+    //     if ($existing) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Email sudah terdaftar!'
+    //         ], 400);
+    //     }
 
-        // 🔹 Buat user baru
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $email,
-            'phone' => $request->phone,
-            'password' => bcrypt($request->password),
-        ]);
+    //     // 🔹 Buat user baru
+    //     $user = User::create([
+    //         'name' => $request->name,
+    //         'email' => $email,
+    //         'phone' => $request->phone,
+    //         'password' => bcrypt($request->password),
+    //     ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Akun berhasil dibuat. Silakan login.',
-            'user' => $user
-        ]);
-    }
+
+    //     $user->assignRole('pelanggan');
+
+    //     // reload roles
+    //     $user->load('roles');
+
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Akun berhasil dibuat. Silakan login.',
+    //         'user' => $user
+    //     ]);
+    // }
+
 
 
 
@@ -314,6 +574,66 @@ class AuthController extends Controller
     //     ]);
     // }
 
+
+
+public function login(Request $request)
+{
+    $validator = Validator::make($request->post(), [
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => false,
+            'message' => $validator->errors()->first()
+        ], 422);
+    }
+
+    // Coba login
+    if (!$token = auth()->attempt($validator->validated())) {
+        return response()->json([
+            'status' => false,
+            'message' => 'Email / Password salah!'
+        ], 401);
+    }
+
+    // Ambil user dan relasinya
+    $user = auth()->user()->load('roles', 'pelanggan', 'mitra');
+
+    /**
+     * 🔥 CEK STATUS VERIFIKASI MITRA
+     * Kalau role = mitra dan status_validasi ≠ diterima → tolak login
+     */
+    if ($user->hasRole('mitra')) {
+
+        // Jika mitra belum dibuat (NULL), langsung tolak
+        if (!$user->mitra) {
+            return response()->json([
+                "status" => false,
+                "message" => "Akun mitra belum diproses oleh admin."
+            ], 403);
+        }
+
+        // Jika status bukan 'diterima'
+        if ($user->mitra->status_validasi !== 'diterima') {
+            return response()->json([
+                "status" => false,
+                "message" => "Akun Anda belum diverifikasi admin."
+            ], 403);
+        }
+    }
+
+    // Jika lolos semua → login sukses
+    return response()->json([
+        'status' => true,
+        'message' => 'Login berhasil',
+        'user' => $user,
+        'role' => $user->getRoleNames()->first(),
+        'token' => $token,
+        'token_type' => 'bearer',
+    ]);
+}
 
 
     public function getEmailOtp(Request $request)

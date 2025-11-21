@@ -1,5 +1,5 @@
 <?php
-// app/Models/Order.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,39 +9,53 @@ class Order extends Model
 {
     use HasFactory;
 
+    // Jika nama tabel bukan "orders", aktifkan ini:
+    // protected $table = 'orders';
+protected $table = 'order';
     protected $fillable = [
-        'order_number',
-        'customer_id',
-        'service_id',
-        'berat',
-        'total_harga',
+        'pelanggan_id',
+        'mitra_id',
+        'jenis_layanan_id',
+        'kode_order',
+        'berat_estimasi',
+        'berat_aktual',
+        'harga_final',
+        'catatan',
         'status',
-        'perkiraan_selesai',
-        'catatan'
+        'alasan_penolakan',
+        'waktu_pelanggan_antar',
+        'waktu_diambil',
     ];
 
     protected $casts = [
-        'perkiraan_selesai' => 'datetime',
-        'berat' => 'decimal:2',
-        'total_harga' => 'decimal:2'
+        'waktu_pelanggan_antar' => 'datetime',
+        'waktu_diambil' => 'datetime',
     ];
 
-    public function customer()
-    {
-        return $this->belongsTo(Customer::class);
-    }
+    /* ================================
+       RELASI
+    ================================= */
 
-    public function service()
-    {
-        return $this->belongsTo(Service::class);
-    }
+    // Order dimiliki oleh 1 pelanggan
+    // public function pelanggan()
+    // {
+    //     return $this->belongsTo(Pelanggan::class);
+    // }
 
-    protected static function boot()
+    // Order dimiliki oleh 1 mitra (laundry)
+    public function mitra()
     {
-        parent::boot();
-
-        static::creating(function ($order) {
-            $order->order_number = 'LND' . date('Ymd') . str_pad(Order::count() + 1, 4, '0', STR_PAD_LEFT);
-        });
+        return $this->belongsTo(Mitra::class);
     }
+    public function pelanggan()
+{
+    return $this->belongsTo(User::class, 'pelanggan_id');
+}
+
+
+public function jenis_layanan()
+{
+    return $this->belongsTo(JenisLayanan::class, 'jenis_layanan_id');
+}
+
 }

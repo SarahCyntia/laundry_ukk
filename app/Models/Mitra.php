@@ -11,15 +11,22 @@ class Mitra extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
 
-    protected $table = 'mitra';
+   protected $table = 'mitra';
 
     protected $fillable = [
+        'user_id',
         'nama_laundry',
         'status_validasi',
+        'kecamatan_id',
         'alamat_laundry',
         'foto_ktp',
         'status_toko',
-        'user_id',
+        'wilayah_id',
+        'jam_buka',
+        'jam_tutup',
+        'foto_toko',
+        'deskripsi'
+
     ];
 
     protected $hidden = [
@@ -28,9 +35,15 @@ class Mitra extends Authenticatable
 
     // ✅ Relasi ke tabel lain
 
-    public function dataPelanggan()
+    public function transaksi()
     {
-        return $this->hasMany(DataPelanggan::class);
+        return $this->hasMany(Transaksi::class, 'mitra_id');
+    }
+
+
+    public function kecamatan()
+    {
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
     }
 
     public function pegawai()
@@ -38,23 +51,19 @@ class Mitra extends Authenticatable
         return $this->hasMany(PegawaiLaundry::class);
     }
 
-    public function jenisLayanan()
-    {
-        return $this->hasMany(JenisLayanan::class);
-    }
 
-    public function transaksi()
-    {
-        return $this->hasMany(Transaksi::class);
-    }
-
-    public function layananTambahan()
-    {
-        return $this->hasMany(LayananTambahan::class);
-    }
     public function user()
-{
-    return $this->belongsTo(User::class, 'user_id');
-}
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 
+    public function jenis_layanan()
+    {
+        return $this->hasMany(JenisLayanan::class); // asumsi 1 mitra bisa punya banyak layanan
+    }
+
+    public function order()
+    {
+        return $this->hasMany(Order::class, 'mitra_id');
+    }
 }

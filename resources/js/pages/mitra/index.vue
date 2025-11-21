@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { h, ref, watch } from "vue";
 import { useDelete } from "@/libs/hooks";
-import Form from "./form.vue";
 import { createColumnHelper } from "@tanstack/vue-table";
 import type { mitra } from "@/types";
 import axios from "axios";
@@ -18,6 +17,26 @@ const mitraData = ref<mitra | null>(null);
 const { delete: deleteMitra } = useDelete({
   onSuccess: () => refresh(),
 });
+const updateStatus = async (id: number, status_validasi: string) => {
+  let url = "";
+
+  if (status_validasi === "diterima") {
+    url = `/mitra/verifikasi/${id}/diterima`;
+  } else {
+    url = `/mitra/verifikasi/${id}/ditolak`;
+  }
+
+  try {
+    await axios.post(url);
+
+    Swal.fire("Berhasil!", "Status mitra diperbarui.", "success");
+
+    paginateRef.value?.refetch();
+  } catch (err) {
+    console.log(err.response?.data);
+    Swal.fire("Gagal!", "Terjadi kesalahan.", "error");
+  }
+};
 
 // Restore data dari sampah
 const restoreMitra = (url: string) => {
@@ -53,44 +72,6 @@ const restoreMitra = (url: string) => {
 };
 
 // 🔹 Update status mitra (diterima / ditolak)
-const updateStatus = (id: number, status: string) => {
-  const label =
-    status === "diterima" ? "Terima" : status === "ditolak" ? "Tolak" : "Ubah";
-
-  Swal.fire({
-    title: `${label} mitra ini?`,
-    text: `Status akan diubah menjadi ${status}.`,
-    icon: "question",
-    showCancelButton: true,
-    confirmButtonText: `Ya, ${label}`,
-    cancelButtonText: "Batal",
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      try {
-        // ✅ gunakan PUT + kirim data dengan nama kolom yang sesuai
-        await axios.put(`/cek-status-mitra/${id}`, { status_validasi: status });
-
-        Swal.fire({
-          icon: "success",
-          title: "Berhasil!",
-          text: `Mitra berhasil di${
-            status === "diterima" ? "terima" : "tolak"
-          }.`,
-          timer: 1500,
-          showConfirmButton: false,
-        });
-        refresh();
-      } catch (err) {
-        Swal.fire({
-          icon: "error",
-          title: "Gagal!",
-          text: "Terjadi kesalahan saat mengubah status.",
-        });
-      }
-    }
-  });
-};
-
 // const updateStatus = (id: number, status: string) => {
 //   const label =
 //     status === "diterima" ? "Terima" : status === "ditolak" ? "Tolak" : "Ubah";
@@ -105,11 +86,15 @@ const updateStatus = (id: number, status: string) => {
 //   }).then(async (result) => {
 //     if (result.isConfirmed) {
 //       try {
-//         await axios.get(`/cek-status-mitra`, { status }); // 👈 hanya update di tabel mitra
+//         // ✅ gunakan PUT + kirim data dengan nama kolom yang sesuai
+//         await axios.put(`/cek-status-mitra/${id}`, { status_validasi: status });
+
 //         Swal.fire({
 //           icon: "success",
 //           title: "Berhasil!",
-//           text: `Mitra berhasil di${status === "diterima" ? "terima" : "tolak"}.`,
+//           text: `Mitra berhasil di${
+//             status === "diterima" ? "terima" : "tolak"
+//           }.`,
 //           timer: 1500,
 //           showConfirmButton: false,
 //         });
@@ -123,6 +108,8 @@ const updateStatus = (id: number, status: string) => {
 //       }
 //     }
 //   });
+// };
+
 // };
 
 // 🔹 Kolom tabel utama
@@ -148,87 +135,47 @@ const columns = [
   }),
 
   column.accessor("status_validasi", {
-  header: "Status Validasi",
-  cell: (cell) => {
-    const status = cell.getValue();
-    const id = cell.row.original.id;
+    header: "Status Validasi",
+    cell: (cell) => {
+      const status = cell.getValue();
+      const id = cell.row.original.id;
 
-    // Kalau masih menunggu
-   if (status === "menunggu") {
-  return h("div", { class: "d-flex gap-2" }, [
-    h(
-      "button",
-      {
-        class: "btn btn-sm btn-success",
-        onClick: () => updateStatus(id, "diterima"),
-      },
-      "Terima"
-    ),
-    h(
-      "button",
-      {
-        class: "btn btn-sm btn-danger",
-        onClick: () => updateStatus(id, "ditolak"),
-      },
-      "Tolak"
-    ),
-  ]);
-}
+      // Jika status menunggu
+      if (status === "menunggu") {
+        return h("div", { class: "d-flex gap-2" }, [
+          h(
+            "button",
+            {
+              class: "btn btn-sm btn-success",
+              onClick: () => updateStatus(id, "diterima"),
+            },
+            "Terima"
+          ),
+          h(
+            "button",
+            {
+              class: "btn btn-sm btn-danger",
+              onClick: () => updateStatus(id, "ditolak"),
+            },
+            "Tolak"
+          ),
+        ]);
+      }
+
+      // Jika sudah diproses
+      const color =
+        status === "diterima"
+          ? "badge bg-success"
+          : status === "ditolak"
+            ? "badge bg-danger"
+            : "badge bg-secondary";
+
+      return h("span", { class: `${color}` }, status.toUpperCase());
+    },
+  }),
 
 
-    // Kalau sudah diterima atau ditolak
-    const color =
-      status === "diterima"
-        ? "badge-success"
-        : status === "ditolak"
-        ? "badge-danger"
-        : "badge-secondary";
 
-    return h(
-      "span",
-      { class: `badge ${color}` },
-      status.toUpperCase()
-    );
-  },
-}),
-
-  // column.accessor("status_validasi", {
-  //   header: "Status Validasi",
-  //   cell: (cell) => {
-  //     const status = cell.getValue();
-  //     const id = cell.row.original.id;
-
-  //     if (status === "pending") {
-  //       return h("div", { class: "d-flex gap-2" }, [
-  //         h(
-  //           "button",
-  //           {
-  //             class: "btn btn-sm btn-success",
-  //             onClick: () => updateStatus(id, "diterima"),
-  //           },
-  //           "Terima"
-  //         ),
-  //         h(
-  //           "button",
-  //           {
-  //             class: "btn btn-sm btn-danger",
-  //             onClick: () => updateStatus(id, "ditolak"),
-  //           },
-  //           "Tolak"
-  //         ),
-  //       ]);
-  //     }
-
-  //     const color =
-  //       status === "diterima"
-  //         ? "badge-success"
-  //         : status === "ditolak"
-  //         ? "badge-danger"
-  //         : "badge-secondary";
-
-  //     return h("span", { class: `badge ${color}` }, status.toUpperCase());
-  //   },
-  // }),
 
   column.accessor("status_toko", {
     header: "Status Toko",
@@ -281,24 +228,22 @@ watch(openForm, (val) => {
 </script>
 
 <template>
-  <Form
-    :selected="selected"
-    v-if="openForm"
-    @close="openForm = false"
-    @refresh="refresh"
-  />
+  <Form :selected="selected" v-if="openForm" @close="openForm = false" @refresh="refresh" />
 
   <div class="card mb-10">
     <div class="card-header align-items-center">
       <h2 class="mb-0">List Mitra</h2>
     </div>
     <div class="card-body">
-      <paginate
+      <!-- <paginate
         ref="paginateRef"
         id="table-mitra"
         url="/mitra"
         :columns="columns"
-      />
+      /> -->
+      <paginate ref="paginateRef" id="table-mitra" url="/mitra" :columns="columns" />
+
     </div>
+
   </div>
 </template>

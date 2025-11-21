@@ -161,6 +161,7 @@ import { toast } from "vue3-toastify";
 import { blockBtn, unblockBtn } from "@/libs/utils";
 import router from "@/router";
 import { useSetting } from "@/services";
+import Swal from "sweetalert2";
 
 interface ICredential {
     name?: string;
@@ -485,22 +486,62 @@ export default defineComponent({
                         headers: { "Content-Type": "multipart/form-data" },
                     }
                 )
+                // .then((res) => {
+                //     toast.success("Akun berhasil dibuat");
+
+                //     if (formData.value.role === "mitra") {;
+                //         // Simpan id mitra sementara untuk cek status verifikasi
+                //         localStorage.setItem("mitra_id", res.data.user.id);
+                //         console.log("mitra id disimpan:", localStorage.getItem("mitra_id"));
+
+                //         // Arahkan ke halaman menunggu verifikasi
+                //         setTimeout(() => {
+                //             unblockBtn("#submit-form");
+                //             router.push({ name: "menunggu-verifikasi" });
+                //         }, 10000);
+                //     } else {
+                //         // User biasa tetap ke halaman login
+                //         router.push({ name: "sign-in" });
+                //     }
+                // })
+                // .catch((err) => {
+                //     toast.error(err.response?.data?.message || "Terjadi kesalahan");
+                //     unblockBtn("#submit-form");
+                // });
                 .then((res) => {
                     toast.success("Akun berhasil dibuat");
 
-                    if (formData.value.role === "mitra") {;
-                        // Simpan id mitra sementara untuk cek status verifikasi
-                        localStorage.setItem("mitra_id", res.data.user.id);
-                        console.log("mitra id disimpan:", localStorage.getItem("mitra_id"));
+                    if (formData.value.role === "mitra") {
+                        // SweetAlert untuk mitra
+                        Swal.fire({
+                            icon: "success",
+                            title: "Pendaftaran Mitra Berhasil!",
+                            text: "Tunggu verifikasi admin dalam beberapa saat.",
+                        }).then(() => {
+                            // Simpan ID mitra
+                            localStorage.setItem("mitra_id", res.data.user.id);
 
-                        // Arahkan ke halaman menunggu verifikasi
-                        setTimeout(() => {
+                            // Hentikan loading pada tombol
                             unblockBtn("#submit-form");
-                            router.push({ name: "menunggu-verifikasi" });
-                        }, 10000);
+
+                            // Delay 10 detik sambil menunggu verifikasi
+                            setTimeout(() => {
+                                router.push({ name: "menunggu-verifikasi" });
+                            }, 10000);
+                        });
                     } else {
-                        // User biasa tetap ke halaman login
-                        router.push({ name: "sign-in" });
+                        // SweetAlert untuk pelanggan
+                        Swal.fire({
+                            icon: "success",
+                            title: "Akun Pelanggan Dibuat!",
+                            text: "Silakan login untuk menggunakan aplikasi.",
+                        }).then(() => {
+                            // Hentikan loading
+                            unblockBtn("#submit-form");
+
+                            // Arahkan ke login
+                            router.push({ name: "sign-in" });
+                        });
                     }
                 })
                 .catch((err) => {

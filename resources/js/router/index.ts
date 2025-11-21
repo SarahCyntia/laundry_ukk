@@ -35,28 +35,60 @@ declare module "vue-router" {
 
 const routes: Array<RouteRecordRaw> = [
 
+  // {
+  //   path: "/",
+  //   component: () => import("@/pages/dashboard/app.vue"),
+  //   // meta: {
+  //   //     requiresAuth: true,
+  //   // },
+  //   children: [
+  //     //  {
+  //     //     path: "/dashboard",
+  //     //     name: "dashboard",
+  //     //     component: () => import("@/pages/dashboard/beranda.vue"),
+  //     // },
+  //     {
+  //       path: "/beranda",
+  //       name: "beranda",
+  //       component: () => import("@/pages/dashboard/beranda.vue"),
+  //       meta: {
+  //         requiresAuth: true,
+  //           // pageTitle: "Beranda",
+  //           // breadcrumbs: ["Beranda"],
+  //       },
+  //     },
+  //   ],
+  // },
+
+
   {
-    path: "/",
-    component: () => import("@/pages/dashboard/app.vue"),
-    // meta: {
-    //     requiresAuth: true,
-    // },
-    children: [
-      //  {
-      //     path: "/dashboard",
-      //     name: "dashboard",
-      //     component: () => import("@/pages/dashboard/beranda.vue"),
-      // },
-      {
-        path: "/beranda",
-        name: "beranda",
-        component: () => import("@/pages/dashboard/beranda.vue"),
-        // meta: {
-        //     pageTitle: "Beranda",
-        //     breadcrumbs: ["Beranda"],
-        // },
-      },
-    ],
+    path: '/DetailLaundry/:id',
+    name: 'DetailLaundry',
+    component: () => import('@/pages/dashboard/DetailLaundry.vue'),
+
+  },
+  {
+    path: '/RiwayatTransaksi/:id',
+    name: 'RiwayatTransaksi',
+    component: () => import('@/pages/dashboard/RiwayatTransaksi.vue'),
+
+  },
+  {
+    path: '/profil-pelanggan/:id',
+    name: 'profil-pelanggan',
+    component: () => import('@/pages/pelanggan/profil-pelanggan.vue'),
+
+  },
+
+  {
+    path: "/beranda",
+    name: "beranda",
+    component: () => import("@/pages/dashboard/beranda.vue"),
+    meta: {
+      requiresAuth: true,
+      // pageTitle: "Beranda",
+      // breadcrumbs: ["Beranda"],
+    },
   },
   {
     path: "/menunggu-verifikasi",
@@ -92,6 +124,8 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/pages/pelanggan/jemput.vue"),
 
   },
+
+
 
 
   {
@@ -144,11 +178,7 @@ const routes: Array<RouteRecordRaw> = [
       //     name: "transaksilayanan",
       //     component: () => import("@/pages/admin/transaksilayananlama.vue"),
       // },
-      {
-        path: "/admin/tambah-pelanggan",
-        name: "tambahpelanggan",
-        component: () => import("@/pages/admin/tambahpelanggan.vue"),
-      },
+
       {
         path: "/dashboard/data-pelanggan",
         name: "datapelanggan",
@@ -177,48 +207,30 @@ const routes: Array<RouteRecordRaw> = [
         },
       },
       // layanan
+
       {
-        path: "/layanan/jenis-item",
-        name: "layanan.jenisitem",
-        component: () =>
-          import("@/pages/layanan/jenisitem.vue"),
-      },
-      {
-        path: "/mitra/mitra",
-        name: "mitra.mitra",
+        path: "/mitra",
+        name: "mitra",
         component: () =>
           import("@/pages/mitra/index.vue"),
       },
       {
-        path: "/layanan/jenis-layanan",
-        name: "layanan.jenislayanan",
+        path: "/mitra/profil",
+        name: "profil",
         component: () =>
-          import("@/pages/layanan/jenislayanan.vue"),
+          import("@/pages/mitra/profil.vue"),
       },
       {
-        path: "/layanan/harga-jenis-layanan",
-        name: "layanan.hargajenislayanan",
+        path: "/mitra/transaksi",
+        name: "transaksi",
         component: () =>
-          import("@/pages/layanan/hargajenislayanan.vue"),
+          import("@/pages/mitra/transaksi/index.vue"),
       },
       {
-        path: "/layanan/layanan-prioritas",
-        name: "layanan.layananprioritas",
+        path: "/mitra/layanan",
+        name: "layanan",
         component: () =>
-          import("@/pages/layanan/layananprioritas.vue"),
-      },
-      {
-        path: "/layanan/layanan-tambahan",
-        name: "layanan.layanantambahan",
-        component: () =>
-          import("@/pages/layanan/layanantambahan.vue"),
-      },
-      // transaksi
-      {
-        path: "/transaksi/transaksilayanan",
-        name: "transaksi.transaksilayanan",
-        component: () =>
-          import("@/pages/transaksi/transaksilayanan.vue"),
+          import("@/pages/mitra/layanan/index.vue"),
       },
       {
         path: "/dashboard/laundrydetail",
@@ -226,10 +238,123 @@ const routes: Array<RouteRecordRaw> = [
         component: () =>
           import("@/pages/dashboard/LaundryDetail.vue"),
       },
-     
+      {
+        path: "/kecamatan",
+        name: "kecamatan",
+        component: () =>
+          import("@/pages/kecamatan/index.vue"),
+      },
 
     ],
   },
+
+  {
+    path: "/",
+    component: () => import("@/layouts/default-layout/DefaultLayout.vue"),
+    meta: {
+      middleware: "auth",
+    },
+    children: [
+      {
+        path: "/dashboard-mitra",
+        name: "dashboard-mitra",
+        component: () => import("@/pages/dashboard-mitra/index.vue"),
+      },
+
+      // layanan
+
+      {
+        path: "/mitra/profil",
+        name: "profil",
+        component: () =>
+          import("@/pages/mitra/profil.vue"),
+      },
+      {
+        path: "/mitra/transaksi",
+        name: "transaksi",
+        component: () =>
+          import("@/pages/mitra/transaksi/index.vue"),
+      },
+      {
+        path: "/mitra/layanan",
+        name: "layanan",
+        component: () =>
+          import("@/pages/mitra/layanan/index.vue"),
+      },
+
+
+
+      {
+        path: "/dashboard-mitra/order-masuk",
+        name: "order-masuk",
+        component: () =>
+          import("@/pages/dashboard-mitra/order-masuk.vue"),
+      },
+
+      {
+        path: "/dashboard-mitra/order-proses",
+        name: "order-proses",
+        component: () =>
+          import("@/pages/dashboard-mitra/order-proses.vue"),
+      },
+
+      {
+        path: "/dashboard-mitra/order-siap-ambil",
+        name: "order-siap-ambil",
+        component: () =>
+          import("@/pages/dashboard-mitra/order-siap-ambil.vue"),
+      },
+      {
+        path: "/dashboard-mitra/order-selesai",
+        name: "order-selesai",
+        component: () =>
+          import("@/pages/dashboard-mitra/order-selesai.vue"),
+      },
+
+
+
+
+
+
+
+
+
+
+
+      {
+        path: "/dashboard/laundrydetail",
+        name: "dashboard.laundrydetail",
+        component: () =>
+          import("@/pages/dashboard/LaundryDetail.vue"),
+      },
+
+    ],
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   {
     path: '/register-mitra',
     name: 'RegisterMitra',
@@ -242,7 +367,7 @@ const routes: Array<RouteRecordRaw> = [
     children: [
 
       {
-        path: "sign-in",
+        path: "/sign-in",
         name: "sign-in",
         component: () => import("@/pages/auth/sign-in/Index.vue"),
         meta: { pageTitle: "Sign In", middleware: "guest" },
@@ -346,52 +471,52 @@ const router = createRouter({
 // Middleware & Guards
 // -------------------------------
 router.beforeEach(async (to, from, next) => {
-  if (to.name) NProgress.start();
+  if (to.name) {
+    // Start the route progress bar.
+    NProgress.start();
+  }
 
   const authStore = useAuthStore();
   const configStore = useConfigStore();
 
-  // Update title
-  document.title = to.meta.pageTitle
-    ? `${to.meta.pageTitle} - ${import.meta.env.VITE_APP_NAME}`
-    : import.meta.env.VITE_APP_NAME;
+  // current page view title
+  if (to.meta.pageTitle) {
+    document.title = `${to.meta.pageTitle} - ${import.meta.env.VITE_APP_NAME
+      }`;
+  } else {
+    document.title = import.meta.env.VITE_APP_NAME as string;
+  }
 
-  // Reset layout config
+  // reset config to initial state
   configStore.resetLayoutConfig();
 
-  // Cek auth
+  // verify auth token before each page change
   if (!authStore.isAuthenticated) await authStore.verifyAuth();
 
-  // 🔒 Middleware: Auth
-  if (to.meta.middleware === "auth") {
-    if (!authStore.isAuthenticated) {
-      next({ name: "sign-in" });
-      return;
-    }
-
-    // 🔹 Cek role access
-    if (to.meta.role && !to.meta.role.includes(authStore.user.role?.name)) {
-      // misal pelanggan coba akses halaman admin
-      if (authStore.user.role?.name === "pelanggan") {
-        next({ name: "pelanggan" });
-      } else {
-        next({ name: "admin.dashboard" });
+  // before page access check if page requires authentication
+  if (to.meta.middleware == "auth") {
+    if (authStore.isAuthenticated) {
+      if (
+        to.meta.permission &&
+        !authStore.user.permission.includes(to.meta.permission)
+      ) {
+      } else if (to.name === "dashboard" && authStore.user.role?.name === "pelanggan") {
+        next({ name: "beranda" });
+      } else if (to.name === "dashboard" && authStore.user.role?.name === "mitra") {
+        next({ name: "dashboard-mitra" });
+      } else if (to.meta.checkDetail == false) {
+        next();
       }
-      return;
-    }
-  }
-
-  // 🚫 Middleware: Guest
-  if (to.meta.middleware === "guest" && authStore.isAuthenticated) {
-    if (authStore.user.role?.name === "pelanggan") {
-      next({ name: "pelanggan" });
+      next();
     } else {
-      next({ name: "admin.dashboard" });
+      next({ name: "beranda" });
     }
-    return;
+  } else if (to.meta.middleware == "guest" && authStore.isAuthenticated) {
+    console.log('auth: ', authStore.isAuthenticated)
+    next({ name: "beranda" });
+  } else {
+    next();
   }
-
-  next();
 });
 
 router.afterEach(() => {

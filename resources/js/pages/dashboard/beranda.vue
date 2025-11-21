@@ -2,12 +2,20 @@
   <div class="page-container">
     <!-- Hero Section -->
     <div class="hero-section">
+      <router-link v-if="!isLoggedIn" :to="{ name: 'sign-in' }" class="btn-login-top">
+        🔑 Sign-in
+      </router-link>
+
+      <button v-else class="btn-login-top text-danger" @click="signOut">
+        🚪 Logout
+      </button>
+
       <div class="icon">🏠</div>
       <h1>Selamat Datang di Beranda</h1>
       <p class="subtitle">Platform Laundry Terpercaya di Indonesia</p>
 
       <div class="hero-buttons">
-        <button class="btn-primary">Cari Laundry</button>
+        <button class="btn-primary"><a class="nav-link" href="#cari">Cari Laundry</a></button>
         <button class="btn-secondary" @click="confirmMitra">
           Daftar Jadi Mitra
         </button>
@@ -15,7 +23,7 @@
     </div>
 
     <!-- Layanan untuk Pengguna -->
-    <div class="service-section">
+    <div class="service-section named" id="cari">
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Layanan Laundry Pilihan</h2>
@@ -26,36 +34,73 @@
 
         <!-- Filter & Search -->
         <div class="search-box">
-          <input
-            type="text"
-            placeholder="Cari laundry berdasarkan lokasi..."
-            class="search-input"
-          />
-          <button class="btn-search">🔍 Cari</button>
+          <input v-model="searchQuery" type="text" placeholder="Cari laundry berdasarkan lokasi..."
+            class="search-input" />
+          <button class="btn-search" @click="filterLaundry">🔍 Cari</button>
         </div>
 
-        <!-- Laundry Cards -->
-        <div class="laundry-grid">
-          <div class="laundry-card" v-for="(laundry, index) in laundries" :key="index">
+        <!-- Loading State -->
+        <div v-if="loading" class="loading-state">
+          <p>Memuat data laundry...</p>
+        </div>
+
+        <!-- Laundry Cards Grid -->
+        <div v-else-if="filteredMitraList.length > 0" class="laundry-grid">
+          <div v-for="m in filteredMitraList" :key="m.id" class="laundry-card">
+            <!-- Header Image -->
             <div class="laundry-image">
-              <span class="laundry-badge">⭐ {{ laundry.rating }}</span>
               <div class="placeholder-img">🧺</div>
+              <span class="laundry-badge" v-if="m.status_toko === 'buka'">✓ Buka</span>
+              <span class="laundry-badge closed" v-else>✗ Tutup</span>
             </div>
+
+            <!-- Card Info -->
             <div class="laundry-info">
-              <h3>{{ laundry.name }}</h3>
-              <p class="location">📍 {{ laundry.location }}</p>
-              <p class="price">Mulai dari <strong>{{ laundry.price }}</strong></p>
-              <div class="features">
-                <span
-                  v-for="(tag, i) in laundry.features"
-                  :key="i"
-                  class="tag"
-                  >✓ {{ tag }}</span
-                >
+              <h3>{{ m.nama_laundry }}</h3>
+              <p class="location">📍 {{ m.alamat_laundry }}</p>
+
+              <!-- Layanan List -->
+              <div v-if="m.jenis_layanan && m.jenis_layanan.length" class="layanan-list">
+                <h4>Layanan Tersedia:</h4>
+                <ul>
+                  <li v-for="l in m.jenis_layanan" :key="l.id">
+                    <strong>{{ l.nama_layanan }}</strong><br />
+                    <span class="desc">{{ l.deskripsi }}</span><br />
+                    <span class="price">Rp {{ Number(l.harga).toLocaleString('id-ID') }} / {{ l.satuan }}</span>
+                  </li>
+                </ul>
               </div>
-              <button class="btn-order">Pilih Laundry</button>
+
+              <div v-else class="no-service">
+                <p>Belum ada layanan tersedia</p>
+              </div>
+
+              <!-- Action Button -->
+             <!-- <router-link
+  :to="m.status_toko === 'buka' ? { name: 'DetailLaundry', params: { id: m.id } } : null"
+  @click="Logging"
+  class="btn-order"
+  :class="{ disabled: m.status_toko !== 'buka' }"
+>
+  {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Tutup' }}
+</router-link> -->
+
+
+              <button 
+                class="btn-order" 
+                @click="goToLaundry(m.id)"
+                :disabled="m.status_toko !== 'buka'"
+              >
+                {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Sedang Tutup' }}
+              </button>
             </div>
           </div>
+        </div>
+
+        <!-- Jika tidak ada data -->
+        <div v-else class="no-data">
+          <p>{{ searchQuery ? 'Tidak ditemukan laundry dengan lokasi tersebut.' : 'Belum ada laundry tersedia saat ini.'
+          }}</p>
         </div>
       </div>
     </div>
@@ -76,73 +121,143 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import Swal from "sweetalert2";
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
+import axios from "axios";
 
-export default {
-  name: "Beranda",
-  data() {
-    return {
-      laundries: [
-        {
-          name: "Clean & Fresh Laundry",
-          location: "Surabaya Pusat",
-          price: "Rp 5.000/kg",
-          rating: "4.8",
-          features: ["Antar Jemput", "Express"],
-        },
-        {
-          name: "Super Wash Laundry",
-          location: "Surabaya Timur",
-          price: "Rp 4.500/kg",
-          rating: "4.9",
-          features: ["Antar Jemput", "24 Jam"],
-        },
-        {
-          name: "Express Clean Service",
-          location: "Surabaya Barat",
-          price: "Rp 6.000/kg",
-          rating: "4.7",
-          features: ["Premium", "Setrika"],
-        },
-        {
-          name: "Fresh & Clean Laundry",
-          location: "Surabaya Selatan",
-          price: "Rp 5.500/kg",
-          rating: "4.6",
-          features: ["Eco Friendly", "Express"],
-        },
-      ],
-      features: [
-        { icon: "🚚", title: "Antar Jemput", desc: "Gratis antar jemput area tertentu" },
-        { icon: "⚡", title: "Express Service", desc: "Selesai dalam 3 jam" },
-        { icon: "💳", title: "Pembayaran Mudah", desc: "Berbagai metode pembayaran" },
-        { icon: "🛡️", title: "Garansi Aman", desc: "Jaminan ganti rugi" },
-      ],
-    };
-  },
-  methods: {
-    confirmMitra() {
-      Swal.fire({
-        title: "Daftar Jadi Mitra?",
-        text: "Kamu akan diarahkan ke halaman login untuk mendaftar sebagai mitra.",
-        icon: "question",
-        showCancelButton: true,
-        confirmButtonColor: "#667eea",
-        cancelButtonColor: "#aaa",
-        confirmButtonText: "Ya, lanjutkan",
-        cancelButtonText: "Batal",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          this.$router.push("/register-mitra");
-        }
-      });
+
+
+const router = useRouter();
+const authStore = useAuthStore();
+
+// State
+const mitraList = ref([]);
+const searchQuery = ref('');
+const loading = ref(false);
+// const laundryId = route.params.id;
+
+// Computed
+const isLoggedIn = computed(() => authStore.isAuthenticated);
+
+const filteredMitraList = computed(() => {
+  if (!searchQuery.value) {
+    return mitraList.value;
+  }
+
+  return mitraList.value.filter(m =>
+    m.nama_laundry.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    m.alamat_laundry.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
+// Features data
+const features = ref([
+  { icon: "🚚", title: "Antar Jemput", desc: "Gratis antar jemput area tertentu" },
+  { icon: "⚡", title: "Express Service", desc: "Selesai dalam 3 jam" },
+  { icon: "💳", title: "Pembayaran Mudah", desc: "Berbagai metode pembayaran" },
+  { icon: "🛡️", title: "Garansi Aman", desc: "Jaminan ganti rugi" },
+]);
+
+// Methods
+function goToLaundry(id: number) {
+  console.log("id", id)
+  router.push({ name: "DetailLaundry", params: { id: id } });
+}
+
+// function goToLaundry(id: number) {
+//   // Arahkan ke LaundryDetail.vue dengan mengirim ID mitra
+//   router.push({
+//     name: 'DetailLaundry',
+//     params: { id: id.toString() }
+//   });
+// }
+
+function filterLaundry() {
+  // Filter sudah otomatis via computed property
+  console.log('Filtering with query:', searchQuery.value);
+}
+
+const signOut = () => {
+  Swal.fire({
+    icon: "warning",
+    text: "Apakah Anda yakin ingin keluar?",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Keluar",
+    cancelButtonText: "Batal",
+    reverseButtons: true,
+    buttonsStyling: false,
+    customClass: {
+      confirmButton: "btn fw-semibold btn-light-primary",
+      cancelButton: "btn fw-semibold btn-light-danger",
     },
-  },
+  }).then(async (result) => {
+    if (result.isConfirmed) {
+      await authStore.logout();
+      Swal.fire({
+        icon: "success",
+        text: "Berhasil keluar",
+        timer: 1500,
+        showConfirmButton: false,
+      }).then(() => {
+        router.push({ name: "beranda" });
+      });
+    }
+  });
 };
+
+const confirmMitra = () => {
+  Swal.fire({
+    title: "Daftar Jadi Mitra?",
+    text: "Kamu akan diarahkan ke halaman login untuk mendaftar sebagai mitra.",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonColor: "#667eea",
+    cancelButtonColor: "#aaa",
+    confirmButtonText: "Ya, lanjutkan",
+    cancelButtonText: "Batal",
+  }).then((result) => {
+    if (result.isConfirmed) {
+      router.push("/sign-up");
+    }
+  });
+};
+
+// Lifecycle
+onMounted(async () => {
+  loading.value = true;
+  try {
+    const response = await axios.get('/mitra');
+    mitraList.value = response.data;
+    console.log('Data mitra berhasil dimuat:', mitraList.value);
+  } catch (error) {
+    console.error('Error fetching mitra:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Gagal Memuat Data',
+      text: 'Tidak dapat memuat data laundry. Silakan coba lagi.',
+    });
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
+<style>
+html {
+  scroll-behavior: smooth;
+}
+</style>
+
 <style scoped>
+
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -154,36 +269,52 @@ export default {
   background: #f7f7f7;
 }
 
+/* Login Button */
+.btn-login-top {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 1000;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.btn-login-top:hover {
+  background: #667eea;
+  color: white;
+}
+
+.text-danger {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.text-danger:hover {
+  background: #dc3545;
+  color: white;
+}
+
+/* Layout */
+.content-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 .text-center {
   text-align: center;
   font-size: 32px;
   font-weight: bold;
   color: #333;
   margin-bottom: 48px;
-}
-
-.content-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: 48px;
-}
-
-.section-header h2 {
-  font-size: 32px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 16px;
-}
-
-.section-desc {
-  color: #666;
-  max-width: 800px;
-  margin: 0 auto;
-  line-height: 1.6;
 }
 
 /* Hero Section */
@@ -197,6 +328,7 @@ export default {
   text-align: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  position: relative;
 }
 
 .icon {
@@ -223,43 +355,65 @@ export default {
   justify-content: center;
 }
 
-.btn-primary {
-  background: white;
-  color: #667eea;
+.btn-primary,
+.btn-secondary {
   padding: 14px 36px;
-  border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: white;
+  color: #667eea;
+  border: none;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary a {
+  text-decoration: none;
+  color: inherit;
 }
 
 .btn-secondary {
   background: transparent;
   color: white;
-  padding: 14px 36px;
   border: 2px solid white;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s;
 }
 
 .btn-secondary:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 /* Service Section */
 .service-section {
   background: white;
   padding: 64px 20px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-header h2 {
+  font-size: 32px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.section-desc {
+  color: #666;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
 }
 
 /* Search Box */
@@ -300,10 +454,19 @@ export default {
   background: #5568d3;
 }
 
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #667eea;
+  font-size: 18px;
+  font-weight: 500;
+}
+
 /* Laundry Grid */
 .laundry-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
   margin-bottom: 32px;
 }
@@ -312,15 +475,18 @@ export default {
   background: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s, box-shadow 0.3s;
+  display: flex;
+  flex-direction: column;
 }
 
 .laundry-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Card Header */
 .laundry-image {
   position: relative;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -330,80 +496,134 @@ export default {
   justify-content: center;
 }
 
+.placeholder-img {
+  font-size: 64px;
+}
+
 .laundry-badge {
   position: absolute;
   top: 12px;
   right: 12px;
   background: white;
-  color: #f59e0b;
+  color: #16a34a;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.placeholder-img {
-  font-size: 64px;
+.laundry-badge.closed {
+  color: #dc3545;
 }
 
+/* Card Body */
 .laundry-info {
   padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .laundry-info h3 {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
   color: #333;
   margin-bottom: 8px;
 }
 
-.location {
+.laundry-info .location {
   color: #666;
   font-size: 14px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
+  display: block;
 }
 
-.price {
+/* Layanan List */
+.layanan-list {
+  margin-bottom: 16px;
+  flex: 1;
+}
+
+.layanan-list h4 {
+  font-size: 15px;
+  color: #667eea;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.layanan-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.layanan-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.layanan-list li:last-child {
+  border-bottom: none;
+}
+
+.layanan-list li strong {
   color: #333;
   font-size: 15px;
-  margin-bottom: 12px;
 }
 
-.price strong {
+.layanan-list li .desc {
+  color: #666;
+  font-size: 13px;
+}
+
+.layanan-list li .price {
   color: #667eea;
-  font-size: 16px;
+  font-weight: 600;
+  font-size: 14px;
 }
 
-.features {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
+.no-service {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-style: italic;
+  flex: 1;
 }
 
-.tag {
-  background: #f3f4f6;
-  color: #16a34a;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
+/* Order Button */
 .btn-order {
   width: 100%;
   background: #667eea;
   color: white;
-  padding: 10px;
+  padding: 12px;
   border: none;
   border-radius: 8px;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.3s;
+  margin-top: auto;
 }
 
-.btn-order:hover {
+.btn-order:hover:not(:disabled) {
   background: #5568d3;
+}
+
+.btn-order:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* No Data State */
+.no-data {
+  text-align: center;
+  padding: 80px 20px;
+  color: #999;
+  font-size: 16px;
 }
 
 /* Features Section */
@@ -446,17 +666,45 @@ export default {
   .hero-section h1 {
     font-size: 28px;
   }
-  
+
   .subtitle {
     font-size: 16px;
   }
-  
-  .section-header h2, .text-center {
+
+  .section-header h2,
+  .text-center {
     font-size: 24px;
   }
-  
+
   .search-box {
     flex-direction: column;
+  }
+
+  .laundry-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-login-top {
+    top: 10px;
+    right: 10px;
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section h1 {
+    font-size: 24px;
+  }
+
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
   }
 }
 </style>

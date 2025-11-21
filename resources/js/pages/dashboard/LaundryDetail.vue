@@ -1,98 +1,158 @@
 <template>
-  <div class="p-6 bg-gray-50 min-h-screen">
-    <button
-      class="mb-4 text-blue-600 hover:underline"
-      @click="router.back()"
-    >
-      ← Kembali
-    </button>
+  <div class="detail-container">
+    <button class="back-btn" @click="$router.back()">← Kembali</button>
 
-    <div v-if="loading" class="text-center text-gray-500">Memuat data...</div>
+    <div v-if="loading" class="loading">Memuat...</div>
 
-    <div v-else>
-      <div class="bg-white shadow rounded-lg p-6 mb-6">
-        <div class="flex flex-col md:flex-row gap-6">
-          <img
-            :src="laundry.foto || '/default-laundry.jpg'"
-            alt="Laundry"
-            class="w-full md:w-60 h-40 object-cover rounded-lg"
-          />
+    <div v-else class="detail-card">
+      <h2>{{ laundry.nama_laundry }}</h2>
 
-          <div>
-            <h1 class="text-2xl font-bold">{{ laundry.nama_laundry }}</h1>
-            <p class="text-gray-600 mt-1">{{ laundry.alamat }}</p>
-            <p class="text-gray-500 mt-1">☎️ {{ laundry.no_hp }}</p>
-          </div>
-        </div>
+      <p>📍 {{ laundry.alamat_laundry }}</p>
+      <p>⭐ Rating: {{ laundry.rating ?? '4.8' }}</p>
+
+      <div class="price-box">
+        <p>Harga per kilo</p>
+        <h3>Rp {{ laundry.harga_per_kilo ?? '5000' }}</h3>
       </div>
 
-      <div class="bg-white shadow rounded-lg p-6">
-        <h2 class="text-xl font-semibold mb-4">🧺 Daftar Layanan</h2>
+      <hr />
 
-        <div v-if="layanan.length === 0" class="text-gray-500">
-          Belum ada layanan yang tersedia.
-        </div>
+      <!-- Form Order -->
+      <h3>Masukkan Pesanan</h3>
 
-        <div v-else class="grid sm:grid-cols-2 gap-4">
-          <div
-            v-for="item in layanan"
-            :key="item.id"
-            class="border rounded-lg p-4 hover:bg-gray-100 cursor-pointer transition"
-          >
-            <h3 class="font-semibold text-lg">{{ item.nama_layanan }}</h3>
-            <p class="text-gray-600">{{ item.deskripsi }}</p>
-            <p class="text-blue-600 font-semibold mt-2">
-              Rp {{ formatHarga(item.harga) }} / {{ item.satuan }}
-            </p>
-          </div>
-        </div>
-
-        <div class="text-center mt-8">
-          <button
-            @click="buatPesanan"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition"
-          >
-            Pesan Sekarang
-          </button>
-        </div>
+      <div class="form-group">
+        <label>Berat Estimasi (kg)</label>
+        <input
+          type="number"
+          v-model="form.berat_estimasi"
+          placeholder="contoh: 3"
+        />
       </div>
+
+      <div class="form-group">
+        <label>Catatan (opsional)</label>
+        <textarea
+          v-model="form.catatan"
+          placeholder="contoh: tolong pisahkan baju putih"
+        ></textarea>
+      </div>
+
+      <button class="btn-order" @click="buatOrder" :disabled="loadingSubmit">
+        <span v-if="loadingSubmit">Mengirim...</span>
+        <span v-else>Buat Pesanan</span>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
+import { useRoute, useRouter } from "vue-router";
+import { toast } from "vue3-toastify";
 
 const route = useRoute();
 const router = useRouter();
-const laundry = ref({});
-const layanan = ref([]);
-const loading = ref(true);
 
-const getDetailLaundry = async () => {
+const id = route.params.id; // ID laundry / mitra
+
+const laundry = ref({});
+const loading = ref(true);
+const loadingSubmit = ref(false);
+
+const form = ref({
+  berat_estimasi: "",
+  catatan: "",
+});
+
+// Ambil detail laundry
+const loadDetail = async () => {
   try {
-    const id = route.params.id;
-    const res = await axios.get(`/api/mitra/${id}`);
-    laundry.value = res.data.laundry;
-    layanan.value = res.data.layanan;
+    const res = await axios.get(`/api/pelanggan/laundry/${id}`);
+    laundry.value = res.data;
   } catch (err) {
-    console.error("Gagal ambil detail laundry:", err);
+    toast.error("Gagal memuat detail laundry");
   } finally {
     loading.value = false;
   }
 };
 
-const formatHarga = (harga) => {
-  return new Intl.NumberFormat("id-ID").format(harga);
-};
+// Buat order baru
+const buatOrder = async () => {
+  if (!form.value.berat_estimasi) {
+    return toast.error("Berat estimasi wajib diisi!");
+  }
 
-const buatPesanan = () => {
-  router.push({ name: "order.form", params: { id: laundry.value.id } });
+  try {
+    loadingSubmit.value = true;
+
+    await axios.post("/api/pelanggan/order", {
+      mitra_id: id,
+      berat_estimasi: form.value.berat_estimasi,
+      catatan: form.value.catatan,
+    });
+
+    toast.success("Order berhasil dibuat!");
+    router.push("/pelanggan/order-saya");
+  } catch (err) {
+    toast.error("Gagal membuat order!");
+  } finally {
+    loadingSubmit.value = false;
+  }
 };
 
 onMounted(() => {
-  getDetailLaundry();
+  loadDetail();
 });
 </script>
+
+<style scoped>
+.detail-container {
+  padding: 20px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #3498db;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.detail-card {
+  background: white;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.price-box {
+  background: #f3f9ff;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.btn-order {
+  width: 100%;
+  background: #3498db;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+</style>

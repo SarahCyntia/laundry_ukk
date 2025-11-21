@@ -27,9 +27,6 @@ class User extends Authenticatable implements JWTSubject
         'password',
         'phone',
         'photo',
-        'status',
-        'nama_laundry',
-        'alamat_laundry',
     ];
 
     /**
@@ -102,6 +99,10 @@ class User extends Authenticatable implements JWTSubject
     public function pelanggan()
     {
         return $this->hasOne(Pelanggan::class);
+    }
+    public function mitra()
+    {
+        return $this->hasOne(Mitra::class);
     }
 
 

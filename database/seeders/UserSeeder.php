@@ -3,34 +3,89 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Support\Str;
+use App\Models\Mitra;
+use App\Models\Pelanggan;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        User::create([
+        /*
+        |--------------------------------------------------------------------------
+        | ADMIN
+        |--------------------------------------------------------------------------
+        */
+        $admin = User::create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('12345678'),
             'phone' => '08123456789',
-        ])->assignRole('admin');
-        User::create([
+        ]);
+        $admin->assignRole('admin');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PEGAWAI
+        |--------------------------------------------------------------------------
+        */
+        $pegawai = User::create([
             'name' => 'Pegawai',
             'email' => 'pegawai@gmail.com',
             'password' => bcrypt('12345678'),
             'phone' => '08123456788',
-        ])->assignRole('pegawai');
-        User::create([
-            'name' => 'mitra1',
-            'email' => 'mitra1@gmail.com',
+        ]);
+        $pegawai->assignRole('pegawai');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | MITRA
+        |--------------------------------------------------------------------------
+        */
+        $mitraUser = User::create([
+            'name' => 'mitra',
+            'email' => 'mitra@gmail.com',
             'password' => bcrypt('12345678'),
             'phone' => '08123459998',
-            'mitra_id' => 1,
-        ])->assignRole('pegawai');
+        ]);
+
+        // Buat record mitra
+        $mitra = Mitra::create([
+            'user_id' => $mitraUser->id,
+            'nama_laundry' => 'Laundry Mitra',
+            'alamat_laundry' => 'Jl. Contoh No. 10',
+            'kecamatan_id' => '1',
+            'foto_ktp' => 'default-ktp.png',
+            'foto_toko' => null,
+            'status_toko' => 'buka',
+            'status_validasi' => 'diterima',
+            'jam_buka' => '08:00',
+            'jam_tutup' => '20:00',
+            'kecamatan_id' => '1',
+        ]);
+
+        $mitraUser->assignRole('mitra');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PELANGGAN
+        |--------------------------------------------------------------------------
+        */
+        $pelangganUser = User::create([
+            'name' => 'pelanggan',
+            'email' => 'pelanggan@gmail.com',
+            'password' => bcrypt('12345678'),
+            'phone' => '08123859998',
+        ]);
+
+        Pelanggan::create([
+            'user_id' => $pelangganUser->id,
+            'alamat' => 'Jl. Pelanggan No. 5',
+        ]);
+
+        $pelangganUser->assignRole('pelanggan');
     }
 }

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Pelanggan;
 use App\Http\Requests\StorePelangganRequest;
 use App\Http\Requests\UpdatePelangganRequest;
+use App\Models\Mitra;
+use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -175,4 +177,57 @@ class PelangganController extends Controller
         'message' => 'Data pelanggan berhasil dihapus'
     ]);
 }
+
+
+
+
+ public function listMitra()
+    {
+        return Mitra::select('id', 'nama_laundry', 'alamat_laundry', 'rating', 'harga_per_kilo')
+            ->where('status_validasi', 'diterima')
+            ->orderBy('nama_laundry')
+            ->get();
+    }
+
+     public function tambahOrder(Request $request)
+    {
+        $request->validate([
+            'mitra_id' => 'required|exists:mitra,id',
+            'berat' => 'required|numeric|min:1'
+        ]);
+
+        $mitra = Mitra::find($request->mitra_id);
+
+        $total = $request->berat * $mitra->harga_per_kilo;
+
+        $trx = Transaksi::create([
+            'user_id' => auth()->id(),
+            'mitra_id' => $mitra->id,
+            'berat' => $request->berat,
+            'total_harga' => $total,
+            'status' => 'menunggu_konfirmasi'
+        ]);
+
+        return response()->json([
+            'message' => 'Pesanan berhasil dibuat',
+            'data' => $trx
+        ], 201);
+    }
+
+    // List pesanan pelanggan
+    public function orderanSaya()
+    {
+        return Transaksi::with('mitra')
+            ->where('user_id', auth()->id())
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    // Detail pesanan
+    public function detail($id)
+    {
+        return Transaksi::with('mitra')
+            ->where('user_id', auth()->id())
+            ->findOrFail($id);
+    }
 }

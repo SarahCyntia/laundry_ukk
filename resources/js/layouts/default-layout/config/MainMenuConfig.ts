@@ -12,12 +12,23 @@ const MainMenuConfig: Array<MenuItem> = [
             },
         ],
     },
+
     {
         pages: [
             {
                 heading: "Dashboard",
                 name: "dashboard",
                 route: "/dashboard",
+                keenthemesIcon: "element-11",
+            },
+        ],
+    },
+    {
+        pages: [
+            {
+                heading: "Dashboard Mitra",
+                name: "dashboard-mitra",
+                route: "/dashboard-mitra",
                 keenthemesIcon: "element-11",
             },
         ],
@@ -105,18 +116,20 @@ const MainMenuConfig: Array<MenuItem> = [
                     },
                 ],
             },
+             {
+                heading: "Mitra",
+                route: "/mitra",
+                name: "mitra",
+                keenthemesIcon: "setting-2",
+            },
             {
                 heading: "Setting",
                 route: "/dashboard/setting",
                 name: "setting",
                 keenthemesIcon: "setting-2",
             },
-            {
-                heading: "Mitra",
-                route: "/mitra/mitra",
-                name: "mitra",
-                keenthemesIcon: "setting-2",
-            },
+          
+           
             // {
             //     heading: "Data Pelanggan",
             //     route: "/dashboard/data-pelanggan",
@@ -142,16 +155,16 @@ const MainMenuConfig: Array<MenuItem> = [
                 keenthemesIcon: "bi bi-truck",
             },
 
-            // {
-            //     heading: "Transaksi Layanan",
-            //     route: "/admin/transaksilayanan",
-            //     name: "transaksilayanan",
-            //     keenthemesIcon: "bi bi-truck",
-            // },
+            {
+                heading: "Kecamatan",
+                route: "/kecamatan",
+                name: "kecamatan",
+                keenthemesIcon: "bi bi-truck",
+            },
             {
                 heading: "Data Pelanggan",
-                route: "/admin/tambah-pelanggan",
-                name: "tambahpelanggan",
+                route: "/dashboard/data-pelanggan",
+                name: "datapelanggan",
                 keenthemesIcon: "bi bi-truck",
             },
             
@@ -159,56 +172,64 @@ const MainMenuConfig: Array<MenuItem> = [
         
     },
     {
-        heading: "Layanan",
-        route: "/layanan",
-        name: "layanan",
-        pages: [
-            
-            {
-                heading: "Jenis Item",
-                route: "/layanan/jenis-item",
-                name: "jenisitem",
-                keenthemesIcon: "bi bi-truck",
-            },
-            {
-                heading: "Jenis Layanan",
-                route: "/layanan/jenis-layanan",
-                name: "jenislayanan",
-                keenthemesIcon: "bi bi-truck",
-            },
-            {
-                heading: "Harga Jenis Layanan",
-                route: "/layanan/harga-jenis-layanan",
-                name: "hargajenislayanan",
-                keenthemesIcon: "bi bi-truck",
-            },
-            {
-                heading: "Layanan Prioritas",
-                route: "/layanan/layanan-prioritas",
-                name: "layananprioritas",
-                keenthemesIcon: "bi bi-truck",
-            },
-            {
-                heading: "Layanan Tambahan",
-                route: "/layanan/layanan-tambahan",
-                name: "layanantambahan",
-                keenthemesIcon: "bi bi-truck",
-            },
-            
-        ],
-    },
-    {
-        heading: "Transaksi",
+        heading: "Mitra",
         route: "/transaksi",
         name: "transaksi",
         pages: [
             
             {
-                heading: "Transaksi Layanan",
-                route: "/transaksi/transaksilayanan",
-                name: "transaksilayanan",
+               heading: "Profil",
+               route: "/mitra/profil",
+               name: "profil",
+               keenthemesIcon: "setting-2",
+           },
+            {
+                heading: "Transaksi",
+                route: "/mitra/transaksi",
+                name: "transaksi",
                 keenthemesIcon: "bi bi-truck",
             },
+            {
+                heading: "Layanan",
+                route: "/mitra/layanan",
+                name: "layanan",
+                keenthemesIcon: "bi bi-truck",
+            },
+             
+        ],
+        
+    },
+    {
+        heading: "Dashboard Mitra",
+        route: "/dashboard-mitra",
+        name: "dashboard-mitra",
+        pages: [
+            
+            {
+               heading: "Order Masuk",
+               route: "/dashboard-mitra/order-masuk",
+               name: "order-masuk",
+               keenthemesIcon: "setting-2",
+           },
+            {
+                heading: "Order Proses",
+                route: "/dashboard-mitra/order-proses",
+                name: "order-proses",
+                keenthemesIcon: "bi bi-truck",
+            },
+            {
+                heading: "Order Siap Diambil",
+                route: "/dashboard-mitra/order-siap-ambil",
+                name: "order-siap-ambil",
+                keenthemesIcon: "bi bi-truck",
+            },
+            {
+                heading: "Order Selesai",
+                route: "/dashboard-mitra/order-selesai",
+                name: "order-selesai",
+                keenthemesIcon: "bi bi-truck",
+            },
+             
         ],
         
     },

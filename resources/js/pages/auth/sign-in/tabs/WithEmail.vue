@@ -124,49 +124,63 @@ export default defineComponent({
     async submit() {
       console.log("Submit");
       blockBtn(this.submitButton);
-      try {
-        const res = await axios.post("/auth/login", {
-          ...this.data,
-        });
+        await axios.post("/auth/login", {
+          ...this.data, type: 'email'
+        }).then(res =>{
+          this.store.setAuth(res.data.user, res.data.token);
+          console.log("Res : ", res.data)
+          console.log()
+          const roleName =
+            typeof res.data.user.role === "string"
+              ? res.data.user.role
+              : res.data.user.role[0];
+  
+          console.log("Role:", roleName);
+          console.log("Role Type:", typeof roleName);
+  
+          if (roleName == "pelanggan") {
+            // ✅ Popup untuk pelanggan
+            Swal.fire({
+              title: "Selamat Datang 👋",
+              text: `Selamat datang di SLaundry, ${res.data.user.name || ""}!`,
+              icon: "success",
+              confirmButtonText: "OK",
+              allowOutsideClick: false,
+            });
+  
+            this.router.push("/beranda");
+          } else if (roleName == "admin") {
+            // ✅ Popup untuk admin
+            Swal.fire({
+              title: "Halo Admin 👋",
+              text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
+              icon: "info", // bisa diganti 'success' sesuai selera
+              confirmButtonText: "OK",
+              allowOutsideClick: false,
+            });
+  
+            this.router.push("/dashboard");
+          }
+          else if (roleName == "mitra") {
+            // ✅ Popup untuk admin
+            Swal.fire({
+              title: "Halo Admin 👋",
+              text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
+              icon: "info", // bisa diganti 'success' sesuai selera
+              confirmButtonText: "OK",
+              allowOutsideClick: false,
+            });
+  
+            this.router.push("/dashboard-mitra");
+          }else {
+            // ✅ Role lain langsung ke dashboard tanpa popup
+            this.router.push("/dashboard");
+          }
+        })
 
         // simpan user + token
-        this.store.setAuth(res.data.user, res.data.token);
 
         // normalisasi role
-        const roleName =
-          typeof res.data.user.role === "string"
-            ? res.data.user.role
-            : res.data.user.role?.name;
-
-        console.log("Role:", roleName);
-        console.log("Role Type:", typeof roleName);
-
-        if (roleName == "pelangan") {
-          // ✅ Popup untuk pelanggan
-          await Swal.fire({
-            title: "Selamat Datang 👋",
-            text: `Selamat datang di SLaundry, ${res.data.user.name || ""}!`,
-            icon: "success",
-            confirmButtonText: "OK",
-            allowOutsideClick: false,
-          });
-
-          this.router.push("/beranda");
-        } else if (roleName == "admin") {
-          // ✅ Popup untuk admin
-          await Swal.fire({
-            title: "Halo Admin 👋",
-            text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
-            icon: "info", // bisa diganti 'success' sesuai selera
-            confirmButtonText: "OK",
-            allowOutsideClick: false,
-          });
-
-          this.router.push("/dashboard");
-        } else {
-          // ✅ Role lain langsung ke dashboard tanpa popup
-          this.router.push("/dashboard");
-        }
 
         // if (roleName == "pelangan") {
         //     console.log("Pop")
@@ -185,11 +199,6 @@ export default defineComponent({
         // } else {
         //   this.router.push("/dashboard");
         // }
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || "Login gagal");
-      } finally {
-        unblockBtn(this.submitButton);
-      }
     },
 
     togglePassword(ev: any) {

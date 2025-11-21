@@ -16,6 +16,16 @@ export interface User {
         name: string;
         full_name: string;
     };
+    pelanggan?: Pelanggan;
+}
+
+export interface Pelanggan{
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    photo?: string;
+    alamat?: string;
 }
 
 export const useAuthStore = defineStore("auth", () => {
@@ -24,11 +34,16 @@ export const useAuthStore = defineStore("auth", () => {
     const isAuthenticated = ref(false);
 
     function setAuth(authUser: User, token = "") {
+        console.log("setAuth")
         isAuthenticated.value = true;
-        user.value = authUser;
+        user.value = {
+            ...authUser,
+            pelanggan: authUser.pelanggan,
+        }
         error.value = null;
 
         if (token) {
+            console.log("Has Token")
             JwtService.saveToken(token);
         }
     }

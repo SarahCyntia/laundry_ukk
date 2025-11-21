@@ -11,8 +11,6 @@
   </div>
 </template>
 
-
-
 <script setup lang="ts">
 import axios from "axios";
 import { onMounted, onUnmounted } from "vue";
@@ -32,6 +30,7 @@ onMounted(() => {
 
   intervalId = setInterval(async () => {
     try {
+      // gunakan userId di URL, bukan id
       const res = await axios.get(`/cek-status-mitra/${userId}`);
       const status = res.data.status_validasi;
 
@@ -60,6 +59,12 @@ onMounted(() => {
       }
     } catch (err) {
       console.error("Gagal cek status mitra:", err);
+      clearInterval(intervalId!);
+      Swal.fire({
+        icon: "error",
+        title: "Terjadi Kesalahan",
+        text: "Gagal memeriksa status akun. Silakan coba lagi.",
+      });
     }
   }, 5000); // cek setiap 5 detik
 });
@@ -68,6 +73,7 @@ onUnmounted(() => {
   if (intervalId) clearInterval(intervalId);
 });
 </script>
+
 
 
 

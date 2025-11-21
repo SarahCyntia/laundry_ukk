@@ -25,7 +25,7 @@
 
     <hr class="my-5" />
 
-    <!-- Data Akun Umum -->
+    <!-- Data Akun Umum -->   
     <div class="fv-row mb-7">
       <label class="form-label fw-bold text-dark fs-6">Nama</label>
       <Field
@@ -143,36 +143,76 @@
     </div> -->
   </div>
 
-        <!-- Status Toko & Validasi -->
-        <!-- <div class="row">
-          <div class="col-md-6 mb-7">
-            <label class="form-label fw-bold text-dark fs-6">Status Toko</label>
-            <select
-              class="form-select form-select-lg form-select-solid"
-              v-model="formData.status_toko"
-            >
-              <option value="buka">Buka</option>
-              <option value="tutup">Tutup</option>
-            </select>
-          </div>
-          <div class="col-md-6 mb-7">
-            <label class="form-label fw-bold text-dark fs-6">Status Validasi</label>
-            <select
-              class="form-select form-select-lg form-select-solid"
-              v-model="formData.status_validasi"
-            >
-              <option value="menunggu">Menunggu</option>
-              <option value="disetujui">Disetujui</option>
-              <option value="ditolak">Ditolak</option>
-            </select>
-          </div>
-        </div> -->
       </div>
     </Transition>
   </section>
 </template>
-
 <script lang="ts">
+import { defineComponent, ref, watch } from "vue";
+import { Field, ErrorMessage } from "vee-validate";
+
+export default defineComponent({
+  name: "Credential",
+  components: { Field, ErrorMessage },
+
+  props: {
+    formData: {
+      type: Object,
+      required: true,
+    },
+  },
+
+  setup(props) {
+    const previewUrl = ref<string | null>(null);
+    const errorMessage = ref<string | null>(null);
+
+    const resetMitraFields = () => {
+      props.formData.nama_laundry = "";
+      props.formData.alamat_laundry = "";
+      props.formData.foto_ktp = null;
+      previewUrl.value = null;
+    };
+
+    watch(
+      () => props.formData.role,
+      (newRole) => {
+        if (newRole === "pelanggan") resetMitraFields();
+      }
+    );
+
+    const handleFileUpload = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files ? target.files[0] : null;
+
+      if (!file) return;
+
+      const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+      if (!allowedTypes.includes(file.type)) {
+        errorMessage.value = "Format file harus JPG atau PNG.";
+        props.formData.foto_ktp = null;
+        previewUrl.value = null;
+        return;
+      }
+
+      const maxSize = 2 * 1024 * 1024; // 2MB
+      if (file.size > maxSize) {
+        errorMessage.value = "Ukuran file maksimal 2MB.";
+        props.formData.foto_ktp = null;
+        previewUrl.value = null;
+        return;
+      }
+
+      props.formData.foto_ktp = file;
+      errorMessage.value = null;
+      previewUrl.value = URL.createObjectURL(file);
+    };
+
+    return { handleFileUpload, previewUrl, errorMessage };
+  },
+});
+</script>
+
+<!-- <script lang="ts">
 import { defineComponent, ref } from "vue";
 import { Field, ErrorMessage } from "vee-validate";
 
@@ -222,7 +262,7 @@ export default defineComponent({
   },
 });
 </script>
-
+ -->
 
 <style scoped>
 .fade-enter-active,
