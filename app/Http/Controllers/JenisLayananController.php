@@ -16,13 +16,16 @@ class JenisLayananController extends Controller
     $page = $request->page ? $request->page - 1 : 0;
 
     $mitra_id = Auth::user()->mitra->id;
+    
 
     DB::statement('SET @no = 0 + ' . ($page * $per));
 
     $data = JenisLayanan::where('mitra_id', $mitra_id)
         ->when($request->search, function ($query, $search) {
             $query->where('nama_layanan', 'like', "%$search%")
-                  ->orWhere('deskripsi', 'like', "%$search%");
+                  ->orWhere('deskripsi', 'like', "%$search%")
+                  ->orWhere('satuan', 'like', "%$search%")
+                  ->orWhere('harga', 'like', "%$search%");
         })
         ->latest()
         ->paginate(
@@ -50,7 +53,8 @@ class JenisLayananController extends Controller
         ]);
 
         $layanan = JenisLayanan::create([
-            'mitra_id' => $mitra->id,
+            // 'mitra_id' => $mitra->id,
+            'mitra_id'      => auth()->user()->mitra->id,
             'nama_layanan' => $request->nama_layanan,
             'deskripsi' => $request->deskripsi,
             'satuan' => $request->satuan,
@@ -114,4 +118,40 @@ class JenisLayananController extends Controller
 
         return response()->json(['message' => 'Layanan berhasil dihapus']);
     }
+
+
+
+
+    public function showi($id)
+{
+    // Ambil layanan berdasarkan ID (tidak peduli mitranya siapa)
+    $layanan = JenisLayanan::find($id);
+
+    if (!$layanan) {
+        return response()->json(['message' => 'Layanan tidak ditemukan'], 404);
+    }
+
+    return response()->json([
+        'id' => $layanan->id,
+        'nama_layanan' => $layanan->nama_layanan,
+        'satuan' => $layanan->satuan,
+        'harga' => $layanan->harga,
+        'harga_per_kg' => $layanan->harga, // biar cocok dengan frontend
+    ]);
+}
+
+
+public function list(Request $request)
+{
+    $data = JenisLayanan::query();
+
+    // contoh filter jika ada
+    if ($request->search) {
+        $data->where('nama', 'like', "%{$request->search}%");
+    }
+
+    return response()->json($data->get());
+}
+
+
 }

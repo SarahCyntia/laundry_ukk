@@ -120,7 +120,8 @@ watch(openForm, (val) => {
       <paginate
         ref="paginateRef"
         id="table-jenis-layanan"
-        url="/jenis-layanan"    
+        url="/jenis-layanan"  
+        method="post"  
         :columns="columns"
       />
     </div>

@@ -34,10 +34,10 @@
       <p>Memuat riwayat transaksi...</p>
     </div>
 
-    <!-- Orders List -->
-    <div v-else-if="filteredOrders.length" class="order-list">
+    <!-- Order List -->
+    <div v-else-if="filteredOrder.length" class="order-list">
       <div 
-        v-for="order in filteredOrders" 
+        v-for="order in filteredOrder" 
         :key="order.id"
         class="order-card"
         @click="viewOrderDetail(order)"
@@ -138,7 +138,7 @@ const filterStatus = [
 ];
 
 // Computed
-const filteredOrders = computed(() => {
+const filteredOrder = computed(() => {
   if (activeFilter.value === 'semua') {
     return order.value;
   }
@@ -250,13 +250,13 @@ async function viewOrderDetail(order: any) {
   });
 }
 
-async function fetchOrders() {
+async function fetchOrder() {
   loading.value = true;
   try {
     // Sesuaikan endpoint dengan backend Anda
     const response = await axios.get('/order/pelanggan');
     order.value = response.data.data || response.data;
-    console.log('Orders:', order.value);
+    console.log('Order:', order.value);
   } catch (error) {
     console.error('Error fetching order:', error);
     Swal.fire({
@@ -279,7 +279,7 @@ const goCari = () => {
 
 // Lifecycle
 onMounted(() => {
-  fetchOrders();
+  fetchOrder();
 });
 </script>
 
@@ -403,7 +403,7 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Orders List */
+/* Order List */
 .order-list {
   display: flex;
   flex-direction: column;

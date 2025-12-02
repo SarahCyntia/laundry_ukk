@@ -11,12 +11,6 @@ import DashboardLayout from "@/pages/dashboard/app.vue";
 import "nprogress/nprogress.css";
 
 
-import PelangganIndex from '@/pages/pelanggan/index.vue'
-import PelangganAntar from '@/pages/pelanggan/antar.vue'
-import PelangganJemput from '@/pages/pelanggan/jemput.vue'
-import PelangganRiwayat from '@/pages/pelanggan/riwayat.vue'
-
-
 
 declare module "vue-router" {
   interface RouteMeta {
@@ -74,8 +68,8 @@ const routes: Array<RouteRecordRaw> = [
 
   },
   {
-    path: '/profil-pelanggan/:id',
-    name: 'profil-pelanggan',
+    path: '/pelanggan/profil-pelanggan/:id',
+    name: 'pelanggan.profil-pelanggan',
     component: () => import('@/pages/pelanggan/profil-pelanggan.vue'),
 
   },
@@ -112,19 +106,6 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/pages/pelanggan/riwayat.vue"),
 
   },
-  {
-    path: "/pelanggan/antar",
-    name: "antar",
-    component: () => import("@/pages/pelanggan/antar.vue"),
-
-  },
-  {
-    path: "/pelanggan/jemput",
-    name: "jemput",
-    component: () => import("@/pages/pelanggan/jemput.vue"),
-
-  },
-
 
 
 

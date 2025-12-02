@@ -70,7 +70,7 @@ class MitraController extends Controller
         }
 
         $mitra = Mitra::create($validatedData);
-        $mitra->load('user'); // load relasi user
+        $mitra->load('user', 'kecamatan'); // load relasi user
 
         return response()->json([
             'success' => true,
@@ -117,7 +117,7 @@ class MitraController extends Controller
     // }
     public function show($id)
 {
-    $mitra = Mitra::with('user')->findOrFail($id);
+    $mitra = Mitra::with('user', 'kecamatan')->findOrFail($id);
 
     return response()->json([
         "success" => true,

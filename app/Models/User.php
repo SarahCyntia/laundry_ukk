@@ -96,14 +96,25 @@ class User extends Authenticatable implements JWTSubject
         return $this->getAllPermissions()->pluck('name');
     }
 
+    // public function pelanggan()
+    // {
+    //     return $this->hasOne(Pelanggan::class);
+    // }
+
     public function pelanggan()
-    {
-        return $this->hasOne(Pelanggan::class);
-    }
+{
+    return $this->hasOne(Pelanggan::class, 'user_id');
+}
+
     public function mitra()
-    {
-        return $this->hasOne(Mitra::class);
-    }
+{
+    return $this->hasOne(Mitra::class, 'user_id');
+}
+public function transaksis()
+{
+    return $this->hasMany(Transaksi::class, 'user_id', 'id');
+}
+
 
 
 }

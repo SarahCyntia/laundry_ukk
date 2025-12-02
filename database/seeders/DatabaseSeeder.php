@@ -18,11 +18,11 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             PermissionSeeder::class,
             // MitraSeeder::class,
+            KecamatanSeeder::class,
             UserSeeder::class,
             SettingSeeder::class,
             JenisLayananSeeder::class,
-            KecamatanSeeder::class,
-            // OrderSeeder::class,
+            OrderSeeder::class,
         ]);
     }
 }

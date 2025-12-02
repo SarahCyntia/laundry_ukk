@@ -10,6 +10,8 @@
         🚪 Logout
       </button>
 
+
+
       <div class="icon">🏠</div>
       <h1>Selamat Datang di Beranda</h1>
       <p class="subtitle">Platform Laundry Terpercaya di Indonesia</p>
@@ -20,6 +22,26 @@
           Daftar Jadi Mitra
         </button>
       </div>
+
+
+
+
+    <div v-if="isLoggedIn">
+  <button class="btn-profile" @click="goToProfile">
+    <span class="profile-icon">👤</span>
+    <span class="profile-name">
+      {{ userProfile?.nama || "Profil Pelanggan" }}
+    </span>
+  </button>
+</div>
+
+
+
+
+
+
+
+
     </div>
 
     <!-- Layanan untuk Pengguna -->
@@ -76,7 +98,7 @@
               </div>
 
               <!-- Action Button -->
-             <!-- <router-link
+              <!-- <router-link
   :to="m.status_toko === 'buka' ? { name: 'DetailLaundry', params: { id: m.id } } : null"
   @click="Logging"
   class="btn-order"
@@ -86,11 +108,7 @@
 </router-link> -->
 
 
-              <button 
-                class="btn-order" 
-                @click="goToLaundry(m.id)"
-                :disabled="m.status_toko !== 'buka'"
-              >
+              <button class="btn-order" @click="goToLaundry(m.id)" :disabled="m.status_toko !== 'buka'">
                 {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Sedang Tutup' }}
               </button>
             </div>
@@ -167,6 +185,11 @@ function goToLaundry(id: number) {
   router.push({ name: "DetailLaundry", params: { id: id } });
 }
 
+function goToProfile(id: number) {
+  console.log("id", id)
+  router.push({ name: "pelanggan.profil-pelanggan", params: { id: id } });
+}
+
 // function goToLaundry(id: number) {
 //   // Arahkan ke LaundryDetail.vue dengan mengirim ID mitra
 //   router.push({
@@ -225,6 +248,9 @@ const confirmMitra = () => {
   });
 };
 
+
+
+
 // Lifecycle
 onMounted(async () => {
   loading.value = true;
@@ -246,13 +272,41 @@ onMounted(async () => {
 </script>
 
 <style>
+
+
+
+
+.btn-profile {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-profile:hover {
+  background: #f5f5f5;
+}
+
+
+
+
+
+
+
+
+
+
 html {
   scroll-behavior: smooth;
 }
 </style>
 
 <style scoped>
-
 .disabled {
   pointer-events: none;
   opacity: 0.5;

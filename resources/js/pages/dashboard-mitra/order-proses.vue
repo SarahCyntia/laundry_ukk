@@ -2,13 +2,13 @@
   <div class="order-proses">
     <h2>Order Sedang Diproses</h2>
 
-    <!-- Jika tidak ada order -->
-    <div v-if="order.length === 0" class="empty">
+    <!-- Jika tidak ada order yang sesuai -->
+    <div v-if="filteredOrder.length === 0" class="empty">
       Tidak ada order dalam proses.
     </div>
 
     <!-- List order -->
-    <div class="card" v-for="o in order" :key="o.id">
+    <div class="card" v-for="o in filteredOrder" :key="o.id">
       <div class="row">
         <div>
           <h3>{{ o.kode_order }}</h3>
@@ -32,20 +32,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import ApiService from "@/core/services/ApiService";
-import { toast } from "vue3-toastify";
+import { ref, onMounted, computed } from "vue";
 import axios from "axios";
+import { toast } from "vue3-toastify";
 
 const order = ref([]);
 
-// Fetch order dalam proses
+// Status yang boleh tampil
+const allowedStatus = ["diproses", "dicuci", "dikeringkan", "disetrika"];
+
+// Data yang sudah difilter
+const filteredOrder = computed(() => {
+  return order.value.filter(o => allowedStatus.includes(o.status));
+});
+
+// Ambil data order
 const loadOrders = async () => {
-  const res = await axios.get("/order/proses");
-  order.value = res.data;
+  try {
+    const res = await axios.get("/order/proses");
+    order.value = res.data;
+  } catch (err) {
+    toast.error("Gagal mengambil data order!");
+  }
 };
 
-// Update status 1 level
+// Update status
 const updateStatus = async (id) => {
   try {
     await axios.post(`/mitra/order/${id}/update-status`);
@@ -62,6 +73,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.order-proses {
+  padding: 15px;
+}
+
 .card {
   background: white;
   padding: 15px;

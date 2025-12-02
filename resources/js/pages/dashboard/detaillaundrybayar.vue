@@ -129,13 +129,18 @@
             </small>
           </div>
 
-          <button 
+<button class="submit-button" @click="openPaymentModal">
+  Buat Pesanan
+</button>
+
+
+          <!-- <button 
             class="btn-order" 
             @click="submitOrder"
             :disabled="!canSubmit"
           >
             Buat Pesanan
-          </button>
+          </button> -->
         </div>
       </div>
 
@@ -197,10 +202,45 @@
       </button>
     </div>
   </div>
+
+
+
+<div v-if="showPaymentModal" class="payment-modal">
+  <div class="payment-box">
+    <h3>Pilih Metode Pembayaran</h3>
+
+    <label class="payment-option">
+      <input type="radio" value="manual" v-model="selectedPayment" />
+      Transfer Manual
+    </label>
+
+    <label class="payment-option">
+      <input type="radio" value="cod" v-model="selectedPayment" />
+      Bayar di Tempat
+    </label>
+
+    <label class="payment-option">
+      <input type="radio" value="midtrans" v-model="selectedPayment" />
+      Midtrans (QRIS/VA)
+    </label>
+
+    <button class="submit-button" @click="submitForm">
+      Lanjutkan
+    </button>
+  </div>
+</div>
+
+
+
+
+
+
+
+
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from "@/libs/axios";
 import Swal from 'sweetalert2';
@@ -211,8 +251,25 @@ const route = useRoute();
 const authStore = useAuthStore();
 
 
+
+const openPaymentModal = () => {
+  showPaymentModal.value = true;
+};
+
+
+
+
+
+
 const props = defineProps<{ id: string }>();
 console.log(props.id)
+
+
+watch(() => authStore.user, (val) => {
+  if (val && val.pelanggan) {
+    noTelepon.value = val.pelanggan.no_telepon;
+  }
+});
 
 
 onMounted(() => {
@@ -230,8 +287,12 @@ const loading = ref(false);
 const selectedLayanan = ref(null);
 const beratEstimasi = ref(1);
 const namaPemesan = ref('');
-const noTelepon = ref('');
+// const noTelepon = ref('');
+const noTelepon = ref(authStore.user?.pelanggan?.no_telepon || "");
 const catatan = ref('');
+const showPaymentModal = ref(false);
+const selectedPayment = ref(null);
+
 
 // Computed
 const canSubmit = computed(() => {
@@ -239,8 +300,6 @@ const canSubmit = computed(() => {
          beratEstimasi.value > 0 && 
          noTelepon.value.trim() !== '';
 });
-
-
 
 
 

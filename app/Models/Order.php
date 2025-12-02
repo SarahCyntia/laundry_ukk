@@ -30,7 +30,10 @@ protected $table = 'order';
     protected $casts = [
         'waktu_pelanggan_antar' => 'datetime',
         'waktu_diambil' => 'datetime',
+        'berat_estimasi' => 'decimal:2',
+        'berat_actual' => 'decimal:2',
     ];
+
 
     /* ================================
        RELASI
@@ -45,11 +48,11 @@ protected $table = 'order';
     // Order dimiliki oleh 1 mitra (laundry)
     public function mitra()
     {
-        return $this->belongsTo(Mitra::class);
+        return $this->belongsTo( Mitra::class, 'mitra_id');
     }
     public function pelanggan()
 {
-    return $this->belongsTo(User::class, 'pelanggan_id');
+    return $this->belongsTo( Pelanggan::class, 'pelanggan_id');
 }
 
 
@@ -57,5 +60,12 @@ public function jenis_layanan()
 {
     return $this->belongsTo(JenisLayanan::class, 'jenis_layanan_id');
 }
+
+
+
+  public function transaksi()
+    {
+        return $this->hasOne(Transaksi::class);
+    }
 
 }

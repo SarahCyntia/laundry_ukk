@@ -3,114 +3,127 @@
 namespace App\Http\Controllers;
 
 use App\Models\Transaksi;
+use App\Models\TransaksiTracking;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
-class TransaksilamaController extends Controller
+class TransaksiController extends Controller
 {
     /**
-     * 🔹 Menampilkan semua transaksi milik mitra yang login
+     * Get all transactions
      */
-    public function index(Request $request)
+    public function index()
+    {
+        $data = Transaksi::with(['pelanggan', 'mitra', 'jenis_layanan'])
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json($data);
+    }
+
+    public function getUserTransaksi()
 {
-    $mitraId = $request->user()->mitra_id;
+    $userId = auth()->id();
 
-    $transaksi = Transaksi::with([
-        'dataPelanggan:id,nama_pelanggan,no_hp,alamat', // ambil data pelanggan
-        'pegawai:id,nama_pegawai',                     // ambil data pegawai
-        'layananPrioritas:id,nama_prioritas,biaya',    // ambil layanan prioritas
-        'detailTransaksi.jenisItem:id,nama_item',      // ambil item seperti baju, selimut
-        'detailTransaksi.jenisLayanan:id,nama_layanan' // ambil jenis layanan: cuci, setrika, dll
-    ])
-    ->where('mitra_id', $mitraId)
-    ->orderByDesc('created_at')
-    ->get();
+    $transaksi = Transaksi::with('mitra', 'pelanggan')
+        ->where('user_id', $userId)
+        ->orderBy('created_at', 'DESC')
+        ->get();
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Daftar transaksi berhasil diambil',
-        'data' => $transaksi
-    ]);
+    return response()->json($transaksi);
 }
 
+
     /**
-     * 🔹 Menyimpan transaksi baru untuk mitra yang login
+     * Store new transaction
      */
     public function store(Request $request)
     {
-        $mitraId = $request->user()->mitra_id;
-
-        $validated = $request->validate([
-            'layanan_prioritas_id' => 'required|exists:layanan_prioritas,id',
-            'pelanggan_id' => 'required|exists:data_pelanggan,id',
-            'pegawai_id' => 'required|exists:pegawai_laundry,id',
-            'total_biaya_layanan' => 'required|numeric',
-            'total_biaya_prioritas' => 'required|numeric',
-            'total_biaya_layanan_tambahan' => 'required|numeric',
-            'total_bayar_akhir' => 'required|numeric',
-            'jenis_pembayaran' => 'required|string',
-            'bayar' => 'required|numeric',
-            'kembalian' => 'required|numeric',
-            'status' => 'required|string',
+        $request->validate([
+            'pelanggan_id' => 'required',
+            'mitra_id' => 'required',
+            'jenis_layanan_id' => 'required',
+            'berat' => 'required|numeric',
+            'harga' => 'required|numeric',
+            'biaya_kurir' => 'required|numeric',
+            'total_harga' => 'required|numeric',
+            'alamat_jemput' => 'required',
+            'alamat_antar' => 'required',
         ]);
 
         $transaksi = Transaksi::create([
-            'id' => Str::uuid(),
-            'nota_layanan' => 'LDR-' . strtoupper(Str::random(6)),
-            'nota_pelanggan' => 'PEL-' . strtoupper(Str::random(6)),
-            'waktu' => now(),
-            'mitra_id' => $mitraId,
-            ...$validated
+            'pelanggan_id' => $request->pelanggan_id,
+            'mitra_id' => $request->mitra_id,
+            'kurir_id' => $request->kurir_id ?? null,
+            'jenis_layanan_id' => $request->jenis_layanan_id,
+            'berat' => $request->berat,
+            'harga' => $request->harga,
+            'biaya_kurir' => $request->biaya_kurir,
+            'total_harga' => $request->total_harga,
+            'status' => 'menunggu jemput',
+            'catatan' => $request->catatan,
+            'alamat_jemput' => $request->alamat_jemput,
+            'alamat_antar' => $request->alamat_antar,
+            'tanggal_jemput' => $request->tanggal_jemput,
+        ]);
+
+        // auto tracking
+        TransaksiTracking::create([
+            'transaksi_id' => $transaksi->id,
+            'status' => 'menunggu jemput',
+            'keterangan' => 'Pesanan dibuat & menunggu kurir menjemput'
         ]);
 
         return response()->json([
-            'message' => 'Transaksi berhasil disimpan',
+            'message' => 'Transaksi berhasil dibuat',
             'data' => $transaksi
         ]);
     }
 
     /**
-     * 🔹 Menampilkan detail transaksi tertentu
+     * Show transaction detail
      */
-    public function show($id, Request $request)
+    public function show($id)
     {
-        $mitraId = $request->user()->mitra_id;
+        $data = Transaksi::with(['pelanggan', 'mitra', 'kurir', 'layanan', 'tracking'])
+            ->findOrFail($id);
 
-        $transaksi = Transaksi::where('mitra_id', $mitraId)
-            ->where('id', $id)
-            ->with(['dataPelanggan', 'pegawai', 'layananPrioritas'])
-            ->firstOrFail();
-
-        return response()->json($transaksi);
+        return response()->json($data);
     }
 
     /**
-     * 🔹 Update status atau data transaksi
+     * Update transaction (pilih kurir / update status / update data)
      */
     public function update(Request $request, $id)
     {
-        $mitraId = $request->user()->mitra_id;
-
-        $transaksi = Transaksi::where('mitra_id', $mitraId)->findOrFail($id);
+        $transaksi = Transaksi::findOrFail($id);
 
         $transaksi->update($request->all());
 
+        // Jika status berubah → tambah tracking otomatis
+        if ($request->has('status')) {
+            TransaksiTracking::create([
+                'transaksi_id' => $transaksi->id,
+                'status' => $request->status,
+                'keterangan' => $request->keterangan ?? 'Status diperbarui'
+            ]);
+        }
+
         return response()->json([
-            'message' => 'Transaksi berhasil diperbarui',
+            'message' => 'Transaksi berhasil diupdate',
             'data' => $transaksi
         ]);
     }
 
     /**
-     * 🔹 Hapus transaksi
+     * Delete transaction
      */
-    public function destroy(Request $request, $id)
+    public function destroy($id)
     {
-        $mitraId = $request->user()->mitra_id;
-
-        $transaksi = Transaksi::where('mitra_id', $mitraId)->findOrFail($id);
+        $transaksi = Transaksi::findOrFail($id);
         $transaksi->delete();
 
-        return response()->json(['message' => 'Transaksi berhasil dihapus']);
+        return response()->json([
+            'message' => 'Transaksi berhasil dihapus'
+        ]);
     }
 }

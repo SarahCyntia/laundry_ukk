@@ -65,7 +65,7 @@ function submit() {
     method: props.selected ? "put" : "post",
     url: props.selected
       ? `/jenis-layanan/${props.selected}`
-      : "/jenis-layanan",
+      : "/jenis-layanan/store",
     data: payload,
   })
     .then(() => {

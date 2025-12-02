@@ -28,12 +28,14 @@ use App\Http\Controllers\MitraDashboardController;
 use App\Http\Controllers\MitraOrderController;
 use App\Http\Controllers\MitraPendaftaranController;
 use App\Http\Controllers\MitraTransaksiController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PelangganTransaksiController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\TransaksiController;
 use App\Http\Controllers\TransaksiLayananController;
 use App\Http\Controllers\WilayahController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\MidtransWebhookController; // if separate
 
 /*
 |--------------------------------------------------------------------------
@@ -124,7 +126,7 @@ Route::prefix('setting')->group(function () {
 // Route::middleware('auth')->group(function () {
 
 // List semua layanan milik mitra
-Route::get('/jenis-layanan', [JenisLayananController::class, 'get']);
+// Route::get('/jenis-layanan', [JenisLayananController::class, 'get']);
 Route::post('/jenis-layanan', [JenisLayananController::class, 'index']);
 
 // Simpan layanan baru
@@ -132,6 +134,7 @@ Route::post('/jenis-layanan/store', [JenisLayananController::class, 'store']);
 
 // Tampilkan 1 layanan
 Route::get('/jenis-layanan/{id}', [JenisLayananController::class, 'show']);
+Route::get('/layanan/{id}', [JenisLayananController::class, 'showi']);
 
 // Update layanan
 Route::put('/jenis-layanan/{id}', [JenisLayananController::class, 'update']);
@@ -139,6 +142,7 @@ Route::put('/jenis-layanan/{id}', [JenisLayananController::class, 'update']);
 // Hapus layanan
 Route::delete('/jenis-layanan/{id}', [JenisLayananController::class, 'destroy']);
 // });
+Route::post('/jenis-layanan/list', [JenisLayananController::class, 'list']);
 
 
 
@@ -174,17 +178,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::post('/update-status', [DashboardController::class, 'updateStatus']);
 
 
- 
-    Route::middleware('can:pelanggan')->group(function () {
-        Route::get('pelanggan', [PelangganController::class, 'get']);
-        Route::post('pelanggan', [PelangganController::class, 'index'])->withoutMiddleware('can:pelanggan');
-        Route::post('pelanggan/store', [PelangganController::class, 'store']);
-        // Route::apiResource('pelanggan', PelangganController::class)
-        //     ->except(['index', 'store']);
-        // Route::get('pelanggan', [PelangganController::class, 'show']);
-        // Route::put('pelanggan', [PelangganController::class, 'update']);
-        // Route::delete('pelanggan', [PelangganController::class, 'destroy']);
-    });
+
 
 
 
@@ -212,30 +206,6 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
 
 
-
-    Route::put('/transaksi/{id}/status', function (Request $request, $id) {
-        $request->validate([
-            'status' => 'required|string'
-        ]);
-
-        $transaksi = \App\Models\Transaksi::findOrFail($id);
-        $transaksi->update(['status' => $request->status]);
-
-        // Auto tracking
-        \App\Models\TransaksiTracking::create([
-            'transaksi_id' => $id,
-            'status' => $request->status,
-            'keterangan' => $request->keterangan ?? 'Status diperbarui'
-        ]);
-
-        return response()->json(['message' => 'Status updated']);
-    });
-   
-    Route::get('/transaksi/{id}/tracking', function ($id) {
-        return \App\Models\TransaksiTracking::where('transaksi_id', $id)
-            ->orderBy('id', 'asc')
-            ->get();
-    });
 
 
 
@@ -267,21 +237,35 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 //     Route::get('/admin/dashboard', [AdminController::class, 'index']);
 // });
 
-    Route::get('/transaksi', [MitraTransaksiController::class, 'index']);
-    Route::put('/transaksi/{id}/status', [MitraTransaksiController::class, 'updateStatus']);
-    Route::get('/transaksi/{id}/print-resi', [MitraTransaksiController::class, 'printResi']);
-    Route::get('/transaksi/{id}', [MitraTransaksiController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/payment/create', [PaymentController::class, 'create']);
+    Route::get('/payment/token/{id}', [PaymentController::class, 'token']);
+    Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
+    // transaksi management
+    Route::get('/transaksi', [TransaksiController::class, 'index']);
+    Route::get('/transaksi/{id}', [TransaksiController::class, 'show']);
+    Route::get('/transaksi/{id}/download', [TransaksiController::class, 'downloadPdf']);
+});
+
+// webhook midtrans (public)
+Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
 
 
+    // Route::get('/transaksi', [MitraTransaksiController::class, 'index']);
+    // Route::put('/transaksi/{id}/status', [MitraTransaksiController::class, 'updateStatus']);
+    // Route::get('/transaksi/{id}/print-resi', [MitraTransaksiController::class, 'printResi']);
+    // Route::get('/transaksi/{id}', [MitraTransaksiController::class, 'show']);
 
 
-    // Transaksi khusus Pelanggan
-    Route::middleware(['auth:sanctum', 'role:pelanggan'])->prefix('pelanggan')->group(function () {
-        Route::get('/transaksi', [PelangganTransaksiController::class, 'index']); // daftar transaksi pelanggan
-        Route::get('/transaksi/{id}/print-resi', [PelangganTransaksiController::class, 'printResi']); // print resi
-        Route::get('/transaksi/{id}', [PelangganTransaksiController::class, 'show']); // detail transaksi
-    });
+
+    // // Transaksi khusus Pelanggan
+    // Route::middleware(['auth:sanctum', 'role:pelanggan'])->prefix('pelanggan')->group(function () {
+    //     Route::get('/transaksi', [PelangganTransaksiController::class, 'index']); // daftar transaksi pelanggan
+    //     Route::get('/transaksi/{id}/print-resi', [PelangganTransaksiController::class, 'printResi']); // print resi
+    //     Route::get('/transaksi/{id}', [PelangganTransaksiController::class, 'show']); // detail transaksi
+    // });
 
 
 
@@ -290,13 +274,13 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     // Route::prefix('mitra')->middleware('auth:sanctum')->group(function () {
 
     // Order Masuk
-    Route::post('/order-masuk', [MitraOrderController::class, 'orderMasuk']);
+    Route::post('/order-masuk', [OrderController::class, 'index']);
     Route::post('/order/{id}/accept', [MitraOrderController::class, 'accept']);
     Route::post('/order/{id}/reject', [MitraOrderController::class, 'reject']);
-// Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
+    // Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
 
     // Order Diproses
-    Route::get('/order/proses', [MitraOrderController::class, 'orderDiproses']);
+    Route::get('/order/proses', [MitraOrderController::class, 'index']);
     Route::post('/order/{id}/update-status', [MitraOrderController::class, 'updateStatus']);
     Route::get('/order/siap-diambil', [MitraOrderController::class, 'orderSiapDiambil']);
     Route::post('/order/{id}/selesai', [MitraOrderController::class, 'TandaiSebagaiSelesai']);
@@ -304,15 +288,22 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::get('/order/selesai', [MitraOrderController::class, 'orderSelesai']);
     // Summary Dashboard
     Route::get('/summary', [MitraDashboardController::class, 'summary']);
-    Route::get('/mitra/notif-order', [MitraOrderController::class, 'notifOrderBaru']);
+    Route::get('/mitra/notif-order', [MitraOrderController::class, 'notifOrderBaru'])->withoutMiddleware('can:mitra');
     Route::post('/mitra/pelanggan-datang', [MitraOrderController::class, 'pelangganDatang']);
 
-//    Route::post('order', [OrderController::class, 'store']);
-Route::post('order', [OrderController::class, 'index']);
-// Route::post('order', [OrderController::class, 'show']);
- Route::get('/order/pelanggan', [OrderController::class, 'getOrderPelanggan']);
-    Route::post('/order', [OrderController::class, 'store']);
-// Route::patch('order/{order}/status', [OrderController::class, 'updateStatus']);
+    //    Route::post('order', [OrderController::class, 'store']);
+    Route::post('order', [OrderController::class, 'index']);
+    // Route::post('order', [OrderController::class, 'show']);
+    Route::get('/order/pelanggan', [OrderController::class, 'getOrderPelanggan']);
+    Route::post('/order/store', [OrderController::class, 'store']);
+
+
+    Route::put('/order/{id}', [OrderController::class, 'update']);
+    Route::get('/order/{id}', [OrderController::class, 'show']);
+    Route::post('/order/{id}/konfirmasi', [OrderController::class, 'konfirmasi']);
+    Route::post('/order/{id}/tolak', [OrderController::class, 'tolak']);
+
+    // Route::patch('order/{order}/status', [OrderController::class, 'updateStatus']);
 // Route::get('order/{id}/accept', [OrderController::class, 'accept']);
 // Route::put('order/{id}/reject', [OrderController::class, 'reject']);
 
@@ -323,7 +314,36 @@ Route::post('order', [OrderController::class, 'index']);
 
     Route::post('/pelanggan/order', [PelangganController::class, 'tambahOrder']);
     Route::get('/pelanggan/order', [PelangganController::class, 'orderanSaya']);
+
+
+    Route::prefix('pelanggan')->group(function () {
+        Route::get('/status', [PelangganController::class, 'orderStatus']);
+    });
+
     Route::get('/pelanggan/order/{id}', [PelangganController::class, 'detail']);
+    Route::get('pelanggan', [PelangganController::class, 'get']);
+    Route::post('pelanggan', [PelangganController::class, 'index'])->withoutMiddleware('can:pelanggan');
+    Route::post('pelanggan/store', [PelangganController::class, 'store']);
+    Route::post('pelanggan/show', [PelangganController::class, 'show']);
+
+
+    Route::get('/pelanggan/profile', [PelangganController::class, 'profile']);
+    Route::put('/pelanggan/{id}', [PelangganController::class, 'updateProfile']);
+    Route::post('/pelanggan/{id}/upload-photo', [PelangganController::class, 'uploadPhoto']);
+
+    // Password
+    Route::post('/user/change-password', [PelangganController::class, 'changePassword']);
+
+    // Statistics
+    // Route::get('/pelanggan/order/status', [PelangganController::class, 'orderStatus']);
+
+
+    Route::put('/order/{id}/status', [OrderController::class, 'updateStatus']);
+
+
+    Route::post('/payment/{order}', [PaymentController::class, 'pay']);
+    Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
+
 
 
 });
@@ -336,3 +356,6 @@ Route::get('/mitraa/{id}', [MitraController::class, 'showdashboard']);
 
 Route::get('/transaksi/user', [TransaksiController::class, 'getUserTransaksi'])
     ->middleware('auth:sanctum');
+
+
+

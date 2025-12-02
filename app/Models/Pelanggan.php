@@ -23,9 +23,20 @@ class Pelanggan extends Model
    protected $table = 'pelanggan';
 //    protected $table = 'pengiriman';
 
+// public function user()
+// {
+//     return $this->belongsTo(User::class);
+// }  
+
 public function user()
 {
     return $this->belongsTo(User::class);
-}  
+}
+
+
+public function order()
+{
+    return $this->hasMany(Order::class);
+}
 
 }

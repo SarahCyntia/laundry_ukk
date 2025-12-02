@@ -15,7 +15,8 @@ return new class extends Migration
         $table->id();
         
         $table->string('nama_laundry');
-        $table->foreignId('user_id')->contrained('users')->onDelete('cascade');
+        // $table->foreignId('user_id')->contrained('users')->onDelete('cascade');
+        $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
         
         $table->enum('status_validasi', ['menunggu', 'diterima', 'ditolak'])->default('menunggu');
        $table->string('alamat_laundry');
@@ -25,7 +26,9 @@ return new class extends Migration
         $table->string('jam_buka')->nullable();
         $table->string('jam_tutup')->nullable();
         $table->string('deskripsi')->nullable();
-        $table->foreignId('kecamatan_id')->contrained('kecamatan')->onDelete('cascade')->nullable();
+        $table->foreignId('kecamatan_id')->constrained('kecamatan')->onDelete('cascade')->nullable();
+
+        // $table->foreignId('kecamatan_id')->contrained('kecamatan')->onDelete('cascade')->nullable();
         // $table->timestamp('status_validasi')->nullable();
 
          $table->softDeletes();

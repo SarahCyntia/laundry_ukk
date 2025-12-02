@@ -11,11 +11,9 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        /*
-        |--------------------------------------------------------------------------
-        | ADMIN
-        |--------------------------------------------------------------------------
-        */
+        // =======================
+        // ADMIN
+        // =======================
         $admin = User::create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
@@ -24,12 +22,9 @@ class UserSeeder extends Seeder
         ]);
         $admin->assignRole('admin');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | PEGAWAI
-        |--------------------------------------------------------------------------
-        */
+        // =======================
+        // PEGAWAI
+        // =======================
         $pegawai = User::create([
             'name' => 'Pegawai',
             'email' => 'pegawai@gmail.com',
@@ -38,54 +33,128 @@ class UserSeeder extends Seeder
         ]);
         $pegawai->assignRole('pegawai');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | MITRA
-        |--------------------------------------------------------------------------
-        */
+        // =======================
+        // MITRA (Laundry)
+        // =======================
         $mitraUser = User::create([
-            'name' => 'mitra',
+            'name' => 'Mitra Laundry',
             'email' => 'mitra@gmail.com',
             'password' => bcrypt('12345678'),
             'phone' => '08123459998',
         ]);
 
-        // Buat record mitra
+        $mitraUser->assignRole('mitra');
+
         $mitra = Mitra::create([
             'user_id' => $mitraUser->id,
             'nama_laundry' => 'Laundry Mitra',
-            'alamat_laundry' => 'Jl. Contoh No. 10',
-            'kecamatan_id' => '1',
-            'foto_ktp' => 'default-ktp.png',
+            'alamat_laundry' => 'Jl. Contoh No.10',
+            'kecamatan_id' => 1,
+            'foto_ktp' => 'default.png',
             'foto_toko' => null,
             'status_toko' => 'buka',
             'status_validasi' => 'diterima',
             'jam_buka' => '08:00',
             'jam_tutup' => '20:00',
-            'kecamatan_id' => '1',
         ]);
 
-        $mitraUser->assignRole('mitra');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | PELANGGAN
-        |--------------------------------------------------------------------------
-        */
+        // =======================
+        // PELANGGAN
+        // =======================
         $pelangganUser = User::create([
-            'name' => 'pelanggan',
+            'name' => 'Pelanggan 1',
             'email' => 'pelanggan@gmail.com',
             'password' => bcrypt('12345678'),
             'phone' => '08123859998',
         ]);
 
+        $pelangganUser->assignRole('pelanggan');
+
         Pelanggan::create([
             'user_id' => $pelangganUser->id,
-            'alamat' => 'Jl. Pelanggan No. 5',
+            'alamat' => 'Jl. Pelanggan No.5',
         ]);
-
-        $pelangganUser->assignRole('pelanggan');
     }
 }
+// class UserSeeder extends Seeder
+// {
+//     public function run(): void
+//     {
+//         /*
+//         |--------------------------------------------------------------------------
+//         | ADMIN
+//         |--------------------------------------------------------------------------
+//         */
+//         $admin = User::create([
+//             'name' => 'Admin',
+//             'email' => 'admin@gmail.com',
+//             'password' => bcrypt('12345678'),
+//             'phone' => '08123456789',
+//         ]);
+//         $admin->assignRole('admin');
+
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | PEGAWAI
+//         |--------------------------------------------------------------------------
+//         */
+//         $pegawai = User::create([
+//             'name' => 'Pegawai',
+//             'email' => 'pegawai@gmail.com',
+//             'password' => bcrypt('12345678'),
+//             'phone' => '08123456788',
+//         ]);
+//         $pegawai->assignRole('pegawai');
+
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | MITRA
+//         |--------------------------------------------------------------------------
+//         */
+//         $mitraUser = User::create([
+//             'name' => 'mitra',
+//             'email' => 'mitra@gmail.com',
+//             'password' => bcrypt('12345678'),
+//             'phone' => '08123459998',
+//         ]);
+
+//         // Buat record mitra
+//         $mitra = Mitra::create([
+//             'user_id' => $mitraUser->id,
+//             'nama_laundry' => 'Laundry Mitra',
+//             'alamat_laundry' => 'Jl. Contoh No. 10',
+//             'kecamatan_id' => '1',
+//             'foto_ktp' => 'default-ktp.png',
+//             'foto_toko' => null,
+//             'status_toko' => 'buka',
+//             'status_validasi' => 'diterima',
+//             'jam_buka' => '08:00',
+//             'jam_tutup' => '20:00',
+//             'kecamatan_id' => '1',
+//         ]);
+
+//         $mitraUser->assignRole('mitra');
+
+
+//         /*
+//         |--------------------------------------------------------------------------
+//         | PELANGGAN
+//         |--------------------------------------------------------------------------
+//         */
+//         $pelangganUser = User::create([
+//             'name' => 'pelanggan',
+//             'email' => 'pelanggan@gmail.com',
+//             'password' => bcrypt('12345678'),
+//             'phone' => '08123859998',
+//         ]);
+
+//         Pelanggan::create([
+//             'user_id' => $pelangganUser->id,
+//             'alamat' => 'Jl. Pelanggan No. 5',
+//         ]);
+
+//         $pelangganUser->assignRole('pelanggan');
+//     }
+// }

@@ -35,10 +35,10 @@ class Mitra extends Authenticatable
 
     // ✅ Relasi ke tabel lain
 
-    public function transaksi()
-    {
-        return $this->hasMany(Transaksi::class, 'mitra_id');
-    }
+    // public function transaksi()
+    // {
+    //     return $this->hasMany(Transaksi::class, 'mitra_id');
+    // }
 
 
     public function kecamatan()
@@ -65,5 +65,10 @@ class Mitra extends Authenticatable
     public function order()
     {
         return $this->hasMany(Order::class, 'mitra_id');
+    }
+
+      public function transaksi()
+    {
+        return $this->hasMany(Transaksi::class);
     }
 }

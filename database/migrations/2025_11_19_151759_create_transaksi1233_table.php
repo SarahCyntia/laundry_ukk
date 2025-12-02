@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up()
 {
-    Schema::create('transaksi', function (Blueprint $table) {
+    Schema::create('transaksi1233', function (Blueprint $table) {
         $table->id();
 
         // pelanggan
@@ -22,7 +22,7 @@ return new class extends Migration
 
         // detail pesanan
         $table->integer('berat')->nullable(); // kg
-        $table->integer('total_harga')->nullable();
+        $table->integer('harga_final')->nullable();
 
         $table->enum('status', [
             'menunggu_konfirmasi',
@@ -47,6 +47,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('transaksi');
+        Schema::dropIfExists('transaksi1233');
     }
 };

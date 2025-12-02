@@ -1,8 +1,197 @@
+<template>
+  <div class="profile-container">
+    <!-- Header -->
+    <div class="profile-header">
+      <button class="btn-back" @click="goBack">
+        ← Kembali
+      </button>
+      <h1>Profil Saya</h1>
+    </div>
+
+    <!-- Loading State -->
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Memuat data profil...</p>
+    </div>
+
+    <!-- Profile Content -->
+    <div v-else class="profile-content">
+      <!-- Profile Card -->
+      <div class="profile-card">
+        <div class="avatar-section">
+          <div class="avatar-circle">
+            <span class="avatar-icon">👤</span>
+          </div>
+          <button class="btn-change-photo" @click="showPhotoUpload">
+            📷 Ubah Foto
+          </button>
+        </div>
+
+        <div class="profile-info-display">
+          <h2>{{ userProfile?.nama || 'Nama Pengguna' }}</h2>
+          <p class="user-email">{{ userProfile?.email || 'email@example.com' }}</p>
+          <p class="user-phone">📱 {{ userProfile?.no_telp || 'Belum ada nomor telepon' }}</p>
+          <p class="member-since">Bergabung sejak {{ formatDate(userProfile?.created_at) }}</p>
+        </div>
+      </div>
+
+      <!-- Detail Information -->
+      <div class="info-section">
+        <div class="section-header">
+          <h3>Informasi Detail</h3>
+          <button class="btn-edit" @click="toggleEditMode">
+            {{ isEditMode ? '❌ Batal' : '✏️ Edit Profil' }}
+          </button>
+        </div>
+
+        <!-- View Mode -->
+        <div v-if="!isEditMode" class="info-grid">
+          <div class="info-item">
+            <label>Nama Lengkap</label>
+            <p>{{ userProfile?.nama || '-' }}</p>
+          </div>
+          <div class="info-item">
+            <label>Email</label>
+            <p>{{ userProfile?.email || '-' }}</p>
+          </div>
+          <div class="info-item">
+            <label>Nomor Telepon</label>
+            <p>{{ userProfile?.no_telp || '-' }}</p>
+          </div>
+          <div class="info-item">
+            <label>Alamat</label>
+            <p>{{ userProfile?.alamat || 'Belum ada alamat' }}</p>
+          </div>
+          <div class="info-item">
+            <label>Kota</label>
+            <p>{{ userProfile?.kota || '-' }}</p>
+          </div>
+          <div class="info-item">
+            <label>Kode Pos</label>
+            <p>{{ userProfile?.kode_pos || '-' }}</p>
+          </div>
+        </div>
+
+        <!-- Edit Mode -->
+        <div v-else class="edit-form">
+          <div class="form-group">
+            <label>Nama Lengkap *</label>
+            <input 
+              v-model="editForm.nama" 
+              type="text" 
+              placeholder="Masukkan nama lengkap"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Email *</label>
+            <input 
+              v-model="editForm.email" 
+              type="email" 
+              placeholder="Masukkan email"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Nomor Telepon *</label>
+            <input 
+              v-model="editForm.no_telp" 
+              type="tel" 
+              placeholder="08xxxxxxxxxx"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group full-width">
+            <label>Alamat Lengkap</label>
+            <textarea 
+              v-model="editForm.alamat" 
+              placeholder="Masukkan alamat lengkap"
+              class="form-control"
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Kota</label>
+            <input 
+              v-model="editForm.kota" 
+              type="text" 
+              placeholder="Masukkan kota"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Kode Pos</label>
+            <input 
+              v-model="editForm.kode_pos" 
+              type="text" 
+              placeholder="12345"
+              class="form-control"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-save" @click="saveProfile">
+              💾 Simpan Perubahan
+            </button>
+            <button class="btn-cancel" @click="cancelEdit">
+              Batal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password Section -->
+      <div class="password-section">
+        <div class="section-header">
+          <h3>Keamanan Akun</h3>
+        </div>
+        
+        <button class="btn-change-password" @click="showChangePassword">
+          🔒 Ubah Password
+        </button>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats-section">
+        <h3>Statistik Saya</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+              <p class="stat-number">{{ userStats.totalOrders || 0 }}</p>
+              <p class="stat-label">Total Pesanan</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <p class="stat-number">{{ userStats.completedOrders || 0 }}</p>
+              <p class="stat-label">Selesai</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <p class="stat-number">{{ userStats.pendingOrders || 0 }}</p>
+              <p class="stat-label">Dalam Proses</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import axios from '@/libs/axios';
+import axios from 'axios';
 import Swal from 'sweetalert2';
 
 const router = useRouter();
@@ -13,15 +202,15 @@ const loading = ref(true);
 const isEditMode = ref(false);
 const userProfile = ref<any>(null);
 const userStats = ref({
-  totalOrder: 0,
-  selesaiOrder: 0,
-  menungguOrder: 0
+  totalOrders: 0,
+  completedOrders: 0,
+  pendingOrders: 0
 });
 
 const editForm = ref({
-  name: '',
+  nama: '',
   email: '',
-  phone: '',
+  no_telp: '',
   alamat: '',
   kota: '',
   kode_pos: ''
@@ -35,22 +224,22 @@ function goBack() {
 function formatDate(dateString: string) {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString('id-ID', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return date.toLocaleDateString('id-ID', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
   });
 }
 
 function toggleEditMode() {
   isEditMode.value = !isEditMode.value;
-
+  
   if (isEditMode.value) {
     // Isi form dengan data saat ini
     editForm.value = {
-      name: userProfile.value?.user?.name || '',
-      email: userProfile.value?.user?.email || '',
-      phone: userProfile.value?.user?.phone || '',
+      nama: userProfile.value?.nama || '',
+      email: userProfile.value?.email || '',
+      no_telp: userProfile.value?.no_telp || '',
       alamat: userProfile.value?.alamat || '',
       kota: userProfile.value?.kota || '',
       kode_pos: userProfile.value?.kode_pos || ''
@@ -61,9 +250,9 @@ function toggleEditMode() {
 function cancelEdit() {
   isEditMode.value = false;
   editForm.value = {
-    name: '',
+    nama: '',
     email: '',
-    phone: '',
+    no_telp: '',
     alamat: '',
     kota: '',
     kode_pos: ''
@@ -72,7 +261,7 @@ function cancelEdit() {
 
 async function saveProfile() {
   // Validasi
-  if (!editForm.value.name || !editForm.value.email || !editForm.value.phone) {
+  if (!editForm.value.nama || !editForm.value.email || !editForm.value.no_telp) {
     Swal.fire({
       icon: 'error',
       title: 'Data Tidak Lengkap',
@@ -82,20 +271,12 @@ async function saveProfile() {
   }
 
   try {
-    const response = await axios.put(`/pelanggan/${userProfile.value.id}`, {
-      name: editForm.value.name,
-      email: editForm.value.email,
-      phone: editForm.value.phone,
-      alamat: editForm.value.alamat,
-      kota: editForm.value.kota,
-      kode_pos: editForm.value.kode_pos
-    });
-
+    const response = await axios.put('/pelanggan', editForm.value);
+    
     if (response.data) {
-      // Refresh data profil setelah update
-      await fetchProfile();
+      userProfile.value = response.data;
       isEditMode.value = false;
-
+      
       Swal.fire({
         icon: 'success',
         title: 'Berhasil!',
@@ -117,64 +298,9 @@ async function saveProfile() {
 function showPhotoUpload() {
   Swal.fire({
     title: 'Upload Foto Profil',
-    html: `
-      <input type="file" id="photo-upload" class="swal2-file" accept="image/*">
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Upload',
-    cancelButtonText: 'Batal',
-    confirmButtonColor: '#667eea',
-    preConfirm: () => {
-      const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-      const file = fileInput?.files?.[0];
-
-      if (!file) {
-        Swal.showValidationMessage('Silakan pilih foto terlebih dahulu');
-        return false;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        Swal.showValidationMessage('File harus berupa gambar');
-        return false;
-      }
-
-      if (file.size > 2 * 1024 * 1024) {
-        Swal.showValidationMessage('Ukuran file maksimal 2MB');
-        return false;
-      }
-
-      return file;
-    }
-  }).then(async (result) => {
-    if (result.isConfirmed && result.value) {
-      try {
-        const formData = new FormData();
-        formData.append('photo', result.value);
-
-        await axios.post(`/pelanggan/${userProfile.value.id}/upload-photo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-
-        // Refresh data profil
-        await fetchProfile();
-
-        Swal.fire({
-          icon: 'success',
-          title: 'Berhasil!',
-          text: 'Foto profil berhasil diupload',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      } catch (error: any) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Gagal',
-          text: error.response?.data?.message || 'Gagal mengupload foto'
-        });
-      }
-    }
+    text: 'Fitur upload foto akan segera hadir!',
+    icon: 'info',
+    confirmButtonColor: '#667eea'
   });
 }
 
@@ -238,36 +364,25 @@ function showChangePassword() {
   });
 }
 
-async function fetchProfile() {
-  try {
-    // Ambil data profil pelanggan yang sedang login
-    const profileResponse = await axios.get('/pelanggan/profile');
-    userProfile.value = profileResponse.data;
-  } catch (error) {
-    console.error('Error fetching profile:', error);
-    throw error;
-  }
-}
-
 // Lifecycle
 onMounted(async () => {
   loading.value = true;
-
+  
   try {
     // Ambil data profil
-    await fetchProfile();
+    const profileResponse = await axios.get('/pelanggan');
+    userProfile.value = profileResponse.data;
 
     // Ambil statistik pesanan
     try {
-      const statsResponse = await axios.get('/pelanggan/status');
+      const statsResponse = await axios.get('/user/orders/stats');
       userStats.value = statsResponse.data;
     } catch (error) {
       console.error('Error fetching stats:', error);
-      // Stats tidak critical, tetap lanjut meskipun gagal
     }
   } catch (error: any) {
     console.error('Error fetching profile:', error);
-
+    
     Swal.fire({
       icon: 'error',
       title: 'Gagal Memuat Profil',
@@ -283,199 +398,7 @@ onMounted(async () => {
 });
 </script>
 
-<template>
-  <div class="profile-container">
-    <!-- Header -->
-    <div class="profile-header">
-      <button class="btn-back" @click="goBack">
-        ← Kembali
-      </button>
-      <h1>Profil Saya</h1>
-    </div>
-
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Memuat data profil...</p>
-    </div>
-
-    <!-- Profile Content -->
-    <div v-else class="profile-content">
-      <!-- Profile Card -->
-      <div class="profile-card">
-        <div class="avatar-section">
-          <div class="avatar-circle">
-            <img v-if="userProfile?.user?.photo" :src="`/storage/${userProfile.user.photo}`" alt="Foto Profil"
-              class="avatar-img" />
-            <span v-else class="avatar-icon">👤</span>
-          </div>
-          <button class="btn-change-photo" @click="showPhotoUpload">
-            📷 Ubah Foto
-          </button>
-        </div>
-
-        <div class="profile-info-display">
-          <h2>{{ userProfile?.user?.name || 'Nama Pengguna' }}</h2>
-          <p class="user-email">{{ userProfile?.user?.email || 'email@example.com' }}</p>
-          <p class="user-phone">📱 {{ userProfile?.user?.phone || 'Belum ada nomor telepon' }}</p>
-          <p class="user-role">
-            <span class="role-badge">Pelanggan</span>
-          </p>
-          <p class="member-since">Bergabung sejak {{ formatDate(userProfile?.created_at) }}</p>
-        </div>
-      </div>
-
-      <!-- Detail Information -->
-      <div class="info-section">
-        <div class="section-header">
-          <h3>Informasi Detail</h3>
-          <button class="btn-edit" @click="toggleEditMode">
-            {{ isEditMode ? '❌ Batal' : '✏️ Edit Profil' }}
-          </button>
-        </div>
-
-        <!-- View Mode -->
-        <div v-if="!isEditMode" class="info-grid">
-          <div class="info-item">
-            <label>Nama Lengkap</label>
-            <p>{{ userProfile?.user?.name || '-' }}</p>
-          </div>
-          <div class="info-item">
-            <label>Email</label>
-            <p>{{ userProfile?.user?.email || '-' }}</p>
-          </div>
-          <div class="info-item">
-            <label>Nomor Telepon</label>
-            <p>{{ userProfile?.user?.phone || '-' }}</p>
-          </div>
-          <div class="info-item">
-            <label>Alamat</label>
-            <p>{{ userProfile?.alamat || 'Belum ada alamat' }}</p>
-          </div>
-          <div class="info-item">
-            <label>Kota</label>
-            <p>{{ userProfile?.kota || '-' }}</p>
-          </div>
-          <div class="info-item">
-            <label>Kode Pos</label>
-            <p>{{ userProfile?.kode_pos || '-' }}</p>
-          </div>
-        </div>
-
-        <!-- Edit Mode -->
-        <div v-else class="edit-form">
-          <div class="form-group">
-            <label>Nama Lengkap *</label>
-            <input v-model="editForm.name" type="text" placeholder="Masukkan nama lengkap" class="form-control" />
-          </div>
-
-          <div class="form-group">
-            <label>Email *</label>
-            <input v-model="editForm.email" type="email" placeholder="Masukkan email" class="form-control" />
-          </div>
-
-          <div class="form-group">
-            <label>Nomor Telepon *</label>
-            <input v-model="editForm.phone" type="tel" placeholder="08xxxxxxxxxx" class="form-control" />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Alamat Lengkap</label>
-            <textarea v-model="editForm.alamat" placeholder="Masukkan alamat lengkap" class="form-control"
-              rows="3"></textarea>
-          </div>
-
-
-          <div class="form-actions">
-            <button class="btn-save" @click="saveProfile">
-              💾 Simpan Perubahan
-            </button>
-            <button class="btn-cancel" @click="cancelEdit">
-              Batal
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Change Password Section -->
-      <div class="password-section">
-        <div class="section-header">
-          <h3>Keamanan Akun</h3>
-        </div>
-
-        <button class="btn-change-password" @click="showChangePassword">
-          🔒 Ubah Password
-        </button>
-      </div>
-
-      <!-- Statistics -->
-      <div class="stats-section">
-        <h3>Statistik Saya</h3>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">📦</div>
-            <div class="stat-info">
-              <p class="stat-number">{{ userStats.totalOrder || 0 }}</p>
-              <p class="stat-label">Total Pesanan</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-info">
-              <p class="stat-number">{{ userStats.selesaiOrder || 0 }}</p>
-              <p class="stat-label">Selesai</p>
-            </div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-info">
-              <p class="stat-number">{{ userStats.menungguOrder || 0 }}</p>
-              <p class="stat-label">Dalam Proses</p>
-            </div>
-          </div>
-
-
-          <div class="transaction-section">
-            <div class="section-headerr">
-              <h3 class="tra">Transaksi</h3>
-            
-
-            <button class="btn-transaction-history" @click="router.push({ name: 'RiwayatTransaksi' })">
-              📜 Lihat Riwayat Transaksi
-            </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <style scoped>
-
-.tra{
-  color: white;
-}
-
-.section-headerr{
-  text-align: center;
-}
-.btn-transaction-history{
-  background-color: #a3acd1;
-  text-align: center;
-border-radius: 8px;
-}
-.transaction-section{
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 20px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  color: white;
-  
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -537,9 +460,7 @@ border-radius: 8px;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 .loading-state p {
@@ -581,13 +502,6 @@ border-radius: 8px;
   justify-content: center;
   margin-bottom: 16px;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  overflow: hidden;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .avatar-icon {
@@ -626,20 +540,6 @@ border-radius: 8px;
   color: #666;
   font-size: 15px;
   margin-bottom: 8px;
-}
-
-.user-role {
-  margin-bottom: 8px;
-}
-
-.role-badge {
-  display: inline-block;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .member-since {

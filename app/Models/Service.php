@@ -16,7 +16,7 @@ class Service extends Model
         'durasi_jam'
     ];
 
-    public function orders()
+    public function order()
     {
         return $this->hasMany(Order::class);
     }
