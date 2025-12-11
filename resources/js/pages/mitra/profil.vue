@@ -6,21 +6,15 @@
 
     <div v-else class="profile-wrapper">
       <div class="profile-header">
-        <img
-          :src="mitra.foto_ktp ? '/storage/' + mitra.foto_ktp : '/img/default.png'"
-          class="profile-photo"
-        />
+        <img :src="mitra.foto_ktp ? '/storage/' + mitra.foto_ktp : '/img/default.png'" class="profile-photo" />
 
         <div class="profile-info">
           <h2 class="profile-name">{{ mitra.nama_laundry }}</h2>
-          <span
-            class="status-badge"
-            :class="{
-              accepted: mitra.status_validasi === 'diterima',
-              rejected: mitra.status_validasi === 'ditolak',
-              pending: mitra.status_validasi === 'menunggu',
-            }"
-          >
+          <span class="status-badge" :class="{
+            accepted: mitra.status_validasi === 'diterima',
+            rejected: mitra.status_validasi === 'ditolak',
+            pending: mitra.status_validasi === 'menunggu',
+          }">
             {{ mitra.status_validasi?.toUpperCase() }}
           </span>
           <p class="small text-muted mt-2">ID Mitra: {{ mitra.id }}</p>
@@ -44,30 +38,27 @@
           </div>
           <div>
             <span class="info-label">Status Toko</span>
-            <span
-            class="badge-store"
-            :class="{
+            <span class="badge-store" :class="{
               buka: mitra.status_toko === 'buka',
               tutup: mitra.status_toko === 'tutup',
-            }"
-            >
-            {{ mitra.status_toko?.toUpperCase() ?? 'TUTUP' }}
-          </span>
-        </div>
-        <div>
-          <span class="info-label">jam Buka</span>
-          <p class="info-value">{{ mitra.jam_buka ?? '-' }}</p>
-        </div>
+            }">
+              {{ mitra.status_toko?.toUpperCase() ?? 'TUTUP' }}
+            </span>
+          </div>
+          <div>
+            <span class="info-label">jam Buka</span>
+            <p class="info-value">{{ mitra.jam_buka ?? '-' }}</p>
+          </div>
         </div>
 
         <hr />
         <!-- <h4 class="section-title">Alamat Laundry</h4>
         <p class="info-value">{{ mitra.alamat_laundry }}</p> -->
         <h4 class="section-title">Alamat Laundry</h4>
-<p class="info-value">
-    {{ mitra.alamat_laundry }},
-    {{ mitra.kecamatan?.nama }}
-</p>
+        <p class="info-value">
+          {{ mitra.alamat_laundry }},
+          {{ mitra.kecamatan?.nama }}
+        </p>
 
       </div>
 
@@ -115,23 +106,132 @@ const editMitra = () => {
 </script>
 
 <style scoped>
-.profile-wrapper { max-width: 900px; margin: 0 auto; padding: 20px; }
-.profile-header { background: white; display: flex; gap: 20px; padding: 25px; border-radius: 20px; align-items: center; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 25px; }
-.profile-photo { width: 130px; height: 130px; border-radius: 20px; object-fit: cover; border: 4px solid #f0f0f0; }
-.profile-name { font-size: 26px; font-weight: bold; margin: 0; }
-.status-badge { padding: 6px 14px; border-radius: 15px; font-weight: bold; font-size: 12px; }
-.status-badge.accepted { background: #d1f7d6; color: #1a8a2b; }
-.status-badge.rejected { background: #ffd7d7; color: #d93025; }
-.status-badge.pending { background: #fff5c2; color: #a58500; }
-.detail-card { background: white; border-radius: 20px; padding: 30px; }
-.section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; }
-.grid-info { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.info-label { font-size: 12px; font-weight: bold; color: #888; }
-.info-value { font-size: 15px; color: #333; margin-top: 3px; }
-.badge-store { padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; }
-.badge-store.buka { background: #c8f8d6; color: #1a8a2b; }
-.badge-store.tutup { background: #ffd9d9; color: #d93025; }
-.btn-edit { background: #3b82f6; color: white; padding: 12px 20px; border-radius: 12px; margin-top: 20px; display: inline-block; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
-.modal-box { background: white; padding: 20px; border-radius: 15px; width: 600px; max-width: 95%; }
+.profile-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.profile-header {
+  background: white;
+  display: flex;
+  gap: 20px;
+  padding: 25px;
+  border-radius: 20px;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+}
+
+.profile-photo {
+  width: 130px;
+  height: 130px;
+  border-radius: 20px;
+  object-fit: cover;
+  border: 4px solid #f0f0f0;
+}
+
+.profile-name {
+  font-size: 26px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 15px;
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.status-badge.accepted {
+  background: #d1f7d6;
+  color: #1a8a2b;
+}
+
+.status-badge.rejected {
+  background: #ffd7d7;
+  color: #d93025;
+}
+
+.status-badge.pending {
+  background: #fff5c2;
+  color: #a58500;
+}
+
+.detail-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.grid-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.info-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #888;
+}
+
+.info-value {
+  font-size: 15px;
+  color: #333;
+  margin-top: 3px;
+}
+
+.badge-store {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.badge-store.buka {
+  background: #c8f8d6;
+  color: #1a8a2b;
+}
+
+.badge-store.tutup {
+  background: #ffd9d9;
+  color: #d93025;
+}
+
+.btn-edit {
+  background: #3b82f6;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-top: 20px;
+  display: inline-block;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  width: 600px;
+  max-width: 95%;
+}
 </style>

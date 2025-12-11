@@ -8,7 +8,7 @@ import Form from "./form-order-masuk.vue";
 import Swal from "sweetalert2";
 import axios from "@/libs/axios";
 
-const url = "/order";
+// const url = "/order";
 
 const mitraId = ref<number | null>(null);
 const column = createColumnHelper();
@@ -94,6 +94,31 @@ const statusIcons = {
   selesai: "success"
 };
 
+
+
+
+const url = computed(() => {
+  const params = new URLSearchParams();
+
+  // Status yang tidak ditampilkan
+  [
+    'diproses',
+    'dicuci',
+    'dikeringkan',
+    'disetrika',
+    'siap_ambil',
+    'selesai'
+  ].forEach(status => {
+    params.append('exclude_status[]', status);
+  });
+
+  return `/order?${params.toString()}`;
+});
+
+
+
+
+
 const updateStatus = async (row: Row<Order>) => {
   const currentStatus = row.original.status;
   const currentIndex = statusSteps.indexOf(currentStatus);
@@ -142,7 +167,7 @@ column.accessor(row => row.pelanggan?.name ?? "-", {
   column.accessor("kode_order", { header: "Kode Order" }),
   column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
-  column.accessor("harga_final", { header: "Harga Final" }),
+  column.accessor("harga_final", { header: "Harga" }),
   column.accessor("catatan", { header: "Catatan" }),
   column.accessor("alasan_penolakan", { header: "Alasan Penolakan" }),
   column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
@@ -229,7 +254,8 @@ column.accessor(row => row.pelanggan?.name ?? "-", {
   }
 
   // === Jika status ditolak -> hanya bisa hapus ===
-  if (row.status !== "ditolak") {
+  // if (row.status !== "ditolak") {
+    if (row.status && row.status.trim() === "diterima") {
     // Tombol Edit
     actions.push(
       h(
@@ -260,6 +286,7 @@ column.accessor(row => row.pelanggan?.name ?? "-", {
 
   return h("div", { class: "d-flex gap-2" }, actions);
 },
+
 
   // cell: (cell) => {
   //   const row = cell.row.original;
@@ -368,7 +395,14 @@ onMounted(refresh);
     <div class="card-header align-items-center">
       <h2 class="mb-0">Orderan</h2>
     </div>
-    <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" />
+    <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
+     
+<paginate
+  ref="paginateRef"
+  :url="url"
+  :columns="columns"
+/>
+
 
     <!-- <paginate ref="paginateRef" id="table-order" :url="url" :columns="columns" /> -->
   </div>

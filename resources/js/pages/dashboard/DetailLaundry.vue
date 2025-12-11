@@ -156,7 +156,7 @@
           <div class="info-card">
             <div class="info-icon">⚙️</div>
             <h4>3. Proses</h4>
-            <p>Mitra akan memproses cucian sesuai layanan yang dipilih</p>
+            <p>Mitra laundry akan memproses cucian sesuai layanan yang dipilih</p>
           </div>
           <div class="info-card">
             <div class="info-icon">✅</div>
@@ -200,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import axios from "@/libs/axios";
 import Swal from 'sweetalert2';
@@ -239,7 +239,6 @@ const canSubmit = computed(() => {
          beratEstimasi.value > 0 && 
          noTelepon.value.trim() !== '';
 });
-
 
 
 
@@ -340,7 +339,7 @@ function buildSuccessHTML(kodeOrder) {
     </ol>
 
     <p style="margin-top: 16px; color: #667eea; font-weight: 600;">
-      💡 Anda bisa memantau status di halaman Riwayat Transaksi
+      💡 Anda bisa memantau status di halaman Riwayat Transaksi di Halaman Profil anda
     </p>
   `;
 }

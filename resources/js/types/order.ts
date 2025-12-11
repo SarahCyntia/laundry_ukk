@@ -17,6 +17,8 @@ export interface Order {
 
   alasan_penolakan: string | null;
 
+  estimasi_selesai: string | null;
+  estimasi_jam: string | null;
   waktu_pelanggan_antar: string | null;
   waktu_diambil: string | null;
 

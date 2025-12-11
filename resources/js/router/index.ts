@@ -62,13 +62,13 @@ const routes: Array<RouteRecordRaw> = [
 
   },
   {
-    path: '/RiwayatTransaksi/:id',
+    path: '/RiwayatTransaksi',
     name: 'RiwayatTransaksi',
     component: () => import('@/pages/dashboard/RiwayatTransaksi.vue'),
 
   },
   {
-    path: '/pelanggan/profil-pelanggan/:id',
+    path: '/pelanggan/profil-pelanggan',
     name: 'pelanggan.profil-pelanggan',
     component: () => import('@/pages/pelanggan/profil-pelanggan.vue'),
 

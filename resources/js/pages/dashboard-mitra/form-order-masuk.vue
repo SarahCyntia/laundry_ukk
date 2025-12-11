@@ -167,6 +167,27 @@ function getEdit() {
 
 
 
+const statusSteps = [
+    "menunggu_konfirmasi_mitra",
+    "diterima",
+    "diproses",
+    "dicuci",
+    "dikeringkan",
+    "disetrika",
+    "siap_diambil",
+    "selesai",
+    "ditolak"
+];
+function isDisabledStatus(status: string) {
+    const currentIndex = statusSteps.indexOf(order.value.status);
+    const optionIndex = statusSteps.indexOf(status);
+
+    // Kalau status tidak ditemukan, jangan dikunci
+    if (currentIndex === -1 || optionIndex === -1) return false;
+
+    // ✅ KUNCI status yang posisinya SEBELUM status saat ini
+    return optionIndex < currentIndex;
+}
 
 
 // =======================
@@ -264,21 +285,51 @@ watch(
 
             <div class="col-md-6">
                 <label class="form-label fw-bold">Status</label>
-                <!-- <Field as="select" class="form-select" name="status" v-model="order.status"> -->
-                <Field as="select" class="form-select" name="status" v-model="order.status"
-                    :disabled="order.status === 'menunggu_konfirmasi_mitra'">
+
+                <Field as="select" class="form-select" name="status" v-model="order.status">
 
                     <option value="">-- Pilih Status --</option>
 
-                    <!-- TAMPILKAN HANYA STATUS LANJUTAN -->
-                    <option v-for="s in statusLanjutan" :key="s" :value="s">
-                        {{ s.replace('_', ' ') }}
+                    <!-- Status dari database (tetap muncul & terkunci) -->
+                    <option v-if="order.status" :value="order.status" disabled>
+                        {{ order.status.replaceAll('_', ' ') }}
                     </option>
 
+                    <!-- Semua status lanjutan -->
+                    <option v-for="s in statusLanjutan" :key="s" :value="s" :disabled="isDisabledStatus(s)">
+                        {{ s.replaceAll('_', ' ') }}
+                    </option>
                 </Field>
 
                 <ErrorMessage name="status" class="text-danger" />
             </div>
+
+
+            <!-- <div class="col-md-6">
+                <label class="form-label fw-bold">Status</label> -->
+            <!-- <Field as="select" class="form-select" name="status" v-model="order.status"> -->
+            <!-- <Field as="select" class="form-select" name="status" v-model="order.status"
+                    :disabled="order.status === 'menunggu_konfirmasi_mitra'">
+
+                    <option value="">-- Pilih Status --</option>
+
+                    <option v-for="s in statusLanjutan" :key="s" :value="s">
+                        {{ s.replace('_', ' ') }}
+                    </option>
+                </Field> -->
+            <!-- <Field as="select" class="form-select" name="status" v-model="order.status">
+
+                    <option value="">-- Pilih Status --</option>
+                    <option v-if="order.status" :value="order.status">
+                        {{ order.status.replaceAll('_', ' ') }}
+                    </option>
+
+                    <option v-for="s in statusLanjutan" :key="s" :value="s">
+                        {{ s.replaceAll('_', ' ') }}
+                    </option>
+                </Field>
+                <ErrorMessage name="status" class="text-danger" />
+            </div> -->
 
             <div class="col-12">
                 <label class="form-label fw-bold">Catatan</label>

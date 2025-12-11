@@ -7,7 +7,7 @@
         <p class="subtitle">Kelola pesanan laundry Anda dengan mudah</p>
       </div>
       <div class="quick-actions">
-        <button class="btn-refresh" @click="loadSummary">
+        <button class="btn-refresh" @click="loadOrder">
           <span class="icon">🔄</span>
           Refresh
         </button>
@@ -20,7 +20,7 @@
         <div class="stat-icon">📥</div>
         <div class="stat-content">
           <h3>Order Masuk</h3>
-          <p class="stat-number">{{ summary.menunggu_konfirmasi }}</p>
+          <p class="stat-number">{{ order.menunggu_konfirmasi_mitra }}</p>
           <span class="stat-label">Menunggu konfirmasi</span>
         </div>
       </div>
@@ -29,7 +29,7 @@
         <div class="stat-icon">⚙️</div>
         <div class="stat-content">
           <h3>Diproses</h3>
-          <p class="stat-number">{{ summary.diproses }}</p>
+          <p class="stat-number">{{ order.diproses }}</p>
           <span class="stat-label">Sedang dikerjakan</span>
         </div>
       </div>
@@ -38,7 +38,7 @@
         <div class="stat-icon">✅</div>
         <div class="stat-content">
           <h3>Siap Diambil</h3>
-          <p class="stat-number">{{ summary.siap_diambil }}</p>
+          <p class="stat-number">{{ order.siap_diambil }}</p>
           <span class="stat-label">Siap untuk pelanggan</span>
         </div>
       </div>
@@ -47,27 +47,27 @@
         <div class="stat-icon">🎉</div>
         <div class="stat-content">
           <h3>Selesai Hari Ini</h3>
-          <p class="stat-number">{{ summary.selesai }}</p>
+          <p class="stat-number">{{ order.selesai }}</p>
           <span class="stat-label">Transaksi selesai</span>
         </div>
       </div>
     </div>
 
-    <!-- Summary Section -->
-    <div class="summary-section">
-      <div class="summary-card total">
-        <div class="summary-icon">📊</div>
-        <div class="summary-content">
+    <!-- order Section -->
+    <div class="order-section">
+      <div class="order-card total">
+        <div class="order-icon">📊</div>
+        <div class="order-content">
           <h4>Total Order Aktif</h4>
-          <p class="summary-number">{{ totalOrderAktif }}</p>
+          <p class="order-number">{{ totalOrderAktif }}</p>
         </div>
       </div>
 
-      <div class="summary-card info">
-        <div class="summary-icon">💡</div>
-        <div class="summary-content">
+      <div class="order-card info">
+        <div class="order-icon">💡</div>
+        <div class="order-content">
           <h4>Status</h4>
-          <p class="summary-text">{{ statusMessage }}</p>
+          <p class="order-text">{{ statusMessage }}</p>
         </div>
       </div>
     </div>
@@ -92,7 +92,7 @@
         <div class="revenue-detail">
           <span class="detail-item">
             <span class="detail-icon">📦</span>
-            <span>{{ summary.selesai }} transaksi</span>
+            <span>{{ order.selesai }} transaksi</span>
           </span>
           <span class="detail-item">
             <span class="detail-icon">📊</span>
@@ -109,7 +109,7 @@
         <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button>
       </div>
       <div class="orders-list">
-        <div v-for="order in recentOrders" :key="order.id" class="order-item">
+        <div v-for="order in recentOrder" :key="order.id" class="order-item">
           <div class="order-info">
             <div class="order-id">Order #{{ order.id }}</div>
             <div class="order-customer">{{ order.customer }}</div>
@@ -171,47 +171,33 @@ import { toast } from "vue3-toastify";
 
 const notif = ref(false);
 const jumlahOrderBaru = ref(0);
+const weeklyStats = ref([]);
+const recentOrders = ref([]);
+const todayRevenue = ref(0);
+
 
 const checkNotif = async () => {
   try {
     const res = await axios.get("/mitra/notif-order");
     if (res.data.new_order && !notif.value) {
+      console.log("Ada order baru");
       notif.value = true;
       jumlahOrderBaru.value = res.data.count || 1;
       toast.info("📢 Ada order baru masuk!", { autoClose: 3000 });
-      loadSummary(); // Refresh data saat ada order baru
+      loadOrder(); // Refresh data saat ada order baru
     }
   } catch (e) {
     console.error("Gagal cek notifikasi", e);
   }
 };
 
-const summary = ref({
-  menunggu_konfirmasi: 0,
+const order = ref({
+  menunggu_konfirmasi_mitra: 0,
   diproses: 0,
   siap_diambil: 0,
   selesai: 0,
 });
 
-// Data untuk chart dan statistik
-const weeklyStats = ref([
-  { day: 'Sen', count: 12 },
-  { day: 'Sel', count: 15 },
-  { day: 'Rab', count: 18 },
-  { day: 'Kam', count: 14 },
-  { day: 'Jum', count: 20 },
-  { day: 'Sab', count: 25 },
-  { day: 'Min', count: 22 },
-]);
-
-const todayRevenue = ref(2500000);
-
-const recentOrders = ref([
-  { id: '1234', customer: 'Budi Santoso', time: '10 menit lalu', status: 'pending' },
-  { id: '1233', customer: 'Ani Wijaya', time: '25 menit lalu', status: 'processing' },
-  { id: '1232', customer: 'Dewi Kusuma', time: '45 menit lalu', status: 'ready' },
-  { id: '1231', customer: 'Eko Prasetyo', time: '1 jam lalu', status: 'completed' },
-]);
 
 const dailyTip = ref('Konfirmasi order dalam 5 menit untuk meningkatkan kepuasan pelanggan!');
 
@@ -240,49 +226,61 @@ const navigateTo = (path: string) => {
 };
 
 const viewAllOrders = () => {
-  navigateTo('/orders');
+  navigateTo('/order-masuk');
 };
 
-const loadSummary = async () => {
+const loadOrder = async () => {
   try {
-    const res = await axios.get("/mitra/summary");
-    summary.value = {
-      menunggu_konfirmasi: res.data.menunggu_konfirmasi ?? 0,
+    const res = await axios.post("/order-masuk");
+    order.value = {
+      menunggu_konfirmasi_mitra: res.data.menunggu_konfirmasi_mitra ?? 0,
       diproses: res.data.diproses ?? 0,
       siap_diambil: res.data.siap_diambil ?? 0,
       selesai: res.data.selesai ?? 0,
     };
   } catch (e) {
-    console.error("Gagal load summary", e);
+    console.error("Gagal load order", e);
     toast.error("Gagal memuat data dashboard");
   }
 };
 
 // Computed properties
 const totalOrderAktif = computed(() => {
-  return summary.value.menunggu_konfirmasi + 
-         summary.value.diproses + 
-         summary.value.siap_diambil;
+  return order.value.menunggu_konfirmasi_mitra + 
+         order.value.diproses + 
+         order.value.siap_diambil;
 });
 
 const averageOrder = computed(() => {
-  if (summary.value.selesai === 0) return 0;
-  return Math.round(todayRevenue.value / summary.value.selesai);
+  if (order.value.selesai === 0) return 0;
+  return Math.round(todayRevenue.value / order.value.selesai);
 });
 
 const statusMessage = computed(() => {
-  if (summary.value.menunggu_konfirmasi > 0) {
+  if (order.value.menunggu_konfirmasi_mitra > 0) {
     return "Ada order menunggu konfirmasi";
-  } else if (summary.value.siap_diambil > 0) {
+  } else if (order.value.siap_diambil > 0) {
     return "Ada order siap diambil";
-  } else if (summary.value.diproses > 0) {
+  } else if (order.value.diproses > 0) {
     return "Semua berjalan lancar";
   }
   return "Tidak ada order aktif";
 });
 
+
+const loadDashboard = async () => {
+  const res = await axios.get("/dashboard");
+
+  order.value = res.data.order;
+  weeklyStats.value = res.data.weekly;
+  todayRevenue.value = res.data.today_revenue;
+  recentOrders.value = res.data.recent_orders;
+};
+
+
 onMounted(() => {
-  loadSummary();
+  loadDashboard();
+  loadOrder();
   setInterval(checkNotif, 20000); // Check setiap 20 detik
 });
 </script>
@@ -417,15 +415,15 @@ onMounted(() => {
   color: #6b7280;
 }
 
-/* Summary Section */
-.summary-section {
+/* order Section */
+.order-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
 
-.summary-card {
+.order-card {
   background: white;
   padding: 24px;
   border-radius: 16px;
@@ -435,7 +433,7 @@ onMounted(() => {
   gap: 20px;
 }
 
-.summary-icon {
+.order-icon {
   font-size: 40px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   width: 64px;
@@ -446,7 +444,7 @@ onMounted(() => {
   justify-content: center;
 }
 
-.summary-content h4 {
+.order-content h4 {
   margin: 0;
   font-size: 14px;
   font-weight: 600;
@@ -455,14 +453,14 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
-.summary-number {
+.order-number {
   margin: 8px 0 0 0;
   font-size: 32px;
   font-weight: 700;
   color: #111827;
 }
 
-.summary-text {
+.order-text {
   margin: 8px 0 0 0;
   font-size: 16px;
   font-weight: 600;

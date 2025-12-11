@@ -280,7 +280,7 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
     // Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
 
     // Order Diproses
-    Route::get('/order/proses', [MitraOrderController::class, 'index']);
+    Route::post('/order-proses', [OrderController::class, 'index']);
     Route::post('/order/{id}/update-status', [MitraOrderController::class, 'updateStatus']);
     Route::get('/order/siap-diambil', [MitraOrderController::class, 'orderSiapDiambil']);
     Route::post('/order/{id}/selesai', [MitraOrderController::class, 'TandaiSebagaiSelesai']);
@@ -288,7 +288,17 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
     Route::get('/order/selesai', [MitraOrderController::class, 'orderSelesai']);
     // Summary Dashboard
     Route::get('/summary', [MitraDashboardController::class, 'summary']);
+
+
+
+
+
+     Route::get('/dashboard', [MitraDashboardController::class, 'index'])->withoutMiddleware('can:mitra');
     Route::get('/mitra/notif-order', [MitraOrderController::class, 'notifOrderBaru'])->withoutMiddleware('can:mitra');
+   
+   
+   
+   
     Route::post('/mitra/pelanggan-datang', [MitraOrderController::class, 'pelangganDatang']);
 
     //    Route::post('order', [OrderController::class, 'store']);
@@ -322,6 +332,13 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
     Route::get('/pelanggan/order/{id}', [PelangganController::class, 'detail']);
     Route::get('pelanggan', [PelangganController::class, 'get']);
+    // Route::put('/pelanggan/update', [PelangganController::class, 'update']);
+
+
+
+    Route::put('/pelanggan/update/{id}', [PelangganController::class, 'update']);
+
+    
     Route::post('pelanggan', [PelangganController::class, 'index'])->withoutMiddleware('can:pelanggan');
     Route::post('pelanggan/store', [PelangganController::class, 'store']);
     Route::post('pelanggan/show', [PelangganController::class, 'show']);

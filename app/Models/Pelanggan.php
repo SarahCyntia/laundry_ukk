@@ -18,6 +18,7 @@ class Pelanggan extends Model
     protected $fillable = [
         'user_id',
         'alamat',
+        'kecamatan_id',
     ];
 
    protected $table = 'pelanggan';
@@ -38,5 +39,12 @@ public function order()
 {
     return $this->hasMany(Order::class);
 }
+
+public function kecamatan()
+{
+    return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
+}
+
+
 
 }

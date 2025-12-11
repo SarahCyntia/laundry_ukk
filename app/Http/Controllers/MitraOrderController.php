@@ -243,18 +243,34 @@ class MitraOrderController extends Controller
 
         return response()->json($order);
     }
+
     public function notifOrderBaru()
-    {
-        $mitraId = auth()->user()->mitra_id;
+{
+    $mitraId = auth()->user()->mitra_id;
 
-        $adaOrderBaru = Order::where('mitra_id', $mitraId)
-            ->where('status', 'menunggu_konfirmasi_mitra')
-            ->exists();
+    $order = Order::with('pelanggan')
+        ->where('mitra_id', $mitraId)
+        ->where('status', 'menunggu_konfirmasi_mitra')
+        ->get();
 
-        return response()->json([
-            'new_order' => $adaOrderBaru
-        ]);
-    }
+    return response()->json([
+        'count' => $order->count(),
+        'order' => $order
+    ]);
+}
+
+    // public function notifOrderBaru()
+    // {
+    //     $mitraId = auth()->user()->mitra_id;
+
+    //     $adaOrderBaru = Order::where('mitra_id', $mitraId)
+    //         ->where('status', 'menunggu_konfirmasi_mitra')
+    //         ->exists();
+
+    //     return response()->json([
+    //         'new_order' => $adaOrderBaru
+    //     ]);
+    // }
 
 
     public function pelangganDatang(Request $request)

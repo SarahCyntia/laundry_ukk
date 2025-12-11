@@ -11,16 +11,32 @@ class UpdatePelangganRequest extends FormRequest
         return true;
     }
 
-    public function rules(): array
-    {
-        return [
-            // 'nama' => 'required|string|max:255',
-            // 'phone' => 'required|string|max:15',
-            // 'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            // 'email' => 'required|email|unique:kurir,email,' . $this->kurir->id,
-            'alamat' => 'required|string|max:500',
-        ];
-    }
+    public function rules()
+{
+    $userId = auth()->id();
+
+    return [
+        'name'  => 'required|string|max:255',
+        'email' => 'required|email|unique:users,email,' . $userId,
+        'phone' => 'required|string|max:20',
+
+        'alamat' => 'nullable|string',
+        'kecamatan_id' => 'nullable|exists:kecamatan,id',
+    ];
+}
+
+    // public function rules(): array
+    // {
+    //     return [
+    //         // 'nama' => 'required|string|max:255',
+    //         // 'phone' => 'required|string|max:15',
+    //         // 'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    //         // 'email' => 'required|email|unique:kurir,email,' . $this->kurir->id,
+    //         'alamat' => 'required|string|max:500',
+    //         'kode_pos' => 'nullable|string|max:500',
+    //         'kecamatan_id' => 'nullable|string|max:500',
+    //     ];
+    // }
 
     public function messages()
     {

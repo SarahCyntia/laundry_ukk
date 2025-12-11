@@ -37,7 +37,7 @@ class UserRoleUpdatedListener
                 // 'status' => 'nonaktif', // atur
             ]);  
         }
-        if ($currentRole === 'pelangan' && !$user->pelanggan) {
+        if ($currentRole === 'pelanggan' && !$user->pelanggan) {
             Pelanggan::create([
                 'user_id' => $user->id,
                 // 'status' => 'nonaktif', // atur
@@ -49,7 +49,7 @@ class UserRoleUpdatedListener
         if ($currentRole !== 'mitra' && $user->mitra) {
             $user->mitra->delete();
         }
-        if ($currentRole !== 'pelangan' && $user->pelanggan) {
+        if ($currentRole !== 'pelanggan' && $user->pelanggan) {
             $user->pelanggan->delete();
         }
     }

@@ -1,118 +1,319 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch, nextTick } from "vue";
+import { createColumnHelper, type Row } from "@tanstack/vue-table";
+import type { Order } from "@/types";
+import { useDelete } from "@/libs/hooks";
+import { h } from "vue";
+// import Form from "./form-order-masuk.vue";
+import Swal from "sweetalert2";
+import axios from "@/libs/axios";
+
+const mitraId = ref<number | null>(null);
+const column = createColumnHelper();
+// const paginateRef = ref<any>(null);
+const selected = ref<string>("");
+const openForm = ref<boolean>(false);
+const order = ref<Order | null>(null); // Data pelanggan yang terkait dengan user login
+
+// AMBIL MITRA_ID DARI PROFILE USER
+onMounted(async () => {
+  const { data } = await axios.get("/mitra");
+  // pastikan API ini mengembalikan user + mitra_id
+  mitraId.value = data.mitra_id;
+});
+
+const props = defineProps<{ selected: string }>();
+const selectedId = ref(null);
+const showForm = ref(false);
+
+function openEdit(id) {
+  selectedId.value = id;
+  showForm.value = true;
+}
+
+// const url = "/order-masuk"; // <--- WAJIB ADA
+
+const paginateRef = ref<any>(null);
+const refresh = () => paginateRef.value?.refetch();
+
+// const column = createColumnHelper<Order>();
+
+const { delete: deleteOrder } = useDelete({
+    onSuccess: () => paginateRef.value.refetch(),
+});
+
+const inputData = ref<Order | null>(null);
+
+const statusSteps = [
+  "menunggu_konfirmasi_mitra",
+  "diterima",
+  "ditolak",
+  "diproses",
+  "dicuci",
+  "dikeringkan",
+  "disetrika",
+  "siap_diambil",
+  "selesai"
+] as const;
+
+const statusLabels = {
+  menunggu_konfirmasi_mitra: "Menunggu Konfirmasi Mitra",
+  diterima: "Diterima",
+  ditolak: "Ditolak",
+  diproses: "Diproses",
+  dicuci: "Dicuci",
+  dikeringkan: "Dikeringkan",
+  disetrika: "Disetrika",
+  siap_diambil: "Siap Diambil",
+  selesai: "Selesai"
+};
+
+const statusColors = {
+  menunggu_konfirmasi_mitra: "bg-info",
+  diterima: "bg-success",
+  ditolak: "bg-danger",
+  diproses: "bg-warning",
+  dicuci: "bg-primary",
+  dikeringkan: "bg-primary",
+  disetrika: "bg-primary",
+  siap_diambil: "bg-info",
+  selesai: "bg-success"
+};
+
+const statusIcons = {
+  menunggu_konfirmasi_mitra: "info",
+  diterima: "question",
+  ditolak: "error",
+  diproses: "info",
+  dicuci: "info",
+  dikeringkan: "warning",
+  disetrika: "info",
+  siap_diambil: "info",
+  selesai: "success"
+};
+
+
+
+const url = computed(() => {
+  const params = new URLSearchParams();
+
+  // Status yang tidak ditampilkan
+  [
+    'menunggu_konfirmasi_mitra',
+    'ditolak',
+    'diterima',
+    'siap_ambil',
+    'selesai'
+  ].forEach(status => {
+    params.append('exclude_status[]', status);
+  });
+
+  return `/order?${params.toString()}`;
+});
+
+
+
+
+
+
+
+
+const updateStatus = async (row: Row<Order>) => {
+  const currentStatus = row.original.status;
+  const currentIndex = statusSteps.indexOf(currentStatus);
+  if (currentIndex === -1 || currentStatus === "selesai") return;
+
+  const nextStatus = statusSteps[currentIndex + 1];
+
+  const confirmed = await Swal.fire({
+    icon: statusIcons[nextStatus],
+    title: `Ubah Status ke "${statusLabels[nextStatus]}"?`,
+    showCancelButton: true
+  }).then(r => r.isConfirmed);
+
+  if (!confirmed) return;
+
+  await axios.put(`/order/${row.original.id}/status`, {
+  status: nextStatus
+});
+
+  Swal.fire("Berhasil", "Status diperbarui", "success");
+  await refresh();
+};
+
+
+const columns = [
+  column.accessor("no", { header: "No" }),
+  // column.accessor("pelanggan.user.name", { header: "Nama Pelanggan" }),
+column.accessor(row => row.pelanggan?.name ?? "-", {
+  header: "Nama Pelanggan",
+}),
+
+  column.accessor("mitra.nama_laundry", { header: "Nama Laundry" }),
+  column.accessor("jenis_layanan.nama_layanan", { header: "Jenis Layanan" }),
+
+
+//   column.accessor("pelanggan.user.name", {
+//   header: "Nama Pelanggan",
+//   cell: ({ row }) => row.original.pelanggan?.user?.name ?? "-",
+// }),
+//   column.accessor("mitra_id", { header: "Nama Laundry" }),
+//   // column.accessor("jenis_layanan_id", { header: "Jenis Layanan" }),
+//   column.accessor("jenis_layanan.nama_layanan", {
+//     header: "Jenis Layanan",
+//     cell: ({ row }) => row.original.jenis_layanan?.nama_layanan ?? "-",
+//   }),
+  column.accessor("kode_order", { header: "Kode Order" }),
+  column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
+  column.accessor("berat_aktual", { header: "Berat Aktual" }),
+  column.accessor("harga_final", { header: "Harga Final" }),
+  column.accessor("catatan", { header: "Catatan" }),
+  column.accessor("alasan_penolakan", { header: "Alasan Penolakan" }),
+  column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
+  column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
+
+  column.accessor("status", {
+    header: "Status",
+    cell: ({ row }) => {
+      const val = row.original.status;
+      const color = statusColors[val] || "bg-secondary";
+
+      return h(
+        "button",
+        {
+          class: `badge ${color} text-white border-0 cursor-pointer`,
+          onClick: () => updateStatus(row)
+        },
+        val.replaceAll("_", " ")
+      );
+    }
+  }),
+    column.accessor("id", {
+  header: "Aksi",
+  cell: (cell) => {
+  const row = cell.row.original;
+  const actions = [];
+
+  // === Jika status masih menunggu konfirmasi ===
+  if (row.status === "menunggu_konfirmasi_mitra") {
+    actions.push(
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-success",
+          onClick: async () => {
+            const ok = await Swal.fire({
+              icon: "question",
+              title: "Terima order ini?",
+              showCancelButton: true
+            }).then(r => r.isConfirmed);
+
+            if (!ok) return;
+
+            await axios.post(`/order/${row.id}/konfirmasi`, {
+              status: "diterima"
+            });
+
+            Swal.fire("Berhasil", "Order diterima!", "success");
+            await refresh();
+          },
+        },
+        "Terima"
+      )
+    );
+
+    // Tombol Tolak
+    actions.push(
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-danger",
+          onClick: async () => {
+            const { value: alasan } = await Swal.fire({
+              title: "Alasan penolakan",
+              input: "text",
+              inputPlaceholder: "Tulis alasan...",
+              showCancelButton: true,
+            });
+
+            if (!alasan) return;
+
+            await axios.post(`/order/${row.id}/tolak`, {
+              status: "ditolak",
+              alasan_penolakan: alasan
+            });
+
+            Swal.fire("Ditolak", "Order berhasil ditolak", "success");
+            await refresh();
+          },
+        },
+        "Tolak"
+      )
+    );
+  }
+
+  // === Jika status ditolak -> hanya bisa hapus ===
+  if (row.status !== "ditolak") {
+    // Tombol Edit
+    actions.push(
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-icon btn-info",
+          onClick: () => {
+            selected.value = cell.getValue();
+            openForm.value = true;
+          },
+        },
+        h("i", { class: "la la-pencil fs-2" })
+      )
+    );
+  }
+
+  // === Tombol hapus tetap ada untuk semua kecuali selesai (opsional) ===
+  actions.push(
+    h(
+      "button",
+      {
+        class: "btn btn-sm btn-icon btn-danger",
+        onClick: () => deleteOrder(`order/${cell.getValue()}`),
+      },
+      h("i", { class: "la la-trash fs-2" })
+    )
+  );
+
+  return h("div", { class: "d-flex gap-2" }, actions);
+},
+
+}),
+
+];
+
+onMounted(refresh);
+</script>
+
+
 <template>
-  <div class="order-proses">
-    <h2>Order Sedang Diproses</h2>
 
-    <!-- Jika tidak ada order yang sesuai -->
-    <div v-if="filteredOrder.length === 0" class="empty">
-      Tidak ada order dalam proses.
+
+  <Form v-if="openForm" :selected="selected" @close="openForm = false" @refresh="refresh" />
+  <div class="card">
+    <div class="card-header align-items-center">
+      <h2 class="mb-0">Orderan</h2>
     </div>
+    <paginate
+  ref="paginateRef"
+  :url="url"
+  :columns="columns"
+/>
 
-    <!-- List order -->
-    <div class="card" v-for="o in filteredOrder" :key="o.id">
-      <div class="row">
-        <div>
-          <h3>{{ o.kode_order }}</h3>
-          <p>Customer: {{ o.customer_name }}</p>
-          <p>Status: <strong>{{ o.status }}</strong></p>
-          <p>Berat Estimasi: {{ o.berat_estimasi }} kg</p>
-        </div>
-
-        <div class="actions">
-          <button 
-            class="btn-update" 
-            :disabled="o.status === 'siap_diambil'"
-            @click="updateStatus(o.id)"
-          >
-            Update Status →
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- <paginate ref="paginateRef" id="table-order" :url="url" :columns="columns" /> -->
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from "vue";
-import axios from "axios";
-import { toast } from "vue3-toastify";
-
-const order = ref([]);
-
-// Status yang boleh tampil
-const allowedStatus = ["diproses", "dicuci", "dikeringkan", "disetrika"];
-
-// Data yang sudah difilter
-const filteredOrder = computed(() => {
-  return order.value.filter(o => allowedStatus.includes(o.status));
-});
-
-// Ambil data order
-const loadOrders = async () => {
-  try {
-    const res = await axios.get("/order/proses");
-    order.value = res.data;
-  } catch (err) {
-    toast.error("Gagal mengambil data order!");
-  }
-};
-
-// Update status
-const updateStatus = async (id) => {
-  try {
-    await axios.post(`/mitra/order/${id}/update-status`);
-    toast.success("Status berhasil diperbarui!");
-    loadOrders();
-  } catch (e) {
-    toast.error("Gagal update status!");
-  }
-};
-
-onMounted(() => {
-  loadOrders();
-});
-</script>
-
 <style scoped>
-.order-proses {
-  padding: 15px;
-}
-
-.card {
-  background: white;
-  padding: 15px;
-  border-radius: 10px;
-  margin-bottom: 12px;
-  box-shadow: 0px 3px 10px rgba(0, 0, 0, 0.1);
-}
-
-.row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-}
-
-.btn-update {
-  background: #3498db;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.btn-update:disabled {
-  background: #7f8c8d;
-  cursor: not-allowed;
-}
-
-.empty {
-  padding: 20px;
-  text-align: center;
-  color: #777;
+.btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1.5rem;
 }
 </style>

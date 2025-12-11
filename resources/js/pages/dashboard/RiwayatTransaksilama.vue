@@ -15,12 +15,8 @@
 
     <!-- Filter Tabs -->
     <div class="filter-tabs">
-      <button 
-        v-for="status in filterStatus" 
-        :key="status.value"
-        :class="['tab-btn', { active: activeFilter === status.value }]"
-        @click="activeFilter = status.value"
-      >
+      <button v-for="status in filterStatus" :key="status.value"
+        :class="['tab-btn', { active: activeFilter === status.value }]" @click="activeFilter = status.value">
         {{ status.label }}
         <span v-if="getCountByStatus(status.value)" class="badge">
           {{ getCountByStatus(status.value) }}
@@ -36,21 +32,33 @@
 
     <!-- Order List -->
     <div v-else-if="filteredOrder.length" class="order-list">
-      <div 
-        v-for="order in filteredOrder" 
-        :key="order.id"
-        class="order-card"
-        @click="viewOrderDetail(order)"
-      >
+      <div
+  v-for="order in filteredOrder"
+  :key="order.id"
+  class="order-card rounded-xl p-5 shadow-sm transition"
+  :class="isOrderExpired(order) ? 'bg-gray-200 opacity-60 pointer-events-none' : 'bg-white'"
+  @click="!isOrderExpired(order) && viewOrderDetail(order)"
+>
+
+      <!-- <div v-for="order in filteredOrder" :key="order.id" class="order-card" @click="viewOrderDetail(order)"> -->
         <!-- Order Header -->
         <div class="order-header">
           <div class="order-code">
             <span class="code-label">Kode Order</span>
             <span class="code-value">{{ order.kode_order }}</span>
           </div>
-          <div :class="['status-badge', getStatusClass(order.status)]">
+         <span
+  class="px-3 py-1 rounded-full text-sm"
+  :class="isOrderExpired(order)
+    ? 'bg-gray-400 text-white'
+    : 'bg-blue-100 text-blue-600'"
+>
+  {{ isOrderExpired(order) ? 'Expired' : order.status_label }}
+</span>
+
+          <!-- <div :class="['status-badge', getStatusClass(order.status)]">
             {{ getStatusLabel(order.status) }}
-          </div>
+          </div> -->
         </div>
 
         <!-- Order Info -->
@@ -72,8 +80,8 @@
           <div class="info-row total">
             <span class="label">💰 Total:</span>
             <span class="value">
-              {{ order.harga_final 
-                ? `Rp ${Number(order.harga_final).toLocaleString('id-ID')}` 
+              {{ order.harga_final
+                ? `Rp ${Number(order.harga_final).toLocaleString('id-ID')}`
                 : `Rp ${(order.berat_estimasi * order.jenis_layanan?.harga || 0).toLocaleString('id-ID')} (estimasi)`
               }}
             </span>
@@ -85,9 +93,19 @@
           <span class="order-date">
             📅 {{ formatDate(order.created_at) }}
           </span>
-          <button class="btn-detail" @click.stop="viewOrderDetail(order)">
+         <button
+  class="btn-detail"
+  :class="isOrderExpired(order) ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : ''"
+  :disabled="isOrderExpired(order)"
+  @click.stop="!isOrderExpired(order) && viewOrderDetail(order)"
+>
+  Lihat Detail →
+</button>
+
+
+          <!-- <button class="btn-detail" @click.stop="viewOrderDetail(order)">
             Lihat Detail →
-          </button>
+          </button> -->
         </div>
       </div>
     </div>
@@ -98,11 +116,11 @@
       <h3>Belum Ada Transaksi</h3>
       <p>{{ getEmptyMessage() }}</p>
       <button class="btn-primary" @click="goCari">
-  Cari Laundry
-</button>
+        Cari Laundry
+      </button>
 
 
-<!-- <button class="btn-primary" @click="router.push({ path: '/', hash: '#cari' })">
+      <!-- <button class="btn-primary" @click="router.push({ path: '/', hash: '#cari' })">
   Cari Laundry
 </button> -->
 
@@ -144,6 +162,10 @@ const filteredOrder = computed(() => {
   }
   return order.value.filter(order => order.status === activeFilter.value);
 });
+const isOrderExpired = (order: any) => {
+  if (!order.waktu_antar) return false;
+  return new Date(order.waktu_antar).getTime() < Date.now();
+};
 
 
 function formatTime(date: Date) {
@@ -186,7 +208,7 @@ async function updateStatusSudahAntar(order) {
 function chatLaundry(order) {
   const phone = order.mitra?.phone || '';
   const msg = `Halo, saya ingin menanyakan order laundry dengan kode ${order.kode_order}`;
-  
+
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
 }
 function bukaMaps(order) {
@@ -258,7 +280,8 @@ function viewOrderDetail(order) {
 
   const waktuAntar = new Date(createdAt.getTime() + 2 * 60 * 60 * 1000);
   const estimasiSelesai = new Date(waktuAntar.getTime() + 6 * 60 * 60 * 1000);
- 
+  const isExpired = waktuAntar.getTime() < Date.now();
+
   let htmlContent = '';
 
   if (order.status === 'diterima') {
@@ -286,9 +309,18 @@ function viewOrderDetail(order) {
       <p><strong>Kode Order:</strong> ${order.kode_order}</p>
 
       <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-        <button id="btnSudahAntar" style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
-          ✓ Saya Sudah Antar
-        </button>
+        <button id="btnSudahAntar"
+  style="
+    padding:10px;
+    border-radius:6px;
+    font-weight:600;
+    background:${isExpired ? '#e5e7eb' : '#4f46e5'};
+    color:${isExpired ? '#9ca3af' : 'white'};
+    ${isExpired ? 'pointer-events:none; cursor:not-allowed;' : ''}
+  ">
+  ${isExpired ? 'Tidak dapat mengantar - waktu sudah lewat' : '✓ Saya Sudah Antar'}
+</button>
+
 
         <button id="btnChat" style="padding:10px; background:#10b981; color:white; border-radius:6px; font-weight:600;">
           💬 Chat Laundry
@@ -314,7 +346,7 @@ function viewOrderDetail(order) {
       showConfirmButton: true,
       confirmButtonText: "Tutup",
       width: '480px'
-    }).then(() => {});
+    }).then(() => { });
   }, 50);
 
   setTimeout(() => {
@@ -597,7 +629,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Order List */

@@ -45,6 +45,9 @@ $table->unsignedBigInteger('jenis_layanan_id')->nullable();
         $table->string('alasan_penolakan')->nullable();
 
         // Waktu-waktu penting
+        // $table->timestamp('sudah_antar')->nullable();
+        $table->timestamp('estimasi_selesai')->nullable();
+        $table->timestamp('estimasi_jam')->nullable();
         $table->timestamp('waktu_pelanggan_antar')->nullable();
         $table->timestamp('waktu_diambil')->nullable();
 

@@ -73,6 +73,8 @@ class UserSeeder extends Seeder
         Pelanggan::create([
             'user_id' => $pelangganUser->id,
             'alamat' => 'Jl. Pelanggan No.5',
+            'kode_pos' => '12345',
+            'kecamatan_id' => 1,
         ]);
     }
 }
@@ -158,3 +160,7 @@ class UserSeeder extends Seeder
 //         $pelangganUser->assignRole('pelanggan');
 //     }
 // }
+
+
+
+

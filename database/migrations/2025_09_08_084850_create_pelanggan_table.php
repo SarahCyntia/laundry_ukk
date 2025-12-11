@@ -16,7 +16,12 @@ return new class extends Migration
     Schema::create('pelanggan', function (Blueprint $table) {
         $table->id();
         $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+
+        $table->unsignedBigInteger('kecamatan_id')->nullable();
+$table->foreign('kecamatan_id')->references('id')->on('kecamatan')->onDelete('cascade');
+
         $table->text('alamat')->nullable();
+        $table->string('kode_pos')->nullable();
         $table->timestamps();
     });
 

@@ -185,9 +185,9 @@ function goToLaundry(id: number) {
   router.push({ name: "DetailLaundry", params: { id: id } });
 }
 
-function goToProfile(id: number) {
-  console.log("id", id)
-  router.push({ name: "pelanggan.profil-pelanggan", params: { id: id } });
+function goToProfile() {
+  // console.log("id", id)
+  router.push({ name: "pelanggan.profil-pelanggan" });
 }
 
 // function goToLaundry(id: number) {

@@ -72,6 +72,116 @@ class PelangganController extends Controller
         ]);
     }
 
+
+
+
+
+
+public function update(Request $request, $id)
+{
+    $pelanggan = Pelanggan::with('user')->find($id);
+
+    if (!$pelanggan) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Data pelanggan tidak ditemukan'
+        ], 404);
+    }
+
+    // $validatedData = $request->validated();
+    $validatedData = $request->validate([
+    'name'      => 'required|string|max:255',
+    'email'     => 'required|email|unique:users,email,' . $pelanggan->user->id,
+    'phone'     => 'required|string|max:20',
+    'alamat'    => 'nullable|string',
+    'kecamatan_id' => 'nullable|integer|exists:kecamatan,id',
+    'kode_pos'  => 'nullable|string|max:10',
+    'photo'     => 'nullable|image|max:2048'
+]);
+
+
+    // =============================
+    // UPDATE FOTO USER
+    // =============================
+    if ($request->hasFile('photo')) {
+
+        // Hapus foto lama
+        if ($pelanggan->user->photo) {
+            Storage::disk('public')->delete($pelanggan->user->photo);
+        }
+
+        // Upload foto baru
+        $validatedData['photo'] = $request->file('photo')->store('photo', 'public');
+    }
+
+    // =============================
+    // UPDATE DATA USER
+    // =============================
+    $pelanggan->user->update([
+        'name'  => $validatedData['name'],
+        'email' => $validatedData['email'],
+        'phone' => $validatedData['phone'],
+        'photo' => $validatedData['photo'] ?? $pelanggan->user->photo,
+    ]);
+
+    // =============================
+    // UPDATE DATA PELANGGAN
+    // =============================
+    $pelanggan->update([
+        'alamat' => $validatedData['alamat'],
+        'kecamatan_id' => $validatedData['kecamatan_id'],
+        'kode_pos' => $validatedData['kode_pos'] ?? null,
+    ]);
+
+    // Reload data relasi
+    $pelanggan->load('user');
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profil berhasil diperbarui',
+        'pelanggan' => [
+            'id' => $pelanggan->id,
+            'alamat' => $pelanggan->alamat,
+            'kecamatan_id' => $pelanggan->kecamatan_id,
+            'kode_pos' => $pelanggan->kode_pos,
+            'user' => [
+                'name' => $pelanggan->user->name,
+                'email' => $pelanggan->user->email,
+                'phone' => $pelanggan->user->phone,
+                'photo' => $pelanggan->user->photo,
+            ],
+        ],
+    ]);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     /**
      * Show a specific pelanggan
      */
@@ -87,6 +197,8 @@ class PelangganController extends Controller
                 'phone' => $pelanggan->user->phone,
                 'photo' => $pelanggan->user->photo,
                 'alamat' => $pelanggan->alamat,
+                'kecamatan_id' => $pelanggan->kecamatan_id,
+                'kode_pos' => $pelanggan->kode_pos,
                 // 'password' => $pengguna->user->password,
             ],
         ]);
@@ -96,53 +208,54 @@ class PelangganController extends Controller
     /**
      * Update an existing pelanggan
      */
-    public function update(UpdatePelangganRequest $request, Pelanggan $pelanggan)
-    {
-        $validatedData = $request->validated();
+    //sebelumnya
+    // public function update(UpdatePelangganRequest $request, Pelanggan $pelanggan)
+    // {
+    //     $validatedData = $request->validated();
 
-        $validatedData['id'] = $request->input('id');
+    //     $validatedData['id'] = $request->input('id');
 
-        if ($request->filled('password')) {
-            $validatedData['password'] = Hash::make($validatedData['password']);
-        } else {
-            unset($validatedData['password']);
-        }
+    //     if ($request->filled('password')) {
+    //         $validatedData['password'] = Hash::make($validatedData['password']);
+    //     } else {
+    //         unset($validatedData['password']);
+    //     }
 
-        // if ($request->filled('jenis_kendaraan')) {
-        //     $validatedData['jenis_kendaraan'] = max(1, min(5, $validatedData['jenis_kendaraan']));
-        // }
+    //     // if ($request->filled('jenis_kendaraan')) {
+    //     //     $validatedData['jenis_kendaraan'] = max(1, min(5, $validatedData['jenis_kendaraan']));
+    //     // }
 
-        if ($request->hasFile('photo')) {
-            if ($pelanggan->user->photo) {
-                Storage::disk('public')->delete($pelanggan->user->photo);
-            }
-            $validatedData['photo'] = $request->file('photo')->store('photo', 'public');
-        }
+    //     if ($request->hasFile('photo')) {
+    //         if ($pelanggan->user->photo) {
+    //             Storage::disk('public')->delete($pelanggan->user->photo);
+    //         }
+    //         $validatedData['photo'] = $request->file('photo')->store('photo', 'public');
+    //     }
 
 
-        $pelanggan->user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            // 'password' => $request->password,
-            'photo' => $validatedData['photo'] ?? $pelanggan->user->photo,
-            // 'photo' => $request->photo,
-        ]);
+    //     $pelanggan->user->update([
+    //         'name' => $request->name,
+    //         'email' => $request->email,
+    //         'phone' => $request->phone,
+    //         // 'password' => $request->password,
+    //         'photo' => $validatedData['photo'] ?? $pelanggan->user->photo,
+    //         // 'photo' => $request->photo,
+    //     ]);
 
-        $pelanggan->update($validatedData);
-        return response()->json([
-            'success' => true,
-            'pelanggan' => [
-                // 'id' => $pelanggan->id,
-                'alamat' => $pelanggan->alamat,
-            ]
-        ]);
-    }
+    //     $pelanggan->update($validatedData);
+    //     return response()->json([
+    //         'success' => true,
+    //         'pelanggan' => [
+    //             // 'id' => $pelanggan->id,
+    //             'alamat' => $pelanggan->alamat,
+    //         ]
+    //     ]);
+    // }
     public function get()
     {
         return response()->json([
             'success' => true,
-            'data' => Pelanggan::select('id', 'alamat')->get()
+            'data' => Pelanggan::select('id', 'alamat', 'kecamatan_id', 'kode_pos')->get()
         ]);
     }
 
@@ -254,104 +367,162 @@ class PelangganController extends Controller
 
 
 
-    public function profile()
-    {
-        try {
-            $user = auth()->user();
+public function profile()
+{
+    try {
+        $user = auth()->user()->load('pelanggan', 'roles');
 
-            Log::info("User : ", ["User : " => $user->roles[0]->name]);
-            Log::info("Pass Role Check");
-
-            // Pastikan hanya pelanggan yang bisa akses
-            if (strtolower($user->role[0]) !== 'pelanggan') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Akses ditolak. Anda bukan pelanggan.',
-                ], 403);
-            }
-
-
-            // Ambil data pelanggan sesuai user_id
-            $pelanggan = Pelanggan::where('user_id', $user->id)->first();
-
-            if (!$pelanggan) {
-                Log::info("Pelanggan Baru");
-                // Buat data pelanggan baru jika belum ada
-                $pelanggan = Pelanggan::create([
-                    'user_id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                ]);
-            }
-
-            Log::info("Pelanggan : ", ['pelanggan' => $pelanggan]);
-
-            return response()->json([
-                'success' => true,
-                'user' => $user,
-                // 'pelanggan' => $pelanggan,
-            ]);
-
-        } catch (\Exception $e) {
+        // Pastikan user punya role
+        if (!$user->roles || $user->roles->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data profil.',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'User tidak memiliki role.'
+            ], 403);
         }
+
+        // Ambil nama role pertama
+        $role = strtolower($user->roles[0]->name);
+
+        Log::info("User Role:", ['role' => $role]);
+
+        // Hanya pelanggan yang boleh akses
+        if ($role !== 'pelanggan') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak. Anda bukan pelanggan.',
+            ], 403);
+        }
+
+        // Ambil data pelanggan sesuai user_id
+        $pelanggan = Pelanggan::where('user_id', $user->id)->first();
+
+        // Jika pelanggan belum ada → buat baru
+        if (!$pelanggan) {
+            Log::info("Membuat pelanggan baru untuk user ID " . $user->id);
+
+            $pelanggan = Pelanggan::create([
+                'user_id' => $user->id,
+                'name'    => $user->name,
+                'email'   => $user->email,
+            ]);
+        }
+
+        // Load relasi lengkap
+        $pelanggan->load('kecamatan');
+        // $pelanggan->load('kecamatan.kota.provinsi');
+
+        return response()->json([
+            'success' => true,
+            'user' => $user,
+            'pelanggan' => $pelanggan
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal mengambil data profil.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
 
     /**
      * Update profile pelanggan
      */
-    public function updateProfile(Request $request, $id)
-    {
-        try {
-            $user = Auth::user();
-            $pelanggan = $user->pelanggan()->findOrFail($id);
+public function updateProfile(UpdatePelangganRequest $request, $id)
+{
+    $user = Auth::user();
 
-            // Validasi
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email,' . $user->id,
-                'phone' => 'required|string|max:20',
-                'alamat' => 'nullable|string',
-                'kota' => 'nullable|string|max:100',
-                'kode_pos' => 'nullable|string|max:10',
-            ]);
+    // Ambil data pelanggan milik user
+    $pelanggan = $user->pelanggan()->where('id', $id)->first();
 
-            // Update data user
-            $user->update([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-            ]);
-
-            // Update data pelanggan
-            $pelanggan->update([
-                'alamat' => $validated['alamat'] ?? null,
-                // 'kota' => $validated['kota'] ?? null,
-                // 'kode_pos' => $validated['kode_pos'] ?? null,
-            ]);
-
-            // Reload dengan relasi
-            $pelanggan->load('user');
-
-            return response()->json($pelanggan);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'error' => $e->error()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal memperbarui profil',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    if (!$pelanggan) {
+        return response()->json([
+            'message' => 'Data pelanggan tidak ditemukan'
+        ], 404);
     }
+
+    // Ambil data terverifikasi dari FormRequest
+    $validated = $request->validated();
+
+    // Update user fields
+    $user->update([
+        'name'   => $validated['name'],
+        'email'  => $validated['email'],
+        'phone'  => $validated['phone'],
+    ]);
+
+    // Update pelanggan fields
+    $pelanggan->update([
+        'alamat'       => $validated['alamat'] ?? null,
+        'kecamatan_id' => $validated['kecamatan_id'] ?? null,
+    ]);
+
+    // Load relasi lengkap
+    $pelanggan->load([
+        'user',
+        'kecamatan'
+    ]);
+
+    return response()->json([
+        'message' => 'Profil berhasil diperbarui',
+        'data'    => $pelanggan
+    ]);
+}
+
+
+//    public function updateProfile(Request $request, $id)
+// {
+//     try {
+//         $user = Auth::user();
+//         $pelanggan = $user->pelanggan()->where('id', $id)->firstOrFail();
+
+//         // Validasi
+//         $validated = $request->validate([
+//             'name'       => 'required|string|max:255',
+//             'email'      => 'required|email|unique:users,email,' . $user->id,
+//             'phone'      => 'required|string|max:20',
+
+//             'alamat'     => 'nullable|string',
+//             'kecamatan_id' => 'nullable|exists:kecamatan,id',
+//         ]);
+
+//         // Update user
+//         $user->update([
+//             'name'  => $validated['name'],
+//             'email' => $validated['email'],
+//             'phone' => $validated['phone'],
+//         ]);
+
+//         // Update pelanggan
+//         $pelanggan->update([
+//             'alamat'       => $validated['alamat'] ?? null,
+//             'kecamatan_id' => $validated['kecamatan_id'] ?? null,
+//         ]);
+
+//         $pelanggan->load(['user', 'kecamatan.kota.provinsi']);
+
+//         return response()->json([
+//             'message' => 'Profil berhasil diperbarui',
+//             'data' => $pelanggan
+//         ]);
+
+//     } catch (ValidationException $e) {
+//         return response()->json([
+//             'message' => 'Validasi gagal',
+//             'errors' => $e->errors()
+//         ], 422);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'message' => 'Gagal memperbarui profil',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
 
     /**
      * Upload foto profil

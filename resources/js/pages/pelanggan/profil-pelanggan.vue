@@ -23,7 +23,7 @@ const editForm = ref({
   email: '',
   phone: '',
   alamat: '',
-  kota: '',
+  kecamatan_id: '',
   kode_pos: ''
 });
 
@@ -42,21 +42,38 @@ function formatDate(dateString: string) {
   });
 }
 
+
 function toggleEditMode() {
   isEditMode.value = !isEditMode.value;
 
-  if (isEditMode.value) {
-    // Isi form dengan data saat ini
+  if (isEditMode.value && userProfile.value) {
     editForm.value = {
-      name: userProfile.value?.user?.name || '',
-      email: userProfile.value?.user?.email || '',
-      phone: userProfile.value?.user?.phone || '',
-      alamat: userProfile.value?.alamat || '',
-      kota: userProfile.value?.kota || '',
-      kode_pos: userProfile.value?.kode_pos || ''
+      name: userProfile.value.user?.name || '',
+      email: userProfile.value.user?.email || '',
+      phone: userProfile.value.user?.phone || '',
+      alamat: userProfile.value.user?.pelanggan?.alamat || '',
+      kecamatan_id: userProfile.value.user?.pelanggan?.kecamatan_id || '',
+      kode_pos: userProfile.value.user?.pelanggan?.kode_pos || ''
     };
+
   }
 }
+
+// function toggleEditMode() {
+//   isEditMode.value = !isEditMode.value;
+
+//   if (isEditMode.value) {
+//     // Isi form dengan data saat ini
+//     editForm.value = {
+//       name: userProfile.value?.user?.name || '',
+//       email: userProfile.value?.user?.email || '',
+//       phone: userProfile.value?.user?.phone || '',
+//       alamat: userProfile.value?.alamat || '',
+//       kecamatan: userProfile.value?.kecamatan || '',
+//       kode_pos: userProfile.value?.kode_pos || ''
+//     };
+//   }
+// }
 
 function cancelEdit() {
   isEditMode.value = false;
@@ -65,54 +82,153 @@ function cancelEdit() {
     email: '',
     phone: '',
     alamat: '',
-    kota: '',
+    kecamatan_id: '',
     kode_pos: ''
   };
 }
 
+
+// async function saveProfile() {
+//   if (!editForm.value.name || !editForm.value.email || !editForm.value.phone) {
+//     Swal.fire({
+//       icon: 'error',
+//       title: 'Data Tidak Lengkap',
+//       text: 'Nama, email, dan nomor telepon wajib diisi!'
+//     });
+//     return;
+//   }
+
+//   try {
+//     const response = await axios.put(`/pelanggan/update/${userProfile.value.pelanggan.id}`, {
+//       name: editForm.value.name,
+//       email: editForm.value.email,
+//       phone: editForm.value.phone,
+//       alamat: editForm.value.alamat,
+//       kecamatan: editForm.value.kecamatan,
+//       kecamatan_id: editForm.value.kecamatan_id,      // kalau punya
+//       kode_pos: editForm.value.kode_pos
+//     });
+
+
+//     await fetchProfile();
+//     isEditMode.value = false;
+
+//     Swal.fire({
+//       icon: 'success',
+//       title: 'Berhasil!',
+//       text: 'Profil berhasil diperbarui',
+//       timer: 1500,
+//       showConfirmButton: false
+//     });
+//   } catch (error: any) {
+//     Swal.fire({
+//       icon: 'error',
+//       title: 'Gagal Memperbarui',
+//       text: error.response?.data?.message || 'Terjadi kesalahan saat memperbarui profil'
+//     });
+//   }
+// }
+
+
 async function saveProfile() {
-  // Validasi
-  if (!editForm.value.name || !editForm.value.email || !editForm.value.phone) {
+  // VALIDASI FORM WAJIB
+  if (!editForm.value.name || !editForm.value.email || !editForm.value.phone || !editForm.value.kecamatan_id || !editForm.value.alamat) {
     Swal.fire({
-      icon: 'error',
-      title: 'Data Tidak Lengkap',
-      text: 'Nama, email, dan nomor telepon wajib diisi!'
+      icon: "error",
+      title: "Data Tidak Lengkap",
+      text: "Nama, email, dan nomor telepon wajib diisi!"
+    });
+    return;
+  }
+
+  // CEK ID PELANGGAN AMAN
+  console.log("USER PROFILE:", userProfile.value?.user?.pelanggan || "PELAGGAN NULL");
+
+  const pelangganId = userProfile.value?.user.pelanggan?.id;
+  if (!pelangganId) {
+    Swal.fire({
+      icon: "error",
+      title: "ID Tidak Ditemukan",
+      text: "Data pelanggan tidak lengkap."
     });
     return;
   }
 
   try {
-    const response = await axios.put(`/pelanggan/${userProfile.value.id}`, {
+    // REQUEST UPDATE
+    const response = await axios.put(`/pelanggan/update/${pelangganId}`, {
       name: editForm.value.name,
       email: editForm.value.email,
       phone: editForm.value.phone,
       alamat: editForm.value.alamat,
-      kota: editForm.value.kota,
+      kecamatan_id: editForm.value.kecamatan_id, // FIX
       kode_pos: editForm.value.kode_pos
     });
 
-    if (response.data) {
-      // Refresh data profil setelah update
-      await fetchProfile();
-      isEditMode.value = false;
+    // REFRESH PROFIL
+    await fetchProfile();
+    isEditMode.value = false;
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Berhasil!',
-        text: 'Profil berhasil diperbarui',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    }
-  } catch (error: any) {
-    console.error('Error updating profile:', error);
     Swal.fire({
-      icon: 'error',
-      title: 'Gagal Memperbarui',
-      text: error.response?.data?.message || 'Terjadi kesalahan saat memperbarui profil'
+      icon: "success",
+      title: "Berhasil!",
+      text: "Profil berhasil diperbarui",
+      timer: 1500,
+      showConfirmButton: false
+    });
+  } catch (error: any) {
+    Swal.fire({
+      icon: "error",
+      title: "Gagal Memperbarui",
+      text: error.response?.data?.message || "Terjadi kesalahan saat memperbarui profil"
     });
   }
 }
+
+
+// async function saveProfile() {
+//   // Validasi
+//   if (!editForm.pelanggan.name || !editForm.pelanggan.email || !editForm.pelanggan.phone) {
+//     Swal.fire({
+//       icon: 'error',
+//       title: 'Data Tidak Lengkap',
+//       text: 'Nama, email, dan nomor telepon wajib diisi!'
+//     });
+//     return;
+//   }
+
+//   try {
+//     const response = await axios.put(`/pelanggan/${userProfile.pelanggan.id}`, {
+//       name: editForm.pelanggan.name,
+//       email: editForm.pelanggan.email,
+//       phone: editForm.pelanggan.phone,
+//       alamat: editForm.pelanggan.alamat,
+//       kecamatan: editForm.pelanggan.kecamatan,
+//       kode_pos: editForm.pelanggan.kode_pos
+//     });
+
+//     if (response.data) {
+//       // Refresh data profil setelah update
+//       await fetchProfile();
+//       isEditMode.pelanggan = false;
+
+//       Swal.fire({
+//         icon: 'success',
+//         title: 'Berhasil!',
+//         text: 'Profil berhasil diperbarui',
+//         timer: 1500,
+//         showConfirmButton: false
+//       });
+//     }
+//   } catch (error: any) {
+//     console.error('Error updating profile:', error);
+//     Swal.fire({
+//       icon: 'error',
+//       title: 'Gagal Memperbarui',
+//       text: error.response?.data?.message || 'Terjadi kesalahan saat memperbarui profil'
+//     });
+//   }
+// }
 
 function showPhotoUpload() {
   Swal.fire({
@@ -152,12 +268,9 @@ function showPhotoUpload() {
         formData.append('photo', result.value);
 
         await axios.post(`/pelanggan/${userProfile.value.id}/upload-photo`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+          headers: { 'Content-Type': 'multipart/form-data' }
         });
 
-        // Refresh data profil
         await fetchProfile();
 
         Swal.fire({
@@ -176,6 +289,7 @@ function showPhotoUpload() {
       }
     }
   });
+
 }
 
 function showChangePassword() {
@@ -248,6 +362,26 @@ async function fetchProfile() {
     throw error;
   }
 }
+
+
+
+const selectedKecamatanName = ref("");
+const kecamatanList = ref([]);
+
+const loadKecamatan = async () => {
+  try {
+    const res = await axios.get("/kecamatan");
+    kecamatanList.value = res.data; // <-- pastikan ini
+    console.log("ISI KECAMATAN:", kecamatanList.value);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+onMounted(() => {
+  loadKecamatan();
+});
+
 
 // Lifecycle
 onMounted(async () => {
@@ -340,27 +474,36 @@ onMounted(async () => {
             <label>Nama Lengkap</label>
             <p>{{ userProfile?.user?.name || '-' }}</p>
           </div>
+
           <div class="info-item">
             <label>Email</label>
             <p>{{ userProfile?.user?.email || '-' }}</p>
           </div>
+
           <div class="info-item">
             <label>Nomor Telepon</label>
             <p>{{ userProfile?.user?.phone || '-' }}</p>
           </div>
+
           <div class="info-item">
             <label>Alamat</label>
-            <p>{{ userProfile?.alamat || 'Belum ada alamat' }}</p>
+            <p>{{ userProfile?.user.pelanggan?.alamat || 'Belum ada alamat' }}</p>
           </div>
+
           <div class="info-item">
-            <label>Kota</label>
-            <p>{{ userProfile?.kota || '-' }}</p>
+            <label>Kecamatan</label>
+            <p>{{ userProfile?.pelanggan?.kecamatan?.nama || '-' }}</p>
           </div>
-          <div class="info-item">
-            <label>Kode Pos</label>
-            <p>{{ userProfile?.kode_pos || '-' }}</p>
-          </div>
+
+          <!-- Kalau butuh kode pos tinggal aktifkan -->
+          <!--
+  <div class="info-item">
+    <label>Kode Pos</label>
+    <p>{{ userProfile?.pelanggan?.kode_pos || '-' }}</p>
+  </div>
+  -->
         </div>
+
 
         <!-- Edit Mode -->
         <div v-else class="edit-form">
@@ -384,6 +527,24 @@ onMounted(async () => {
             <textarea v-model="editForm.alamat" placeholder="Masukkan alamat lengkap" class="form-control"
               rows="3"></textarea>
           </div>
+          <div class="form-group">
+            <label>Kecamatan</label>
+            <select v-model="editForm.kecamatan_id" class="form-control" value="pidlifh">
+              <!-- <option value="Pilih Kecamatan">Pilih Kecamatan</option> -->
+              <option v-for="item in kecamatanList" :key="item.id" :value="item.id">
+                {{ item.nama }}
+              </option>
+            </select>
+          </div>
+
+
+
+          <!-- <div class="form-group">
+            <label>Kecamatan</label>
+            <p class="info-value">
+              {{ kecamatan?.nama }}
+            </p>
+          </div> -->
 
 
           <div class="form-actions">
@@ -438,11 +599,11 @@ onMounted(async () => {
           <div class="transaction-section">
             <div class="section-headerr">
               <h3 class="tra">Transaksi</h3>
-            
 
-            <button class="btn-transaction-history" @click="router.push({ name: 'RiwayatTransaksi' })">
-              📜 Lihat Riwayat Transaksi
-            </button>
+
+              <button class="btn-transaction-history" @click="router.push({ name: 'RiwayatTransaksi' })">
+                📜 Lihat Riwayat Transaksi
+              </button>
             </div>
           </div>
         </div>
@@ -452,20 +613,32 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.info-value {
+  font-size: 15px;
+  color: #333;
+  margin-top: 3px;
+}
 
-.tra{
+
+
+
+
+
+.tra {
   color: white;
 }
 
-.section-headerr{
+.section-headerr {
   text-align: center;
 }
-.btn-transaction-history{
+
+.btn-transaction-history {
   background-color: #a3acd1;
   text-align: center;
-border-radius: 8px;
+  border-radius: 8px;
 }
-.transaction-section{
+
+.transaction-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
   border-radius: 12px;
@@ -473,7 +646,7 @@ border-radius: 8px;
   align-items: center;
   gap: 16px;
   color: white;
-  
+
 }
 
 * {

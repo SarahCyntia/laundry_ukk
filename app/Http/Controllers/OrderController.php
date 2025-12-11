@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mitra;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Midtrans\Snap;
 use Midtrans\Config;
 
@@ -32,8 +33,16 @@ class OrderController extends Controller
                 'jenis_layanan:id,nama_layanan',
                 'mitra:id,user_id,nama_laundry',
             ])
+            ->when($request->status, function ($query, $status) {
+                // Jika parameter 'status' ada, filter berdasarkan status tersebut
+                $query->where('status', $status);
+            })
+            ->when($request->has('exclude_status'), function ($query) use ($request) {
+                $query->whereNotIn('status', $request->exclude_status);
+            })
             ->orderBy('created_at', 'desc')
             ->paginate($per);
+
 
         // Nomor urut
         $start = ($query->currentPage() - 1) * $per + 1;
@@ -63,10 +72,15 @@ class OrderController extends Controller
                 'berat_estimasi' => $o->berat_estimasi,
                 'berat_aktual' => $o->berat_aktual,
                 'harga_final' => $o->harga_final,
+                'alasan_penolakan' => $o->alasan_penolakan,
+                'estimasi_selesai' => $o->estimasi_selesai,
+                'estimasi_jam' => $o->estimasi_jam,
                 'catatan' => $o->catatan,
                 'created_at' => $o->created_at->format('Y-m-d H:i'),
             ];
         });
+
+
 
         return response()->json($query);
     }
@@ -79,41 +93,41 @@ class OrderController extends Controller
 
     //sebelumnya
     public function store(Request $request)
-{
-    $request->validate([
-        'pelanggan_id' => 'required',
-        'mitra_id' => 'required',
-        'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
-        'berat_estimasi' => 'nullable',
-        'catatan' => 'nullable',
-    ]);
+    {
+        $request->validate([
+            'pelanggan_id' => 'required',
+            'mitra_id' => 'required',
+            'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
+            'berat_estimasi' => 'nullable',
+            'catatan' => 'nullable',
+        ]);
 
-    $pelanggan = auth()->user()->pelanggan;
+        $pelanggan = auth()->user()->pelanggan;
 
-    if (!$pelanggan) {
+        if (!$pelanggan) {
+            return response()->json([
+                'message' => 'Akun ini tidak memiliki data pelanggan'
+            ], 400);
+        }
+
+        $order = Order::create([
+            'pelanggan_id' => $pelanggan->id,
+            'mitra_id' => $request->mitra_id,
+            'jenis_layanan_id' => $request->jenis_layanan_id, // FIX
+            'kode_order' => 'ORD-' . time(),
+            'berat_estimasi' => $request->berat_estimasi,
+            'catatan' => $request->catatan,
+            'status' => 'menunggu_konfirmasi_mitra',
+        ]);
+
         return response()->json([
-            'message' => 'Akun ini tidak memiliki data pelanggan'
-        ], 400);
+            'success' => true,
+            'message' => 'Order berhasil dibuat',
+            'data' => $order
+        ]);
     }
 
-    $order = Order::create([
-        'pelanggan_id' => $pelanggan->id,
-        'mitra_id' => $request->mitra_id,
-        'jenis_layanan_id' => $request->jenis_layanan_id, // FIX
-        'kode_order' => 'ORD-' . time(),
-        'berat_estimasi' => $request->berat_estimasi,
-        'catatan' => $request->catatan,
-        'status' => 'menunggu_konfirmasi_mitra',
-    ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Order berhasil dibuat',
-        'data' => $order
-    ]);
-}
-
- 
     //BUAT BESOK
     // public function store(Request $request)
     // {
@@ -199,13 +213,39 @@ class OrderController extends Controller
      *  4. MITRA KONFIRMASI / TOLAK ORDER
      * ============================================ */
     public function konfirmasi($id)
-    {
-        $order = Order::findOrFail($id);
-        $order->status = 'diterima';
-        $order->save();
+{
+    $order = Order::findOrFail($id);
 
-        return response()->json(['message' => 'Order dikonfirmasi']);
-    }
+    $order->status = "diterima";
+    $order->waktu_pelanggan_antar = now()->addHours(2); // pelanggan harus antar dalam 2 jam
+    $order->estimasi_selesai = now()->addHours($order->jenis_layanan->estimasi_jam);
+
+    $order->save();
+
+    // 🔔 KIRIM WA KE PELANGGAN
+    Http::post("https://api.fonnte.com/send", [
+        "target" => $order->pelanggan->user->phone,
+        "message" =>
+            "Hai {$order->pelanggan->user->name}, order laundry Anda *DITERIMA*.
+             Silakan antar laundry *sebelum jam {$order->waktu_pelanggan_antar->format('H:i')}*.
+             Estimasi selesai: *{$order->estimasi_selesai->format('H:i')}*.
+             Kode Order: {$order->kode_order}.
+             Laundry: {$order->mitra->nama_laundry}.",
+        "token" => env("FONNTE_KEY")
+    ]);
+
+    return response()->json(['message' => 'Order diterima']);
+}
+
+    //sebelumnya
+    // public function konfirmasi($id)
+    // {
+    //     $order = Order::findOrFail($id);
+    //     $order->status = 'diterima';
+    //     $order->save();
+
+    //     return response()->json(['message' => 'Order dikonfirmasi']);
+    // }
 
 
     public function tolak(Request $request, $id)
@@ -369,6 +409,12 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
+        
+        if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
+            return response()->json([
+                'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
+            ], 403);
+        }
 
         $request->validate([
             'pelanggan_id' => 'nullable|numeric',

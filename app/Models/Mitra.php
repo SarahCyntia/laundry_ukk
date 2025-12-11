@@ -25,7 +25,9 @@ class Mitra extends Authenticatable
         'jam_buka',
         'jam_tutup',
         'foto_toko',
-        'deskripsi'
+        'deskripsi',
+        'estimasi_selesai',
+        'estimasi_jam'
 
     ];
 
