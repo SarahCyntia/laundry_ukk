@@ -10,6 +10,14 @@
         🚪 Logout
       </button>
 
+      <div v-if="isLoggedIn" >
+        <button class="btn-profil-top" @click="goToProfile">
+          <span class="profile-icon">👤</span>
+          <span class="profile-name">
+            {{ userProfile?.nama || "Profil Pelanggan" }}
+          </span>
+        </button>
+      </div>
 
 
       <div class="icon">🏠</div>
@@ -26,14 +34,6 @@
 
 
 
-    <div v-if="isLoggedIn">
-  <button class="btn-profile" @click="goToProfile">
-    <span class="profile-icon">👤</span>
-    <span class="profile-name">
-      {{ userProfile?.nama || "Profil Pelanggan" }}
-    </span>
-  </button>
-</div>
 
 
 
@@ -272,11 +272,7 @@ onMounted(async () => {
 </script>
 
 <style>
-
-
-
-
-.btn-profile {
+/* .btn-profile {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -286,13 +282,51 @@ onMounted(async () => {
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
+  height: 40px;
+  width: 105%;
+
 }
 
 .btn-profile:hover {
-  background: #f5f5f5;
+  background: #6c80d9;
+} */
+
+
+
+
+
+.btn-profil-top {
+  position: fixed;
+  top: 20px;
+  left: 30px;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 1000;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  height: 40px;
+  width: 150px;
 }
 
+.btn-profil-top:hover {
+  background: #8699ef;
+  color: white;
+}
+.text-blue {
+  color: #8cbbdd;
+  border-color: #dc3545;
+}
 
+.text-blue:hover {
+  background: #db9298;
+  color: white;
+}
 
 
 
@@ -342,9 +376,10 @@ html {
 }
 
 .btn-login-top:hover {
-  background: #667eea;
+  background: #6b7fda;
   color: white;
 }
+
 
 .text-danger {
   color: #dc3545;
@@ -352,7 +387,7 @@ html {
 }
 
 .text-danger:hover {
-  background: #dc3545;
+  background: #db9298;
   color: white;
 }
 

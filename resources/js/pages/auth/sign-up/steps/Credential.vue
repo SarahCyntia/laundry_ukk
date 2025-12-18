@@ -109,6 +109,38 @@
           </div>
         </div>
 
+
+<div class="fv-row mb-7">
+  <label class="form-label fw-bold text-dark fs-6">Kecamatan</label>
+
+  <Field
+    as="select"
+    name="kecamatan_id"
+    v-model="formData.kecamatan_id"
+  class="form-select form-select-lg bg-white text-dark"
+  >
+    <option value="">-- Pilih Kecamatan --</option>
+
+    <option
+      v-for="kecamatan in kecamatanList"
+      :key="kecamatan.id"
+      :value="kecamatan.id"
+    >
+      {{ kecamatan.nama }}
+    </option>
+
+  </Field>
+
+  <div class="fv-plugins-message-container">
+    <div class="fv-help-block">
+      <ErrorMessage name="kecamatan_id" />
+    </div>
+  </div>
+</div>
+
+
+
+
         <!-- Foto KTP -->
        <div class="fv-row mb-7">
     <label class="form-label fw-bold text-dark fs-6">Foto KTP</label>
@@ -148,8 +180,9 @@
   </section>
 </template>
 <script lang="ts">
-import { defineComponent, ref, watch } from "vue";
+import { defineComponent, ref, watch, onMounted } from "vue";
 import { Field, ErrorMessage } from "vee-validate";
+import axios from "@/libs/axios";
 
 export default defineComponent({
   name: "Credential",
@@ -162,13 +195,17 @@ export default defineComponent({
     },
   },
 
+  
+
   setup(props) {
     const previewUrl = ref<string | null>(null);
     const errorMessage = ref<string | null>(null);
+    const kecamatanList = ref([]);
 
     const resetMitraFields = () => {
       props.formData.nama_laundry = "";
       props.formData.alamat_laundry = "";
+      props.formData.kecamatan_id = "";
       props.formData.foto_ktp = null;
       previewUrl.value = null;
     };
@@ -207,7 +244,13 @@ export default defineComponent({
       previewUrl.value = URL.createObjectURL(file);
     };
 
-    return { handleFileUpload, previewUrl, errorMessage };
+onMounted(async () => {
+  const res = await axios.get("/kecamatan");
+  kecamatanList.value = res.data;
+});
+
+
+    return { handleFileUpload, previewUrl, errorMessage,  kecamatanList, };
   },
 });
 </script>
@@ -268,6 +311,12 @@ export default defineComponent({
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
+}
+.form-select option {
+  color: #000 !important;
+}
+select option {
+  color: #000;
 }
 .fade-enter-from,
 .fade-leave-to {

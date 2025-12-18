@@ -62,6 +62,18 @@ class MitraOrderController extends Controller
     return response()->json($order);
 }
 
+public function show($id)
+{
+    $order = Order::where('id', $id)
+        ->where('mitra_id', auth()->user()->mitra_id) // 🔒 WAJIB
+        ->firstOrFail();
+
+    return response()->json([
+        'order' => $order,
+        'jenis_layanan' => $order->jenisLayanan,
+    ]);
+}
+
 
     //     public function orderMasuk(Request $request)
 // {
@@ -244,20 +256,49 @@ class MitraOrderController extends Controller
         return response()->json($order);
     }
 
+
+
+
+
     public function notifOrderBaru()
 {
-    $mitraId = auth()->user()->mitra_id;
-
-    $order = Order::with('pelanggan')
-        ->where('mitra_id', $mitraId)
-        ->where('status', 'menunggu_konfirmasi_mitra')
-        ->get();
-
-    return response()->json([
-        'count' => $order->count(),
-        'order' => $order
-    ]);
+    try {
+        return response()->json([
+            "logged_user" => auth()->user(),
+            "mitra_id" => auth()->user()->mitra_id ?? null,
+            "test_orders" => Order::select('id','mitra_id','status')->orderBy('id','desc')->limit(10)->get(),
+            "query_result" => Order::where('mitra_id', auth()->user()->mitra_id)
+                ->where('status', 'menunggu_konfirmasi_mitra')
+                ->get(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            "error" => $e->getMessage(),
+            "line" => $e->getLine(),
+        ], 500);
+    }
 }
+
+
+
+//ini bisa
+    // public function notifOrderBaru()
+    // {
+    //     $mitraId = auth()->user()->mitra_id;
+
+    //     $order = Order::with('pelanggan')
+    //         ->where('mitra_id', $mitraId)
+    //         ->where('status', 'menunggu_konfirmasi_mitra')
+    //         ->get();
+
+    //     return [
+    //         "mitra_id" => $mitraId,
+    //         "db_has" => Order::pluck("mitra_id"),
+    //         "found" => $order->count(),
+    //         "order" => $order
+    //     ];
+    // }
+
 
     // public function notifOrderBaru()
     // {

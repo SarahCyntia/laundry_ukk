@@ -61,10 +61,10 @@
           </div> -->
         </div>
 
-        <!-- Order Info -->
+        <!-- Order Info --> 
         <div class="order-info">
           <div class="info-row">
-            <span class="label">🧺 Laundry:</span>
+            <span class="label">🧺 Nama Laundry:</span>
             <span class="value">{{ order.mitra?.nama_laundry || '-' }}</span>
           </div>
           <div class="info-row">

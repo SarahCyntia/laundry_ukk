@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\JenisLayanan;
 use App\Models\Mitra;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -100,7 +101,14 @@ class OrderController extends Controller
             'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
             'berat_estimasi' => 'nullable',
             'catatan' => 'nullable',
+
         ]);
+
+        $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
+        $hargaPerKg = $layanan->harga; // contoh: 8000
+
+        // 🔥 HITUNG TOTAL
+        $hargaFinal = $request->berat_estimasi * $hargaPerKg;
 
         $pelanggan = auth()->user()->pelanggan;
 
@@ -118,6 +126,7 @@ class OrderController extends Controller
             'berat_estimasi' => $request->berat_estimasi,
             'catatan' => $request->catatan,
             'status' => 'menunggu_konfirmasi_mitra',
+              'harga_final' => $hargaFinal, 
         ]);
 
         return response()->json([
@@ -213,29 +222,29 @@ class OrderController extends Controller
      *  4. MITRA KONFIRMASI / TOLAK ORDER
      * ============================================ */
     public function konfirmasi($id)
-{
-    $order = Order::findOrFail($id);
+    {
+        $order = Order::findOrFail($id);
 
-    $order->status = "diterima";
-    $order->waktu_pelanggan_antar = now()->addHours(2); // pelanggan harus antar dalam 2 jam
-    $order->estimasi_selesai = now()->addHours($order->jenis_layanan->estimasi_jam);
+        $order->status = "diterima";
+        $order->waktu_pelanggan_antar = now()->addHours(2); // pelanggan harus antar dalam 2 jam
+        $order->estimasi_selesai = now()->addHours($order->jenis_layanan->estimasi_jam);
 
-    $order->save();
+        $order->save();
 
-    // 🔔 KIRIM WA KE PELANGGAN
-    Http::post("https://api.fonnte.com/send", [
-        "target" => $order->pelanggan->user->phone,
-        "message" =>
-            "Hai {$order->pelanggan->user->name}, order laundry Anda *DITERIMA*.
+        // 🔔 KIRIM WA KE PELANGGAN
+        Http::post("https://api.fonnte.com/send", [
+            "target" => $order->pelanggan->user->phone,
+            "message" =>
+                "Hai {$order->pelanggan->user->name}, order laundry Anda *DITERIMA*.
              Silakan antar laundry *sebelum jam {$order->waktu_pelanggan_antar->format('H:i')}*.
              Estimasi selesai: *{$order->estimasi_selesai->format('H:i')}*.
              Kode Order: {$order->kode_order}.
              Laundry: {$order->mitra->nama_laundry}.",
-        "token" => env("FONNTE_KEY")
-    ]);
+            "token" => env("FONNTE_KEY")
+        ]);
 
-    return response()->json(['message' => 'Order diterima']);
-}
+        return response()->json(['message' => 'Order diterima']);
+    }
 
     //sebelumnya
     // public function konfirmasi($id)
@@ -409,7 +418,7 @@ class OrderController extends Controller
     public function update(Request $request, $id)
     {
         $order = Order::findOrFail($id);
-        
+
         if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
             return response()->json([
                 'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'

@@ -168,6 +168,7 @@
 import { ref, onMounted, computed } from "vue";
 import axios from "@/libs/axios";
 import { toast } from "vue3-toastify";
+import Swal from "sweetalert2";
 
 const notif = ref(false);
 const jumlahOrderBaru = ref(0);
@@ -175,21 +176,62 @@ const weeklyStats = ref([]);
 const recentOrders = ref([]);
 const todayRevenue = ref(0);
 
-
 const checkNotif = async () => {
   try {
-    const res = await axios.get("/mitra/notif-order");
-    if (res.data.new_order && !notif.value) {
-      console.log("Ada order baru");
-      notif.value = true;
-      jumlahOrderBaru.value = res.data.count || 1;
-      toast.info("📢 Ada order baru masuk!", { autoClose: 3000 });
-      loadOrder(); // Refresh data saat ada order baru
+    const res = await axios.get("/notif-order");
+
+    const adaOrderBaru = res.data.new_order;
+    const jumlah = res.data.count;
+
+    // ⬇️ Notifikasi ditaruh di sini
+    if (adaOrderBaru) {
+      toast.info(`📢 Ada ${jumlah} order baru masuk!`, { autoClose: 3000 });
+      loadOrder(); // refresh tabel order
     }
+
   } catch (e) {
     console.error("Gagal cek notifikasi", e);
   }
 };
+
+// const checkNotif = async () => {
+//   try {
+//     const res = await axios.get("/notif-order");
+
+//     const adaOrderBaru = res.data.new_order;
+//     const jumlah = res.data.count;
+
+//     // Tampilkan notif HANYA jika backend bilang ada order baru
+//     if (adaOrderBaru) {
+//       Swal.fire({
+//         title: "📢 Order Baru!",
+//         text: `Ada ${jumlah} order baru yang menunggu konfirmasi.`,
+//         icon: "info",
+//         toast: false,
+//         confirmButtonText: "Lihat sekarang"
+//       }).then(() => {
+//         loadOrder(); // Refresh data setelah ditekan
+//       });
+//     }
+
+//   } catch (e) {
+//     console.error("Gagal cek notifikasi", e);
+//   }
+// };
+// const checkNotif = async () => {
+//   try {
+//     const res = await axios.get("/notif-order");
+//     if (res.data.new_order && !notif.value) {
+//       console.log("Ada order baru");
+//       notif.value = true;
+//       jumlahOrderBaru.value = res.data.count || 1;
+//       toast.info("📢 Ada order baru masuk!", { autoClose: 3000 });
+//       loadOrder(); // Refresh data saat ada order baru
+//     }
+//   } catch (e) {
+//     console.error("Gagal cek notifikasi", e);
+//   }
+// };
 
 const order = ref({
   menunggu_konfirmasi_mitra: 0,
@@ -246,8 +288,8 @@ const loadOrder = async () => {
 
 // Computed properties
 const totalOrderAktif = computed(() => {
-  return order.value.menunggu_konfirmasi_mitra + 
-         order.value.diproses + 
+  return order.value.menunggu_konfirmasi_mitra +
+         order.value.diproses +
          order.value.siap_diambil;
 });
 
@@ -277,8 +319,12 @@ const loadDashboard = async () => {
   recentOrders.value = res.data.recent_orders;
 };
 
+setInterval(() => {
+  checkNotif();
+}, 5000);
 
 onMounted(() => {
+setInterval(checkNotif, 20000);
   loadDashboard();
   loadOrder();
   setInterval(checkNotif, 20000); // Check setiap 20 detik

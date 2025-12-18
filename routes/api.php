@@ -102,7 +102,12 @@ Route::prefix('auth')->group(function () {
 });
 Route::get('/cek-status-mitra/{id}', [AuthController::class, 'cekStatusMitra']);
 Route::put('/cek-status-mitra/{id}', [AuthController::class, 'updateStatusMitra']);
-Route::post('/mitra', [authController::class, 'index']);
+
+
+Route::post('/mitra/auth', [authController::class, 'index']);
+
+
+
 Route::post('/mitra/verifikasi/{id}/diterima', [authController::class, 'verifikasiDiterima']);
 Route::post('/mitra/verifikasi/{id}/ditolak', [authController::class, 'verifikasiDitolak']);
 
@@ -210,7 +215,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
 
     Route::get('mitra', [MitraController::class, 'get']);
+
     Route::post('mitra', [MitraController::class, 'index'])->withoutMiddleware('can:mitra');
+    Route::get('/profile', [MitraController::class, 'profile'])->withoutMiddleware('can:mitra');
+
     Route::post('mitra/store', [MitraController::class, 'store']);
     Route::delete('mitra/{id}', [MitraController::class, 'destroy']);
     Route::apiResource('mitra', MitraController::class)->except(['index', 'store']);
@@ -294,11 +302,11 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
 
      Route::get('/dashboard', [MitraDashboardController::class, 'index'])->withoutMiddleware('can:mitra');
-    Route::get('/mitra/notif-order', [MitraOrderController::class, 'notifOrderBaru'])->withoutMiddleware('can:mitra');
-   
-   
-   
-   
+    Route::get('/notif-order', [MitraOrderController::class, 'notifOrderBaru'])->withoutMiddleware('can:mitra');
+
+
+
+
     Route::post('/mitra/pelanggan-datang', [MitraOrderController::class, 'pelangganDatang']);
 
     //    Route::post('order', [OrderController::class, 'store']);
@@ -338,7 +346,7 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
     Route::put('/pelanggan/update/{id}', [PelangganController::class, 'update']);
 
-    
+
     Route::post('pelanggan', [PelangganController::class, 'index'])->withoutMiddleware('can:pelanggan');
     Route::post('pelanggan/store', [PelangganController::class, 'store']);
     Route::post('pelanggan/show', [PelangganController::class, 'show']);

@@ -77,19 +77,40 @@ const order = ref({
 
 // ✅ TARUH TEPAT SETELAH INI
 watch(
-    () => order.value.berat_aktual,
-    (val) => {
-        console.log("Berat aktual:", val);
-        console.log("Harga per kg:", order.value.harga_per_kg);
+  () => [
+    order.value.berat_estimasi,
+    order.value.berat_aktual,
+    order.value.harga_per_kg
+  ],
+  () => {
+    const berat =
+      order.value.berat_aktual ||
+      order.value.berat_estimasi;
 
-        if (val && order.value.harga_per_kg) {
-            order.value.harga_final =
-                Number(val) * Number(order.value.harga_per_kg);
-        } else {
-            order.value.harga_final = "";
-        }
+    if (berat && order.value.harga_per_kg) {
+      order.value.harga_final =
+        Number(berat) * Number(order.value.harga_per_kg);
+    } else {
+      order.value.harga_final = "";
     }
+  },
+  { immediate: true }
 );
+
+// watch(
+//     () => order.value.berat_aktual,
+//     (val) => {
+//         console.log("Berat aktual:", val);
+//         console.log("Harga per kg:", order.value.harga_per_kg);
+
+//         if (val && order.value.harga_per_kg) {
+//             order.value.harga_final =
+//                 Number(val) * Number(order.value.harga_per_kg);
+//         } else {
+//             order.value.harga_final = "";
+//         }
+//     }
+// );
 
 
 

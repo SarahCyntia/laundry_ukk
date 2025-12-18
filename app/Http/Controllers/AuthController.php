@@ -188,6 +188,7 @@ public function registerMitra(Request $request)
         'nama_laundry' => 'required|string',
         'alamat_laundry' => 'required|string',
         'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        'kecamatan_id' => 'required|exists:kecamatan,id',
     ]);
 
     // Simpan user
@@ -214,6 +215,7 @@ public function registerMitra(Request $request)
         'foto_ktp' => $path,
         'status_validasi' => 'menunggu', // default
         'status_toko' => 'buka',
+         'kecamatan_id' => $validated['kecamatan_id'],
     ]);
 
     return response()->json([
@@ -355,6 +357,7 @@ public function verifikasi($id, Request $request)
             'foto_ktp' => $pendaftar->foto_ktp,
             'status_validasi' => 'diterima',
             'status_toko' => 'tutup',
+            'kecamatan_id' => $pendaftar->kecamatan_id,
         ]);
 
         $pendaftar->status_validasi = 'diterima';

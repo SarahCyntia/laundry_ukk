@@ -56,7 +56,7 @@
         <!-- Order Info -->
         <div class="order-info">
           <div class="info-row">
-            <span class="label">🧺 Laundry:</span>
+            <span class="label">🧺 Nama Laundry:</span>
             <span class="value">{{ order.mitra?.nama_laundry || '-' }}</span>
           </div>
           <div class="info-row">
@@ -261,51 +261,124 @@ function viewOrderDetail(order) {
  
   let htmlContent = '';
 
-  if (order.status === 'diterima') {
-    htmlContent = `
-      <p style="font-size:18px; font-weight:600; color:#2563eb;">
-        ✓ Order Diterima Mitra → Harap Antar Laundry
-      </p>
+if (order.status === 'diterima') {
+  htmlContent = `
+    <p style="font-size:18px; font-weight:600; color:#2563eb;">
+      ✓ Order Diterima Mitra → Harap Antar Laundry
+    </p>
 
-      <p><strong>Waktu Antar:</strong><br>
-        ${formatTime(waktuAntar)} WIB (${formatDateDay(waktuAntar)})
-      </p>
+    <p><strong>Waktu Antar:</strong><br>
+      ${formatTime(waktuAntar)} WIB (${formatDateDay(waktuAntar)})
+    </p>
 
-      <p><strong>Estimasi Selesai:</strong><br>
-        ${formatTime(estimasiSelesai)} WIB (${formatDateDay(estimasiSelesai)})
-      </p>
+    <p><strong>Estimasi Selesai:</strong><br>
+      ${formatTime(estimasiSelesai)} WIB (${formatDateDay(estimasiSelesai)})
+    </p>
 
-      <p style="margin-top:10px; padding:10px; background:#eef2ff; border-radius:8px; font-weight:600; color:#4338ca;">
-        ${getCountdown(waktuAntar)}
-      </p>
+    <p style="margin-top:10px; padding:10px; background:#eef2ff; border-radius:8px; font-weight:600; color:#4338ca;">
+      ${getCountdown(waktuAntar)}
+    </p>
 
-      <hr style="margin:14px 0">
+    <hr style="margin:14px 0">
 
-      <p><strong>Antar ke Laundry:</strong><br> ${order.mitra?.nama_laundry}</p>
-      <p><strong>Alamat:</strong><br> ${order.mitra?.alamat_laundry}</p>
-      <p><strong>Kode Order:</strong> ${order.kode_order}</p>
+    <p><strong>Antar ke Laundry:</strong><br> ${order.mitra?.nama_laundry}</p>
+    <p><strong>Alamat:</strong><br> ${order.mitra?.alamat_laundry}</p>
+    <p><strong>Kode Order:</strong> ${order.kode_order}</p>
 
-      <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-        <button id="btnSudahAntar" style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
-          ✓ Saya Sudah Antar
-        </button>
+    <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+      <button id="btnSudahAntar" style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
+        ✓ Saya Sudah Antar
+      </button>
 
-        <button id="btnChat" style="padding:10px; background:#10b981; color:white; border-radius:6px; font-weight:600;">
-          💬 Chat Laundry
-        </button>
+      <button id="btnChat" style="padding:10px; background:#10b981; color:white; border-radius:6px; font-weight:600;">
+        💬 Chat Laundry
+      </button>
 
-        <button id="btnMaps" style="padding:10px; background:#2563eb; color:white; border-radius:6px; font-weight:600;">
-          📍 Lihat Lokasi Laundry
-        </button>
-      </div>
-    `;
-  }
-  else {
-    htmlContent = `
-      <p>Status: <strong>${order.status}</strong></p>
-      <p>Kode Order: <strong>${order.kode_order}</strong></p>
-    `;
-  }
+      <button id="btnMaps" style="padding:10px; background:#2563eb; color:white; border-radius:6px; font-weight:600;">
+        📍 Lihat Lokasi Laundry
+      </button>
+    </div>
+  `;
+}
+
+/* 🔴 TAMBAHAN BARU */
+else if (order.status === 'ditolak') {
+  htmlContent = `
+    <p style="font-size:18px; font-weight:600; color:#dc2626;">
+      ✗ Pesanan Ditolak
+    </p>
+
+    <hr style="margin:12px 0">
+
+    <p><strong>Kode Order:</strong> ${order.kode_order}</p>
+    <p><strong>Laundry:</strong> ${order.mitra?.nama_laundry || '-'}</p>
+
+    <div style="
+      margin-top:12px;
+      padding:12px;
+      background:#fee2e2;
+      border-radius:8px;
+      color:#7f1d1d;
+    ">
+      <strong>Alasan Penolakan:</strong><br>
+      ${order.alasan_penolakan || 'Tidak ada keterangan dari mitra'}
+    </div>
+  `;
+}
+
+/* DEFAULT */
+else {
+  htmlContent = `
+    <p>Status: <strong>${getStatusLabel(order.status)}</strong></p>
+    <p>Kode Order: <strong>${order.kode_order}</strong></p>
+  `;
+}
+
+  // if (order.status === 'diterima') {
+  //   htmlContent = `
+  //     <p style="font-size:18px; font-weight:600; color:#2563eb;">
+  //       ✓ Order Diterima Mitra → Harap Antar Laundry
+  //     </p>
+
+  //     <p><strong>Waktu Antar:</strong><br>
+  //       ${formatTime(waktuAntar)} WIB (${formatDateDay(waktuAntar)})
+  //     </p>
+
+  //     <p><strong>Estimasi Selesai:</strong><br>
+  //       ${formatTime(estimasiSelesai)} WIB (${formatDateDay(estimasiSelesai)})
+  //     </p>
+
+  //     <p style="margin-top:10px; padding:10px; background:#eef2ff; border-radius:8px; font-weight:600; color:#4338ca;">
+  //       ${getCountdown(waktuAntar)}
+  //     </p>
+
+  //     <hr style="margin:14px 0">
+
+  //     <p><strong>Antar ke Laundry:</strong><br> ${order.mitra?.nama_laundry}</p>
+  //     <p><strong>Alamat:</strong><br> ${order.mitra?.alamat_laundry}</p>
+  //     <p><strong>Kode Order:</strong> ${order.kode_order}</p>
+
+  //     <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+  //       <button id="btnSudahAntar" style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
+  //         ✓ Saya Sudah Antar
+  //       </button>
+
+  //       <button id="btnChat" style="padding:10px; background:#10b981; color:white; border-radius:6px; font-weight:600;">
+  //         💬 Chat Laundry
+  //       </button>
+
+  //       <button id="btnMaps" style="padding:10px; background:#2563eb; color:white; border-radius:6px; font-weight:600;">
+  //         📍 Lihat Lokasi Laundry
+  //       </button>
+  //     </div>
+  //   `;
+  // }
+  // else {
+  //   htmlContent = `
+  //     <p>Status: <strong>${order.status}</strong></p>
+  //     <p>Kode Order: <strong>${order.kode_order}</strong></p>
+  //   `;
+  // }
 
   setTimeout(() => {
     Swal.fire({

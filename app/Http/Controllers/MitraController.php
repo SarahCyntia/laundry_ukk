@@ -115,15 +115,28 @@ class MitraController extends Controller
     //         ],
     //     ]);
     // }
-    public function show($id)
+
+    public function show()
 {
-    $mitra = Mitra::with('user', 'kecamatan')->findOrFail($id);
+    $mitra = Mitra::with('user', 'kecamatan')
+        ->where('id', auth()->user()->mitra_id)
+        ->firstOrFail();
 
     return response()->json([
         "success" => true,
         "data" => $mitra
     ]);
 }
+
+//     public function show($id)
+// {
+//     $mitra = Mitra::with('user', 'kecamatan')->findOrFail($id);
+
+//     return response()->json([
+//         "success" => true,
+//         "data" => $mitra
+//     ]);
+// }
 
 
     // public function update(UpdateMitraRequest $request, Mitra $mitra)
@@ -179,7 +192,12 @@ class MitraController extends Controller
     public function update(Request $request, $id)
 {
     Log::info("All request data: ", $request->all());
-    $mitra = Mitra::findOrFail($id);
+    // $mitra = Mitra::findOrFail($id);
+    $mitra = Mitra::where('id', $id)
+    ->where('user_id', auth()->id())
+    ->firstOrFail();
+
+
 
     $mitra->update([
         "nama_laundry"   => $request->nama_laundry,
@@ -459,5 +477,39 @@ public function search(Request $request)
             ], 500);
         }
     }
+
+
+
+
+
+
+
+
+
+    public function profile()
+{
+    $user = auth()->user();
+
+    if (!$user) {
+        return response()->json([
+            'message' => 'Unauthorized'
+        ], 401);
+    }
+
+    $mitra = Mitra::with('user', 'kecamatan')
+        ->where('user_id', $user->id)
+        ->first();
+
+    if (!$mitra) {
+        return response()->json([
+            'message' => 'Mitra tidak ditemukan'
+        ], 404);
+    }
+
+    return response()->json([
+        'data' => $mitra
+    ]);
+}
+
 
 }

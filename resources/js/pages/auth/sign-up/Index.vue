@@ -170,6 +170,7 @@ interface ICredential {
     foto_ktp?: File | null;
     nama_laundry?: string;
     alamat_laundry?: string;
+    kecamatan_id?: string;
     role?: string;
 }
 
@@ -227,6 +228,7 @@ export default defineComponent({
             foto_ktp: null,
             nama_laundry: "",
             alamat_laundry: "",
+            kecamatan_id: "",
             password: "",
             password_confirmation: "",
         });
@@ -470,6 +472,8 @@ export default defineComponent({
             data.append("password_confirmation", values.password_confirmation || "");
             data.append("nama_laundry", values.nama_laundry || "");
             data.append("alamat_laundry", values.alamat_laundry || "");
+            data.append("kecamatan_id", values.kecamatan_id || "");
+            // data.append("kecamatan_id", String(formData.kecamatan_id));
 
             // tambahkan file KTP jika ada
             if (formData.value.foto_ktp) {

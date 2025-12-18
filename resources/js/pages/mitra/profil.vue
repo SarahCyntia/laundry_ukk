@@ -88,9 +88,8 @@ onMounted(() => getMitra());
 const getMitra = async () => {
   loading.value = true;
   try {
-    const res = await axios.post('/mitra'); // pakai GET sesuai controller index
-    const data = res.data.data;
-    mitra.value = Array.isArray(data) ? data[0] ?? {} : data;
+    const res = await axios.get('/profile'); // pakai GET sesuai controller index
+    mitra.value = res.data.data;
   } catch (e) {
     console.error('Gagal memuat mitra:', e);
   } finally {

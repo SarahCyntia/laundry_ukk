@@ -396,13 +396,24 @@ async function submitOrder() {
 
       await axios.post("/order/store", orderData);
 
-      Swal.fire({
-        icon: "success",
-        title: "Pesanan Berhasil Dibuat!",
-        html: buildSuccessHTML(kodeOrder),
-        confirmButtonColor: "#667eea",
-        confirmButtonText: "Mengerti",
-      })
+Swal.fire({
+  icon: "success",
+  title: "Pesanan Berhasil Dibuat!",
+  html: buildSuccessHTML(kodeOrder),
+  confirmButtonColor: "#667eea",
+  confirmButtonText: "Mengerti",
+}).then(() => {
+  resetForm();        // ⬅️ balik ke setelan awal
+  window.scrollTo({ top: 0, behavior: "smooth" }); // opsional
+});
+
+      // Swal.fire({
+      //   icon: "success",
+      //   title: "Pesanan Berhasil Dibuat!",
+      //   html: buildSuccessHTML(kodeOrder),
+      //   confirmButtonColor: "#667eea",
+      //   confirmButtonText: "Mengerti",
+      // })
       // }).then(() => router.push("/RiwayatTransaksi"));
 
     } catch (error) {
@@ -545,6 +556,15 @@ async function submitOrder() {
 //     }
 //   });
 // }
+
+
+
+function resetForm() {
+  selectedLayanan.value = null;
+  beratEstimasi.value = 1;
+  noTelepon.value = '';
+  catatan.value = '';
+}
 
 // Lifecycle
 onMounted(async () => {

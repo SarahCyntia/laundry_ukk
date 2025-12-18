@@ -295,13 +295,6 @@ const routes: Array<RouteRecordRaw> = [
 
 
 
-
-
-
-
-
-
-
       {
         path: "/dashboard/laundrydetail",
         name: "dashboard.laundrydetail",
