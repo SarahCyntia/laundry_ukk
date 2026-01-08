@@ -10,7 +10,7 @@
         🚪 Logout
       </button>
 
-      <div v-if="isLoggedIn" >
+      <div v-if="isLoggedIn">
         <button class="btn-profil-top" @click="goToProfile">
           <span class="profile-icon">👤</span>
           <span class="profile-name">
@@ -79,7 +79,7 @@
             <!-- Card Info -->
             <div class="laundry-info">
               <h3>{{ m.nama_laundry }}</h3>
-              <p class="location">📍 {{ m.alamat_laundry }}</p>
+              <p class="location">📍 {{ m.alamat_laundry }}, Kecamatan {{ m.kecamatan?.nama }}</p>
 
               <!-- Layanan List -->
               <div v-if="m.jenis_layanan && m.jenis_layanan.length" class="layanan-list">
@@ -135,17 +135,86 @@
           </div>
         </div>
       </div>
+      <!-- Cek Status Laundry -->
     </div>
+  
+
+
+
+
+<div class="cek-status-section">
+  <div class="content-wrapper">
+    <h2 class="text-center mt-20">Cek Status Laundry</h2>
+    <p class="section-desc text-kecil" id="kecil">
+      Masukkan kode order untuk mengetahui status laundry Anda
+    </p>
+
+
+
+    <p>Masukkan Kode Order</p>
+    <div class="search-kode" id="kode">
+      <input
+        v-model="KodeOrder"
+        type="text"
+        placeholder="Contoh: ORD-123456"
+        class="search-input"
+        @keyup.enter="cekStatus"
+      />
+
+      <!-- <button class="btn-search" @click="cekStatus" :disabled="loading"> -->
+        <button
+  type="button"
+  class="btn-search"
+  @click="cekStatus"
+>
+        {{ loading ? "Mencari..." : "🔍 Cari" }}
+      </button>
+    </div>
+
+    <div v-if="statusResult" class="status-result">
+      <span class="status-badge">
+        {{ statusResult }}
+      </span>
+    </div>
+  </div>
+</div>
+
+
+
+  
   </div>
 </template>
 
 <script setup lang="ts">
 import Swal from "sweetalert2";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import axios from "axios";
 
+const loadingLaundry = ref(false);
+const loadingStatus = ref(false);
+
+
+
+const kodeOrder = ref("");
+const statusResult = ref<string | null>(null);
+  
+
+async function cekStatus() {
+  if (!kodeOrder.value) {
+    Swal.fire("Oops", "Kode order tidak boleh kosong", "warning");
+    return;
+  }
+
+  try {
+    const res = await axios.get(`/cek-status/${kodeOrder.value}`);
+    statusResult.value = res.data.status_label;
+  } catch (e) {
+    statusResult.value = null;
+    Swal.fire("Tidak ditemukan", "Kode order tidak valid", "error");
+  }
+}
 
 
 const router = useRouter();
@@ -167,7 +236,8 @@ const filteredMitraList = computed(() => {
 
   return mitraList.value.filter(m =>
     m.nama_laundry.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    m.alamat_laundry.toLowerCase().includes(searchQuery.value.toLowerCase())
+    m.alamat_laundry.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    m.kecamatan?.nama?.toLowerCase().includes(q)
   );
 });
 
@@ -189,6 +259,39 @@ function goToProfile() {
   // console.log("id", id)
   router.push({ name: "pelanggan.profil-pelanggan" });
 }
+
+
+
+
+const alamat = ref('')
+const kecamatan_id = ref<number | null>(null)
+const kecamatans = ref([])
+onMounted(async () => {
+  const res = await axios.get('kecamatan')
+  kecamatans.value = res.data
+})
+
+watch(alamat, async (val) => {
+  if (val.length < 10) return
+
+  const res = await axios.post('/deteksi-kecamatan', {
+    alamat: val
+  })
+
+  if (res.data?.id) {
+    kecamatan_id.value = res.data.id
+  }
+})
+
+
+
+
+
+
+
+
+
+
 
 // function goToLaundry(id: number) {
 //   // Arahkan ke LaundryDetail.vue dengan mengirim ID mitra
@@ -272,6 +375,222 @@ onMounted(async () => {
 </script>
 
 <style>
+
+#kode {
+  display: flex;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto 48px;
+  margin-top: 60px;
+}
+
+
+
+.cek-status-section {
+  padding: 80px 20px;
+  /* background: linear-gradient(135deg, #d0e4fd 0%, #eef2f6 100%); */
+  position: relative;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.cek-status-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.cek-status-section::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -5%;
+  width: 400px;
+  height: 400px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.cek-status-section .content-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cek-status-section h2 {
+  color: #667eea;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.cek-status-section .section-desc {
+  color: #667eea;
+  font-size: 1rem;
+  margin-bottom: 40px;
+  opacity: 0.9;
+  line-height: 1.6;
+}
+
+.cek-box {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 0 auto;
+}
+#box{
+    flex: 1;
+    padding: 14px 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.3s;
+
+}
+
+.cek-input {
+  flex: 1;
+  padding: 16px 24px;
+  font-size: 1rem;
+  border: 1px solid #d0d0d0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #666;
+  transition: all 0.3s ease;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cek-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.cek-input::placeholder {
+  color: #999;
+}
+
+.btn-cek {
+  padding: 16px 40px;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #667eea;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-cek:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+
+.btn-cek::before {
+  content: '🔍';
+  font-size: 1.1rem;
+}
+
+.status-result {
+  text-align: center;
+  margin-top: 30px;
+  animation: fadeInUp 0.5s ease;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 15px 35px;
+  background: #ffffff;
+  color: #667eea;
+  font-size: 1.2rem;
+  font-weight: 700;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  border: 2px solid #667eea;
+  animation: pulse 2s infinite;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cek-status-section {
+    padding: 60px 20px;
+  }
+
+  .cek-status-section h2 {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  .cek-status-section .section-desc {
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+  }
+
+  .cek-status-box {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cek-input {
+    width: 100%;
+    padding: 14px 20px;
+  }
+
+  .btn-cek {
+    width: 100%;
+    padding: 14px 30px;
+    justify-content: center;
+  }
+
+  .status-badge {
+    padding: 12px 28px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .cek-status-section h2 {
+    font-size: 1.75rem;
+  }
+}
 /* .btn-profile {
   display: flex;
   align-items: center;
@@ -290,7 +609,6 @@ onMounted(async () => {
 .btn-profile:hover {
   background: #6c80d9;
 } */
-
 
 
 
@@ -318,6 +636,7 @@ onMounted(async () => {
   background: #8699ef;
   color: white;
 }
+
 .text-blue {
   color: #8cbbdd;
   border-color: #dc3545;
@@ -400,10 +719,21 @@ html {
 
 .text-center {
   text-align: center;
-  font-size: 32px;
+  font-size: 30px;
   font-weight: bold;
   color: #333;
   margin-bottom: 48px;
+}
+.text-kecil {
+  text-align: center;
+  font-size: 18px;
+    color: #666;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+#kecil {
+  margin-top: -50px;
 }
 
 /* Hero Section */

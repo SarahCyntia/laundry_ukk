@@ -15,12 +15,8 @@
 
     <!-- Filter Tabs -->
     <div class="filter-tabs">
-      <button 
-        v-for="status in filterStatus" 
-        :key="status.value"
-        :class="['tab-btn', { active: activeFilter === status.value }]"
-        @click="activeFilter = status.value"
-      >
+      <button v-for="status in filterStatus" :key="status.value"
+        :class="['tab-btn', { active: activeFilter === status.value }]" @click="activeFilter = status.value">
         {{ status.label }}
         <span v-if="getCountByStatus(status.value)" class="badge">
           {{ getCountByStatus(status.value) }}
@@ -36,12 +32,7 @@
 
     <!-- Order List -->
     <div v-else-if="filteredOrder.length" class="order-list">
-      <div 
-        v-for="order in filteredOrder" 
-        :key="order.id"
-        class="order-card"
-        @click="viewOrderDetail(order)"
-      >
+      <div v-for="order in filteredOrder" :key="order.id" class="order-card" @click="viewOrderDetail(order)">
         <!-- Order Header -->
         <div class="order-header">
           <div class="order-code">
@@ -72,8 +63,8 @@
           <div class="info-row total">
             <span class="label">💰 Total:</span>
             <span class="value">
-              {{ order.harga_final 
-                ? `Rp ${Number(order.harga_final).toLocaleString('id-ID')}` 
+              {{ order.harga_final
+                ? `Rp ${Number(order.harga_final).toLocaleString('id-ID')}`
                 : `Rp ${(order.berat_estimasi * order.jenis_layanan?.harga || 0).toLocaleString('id-ID')} (estimasi)`
               }}
             </span>
@@ -98,11 +89,11 @@
       <h3>Belum Ada Transaksi</h3>
       <p>{{ getEmptyMessage() }}</p>
       <button class="btn-primary" @click="goCari">
-  Cari Laundry
-</button>
+        Cari Laundry
+      </button>
 
 
-<!-- <button class="btn-primary" @click="router.push({ path: '/', hash: '#cari' })">
+      <!-- <button class="btn-primary" @click="router.push({ path: '/', hash: '#cari' })">
   Cari Laundry
 </button> -->
 
@@ -175,18 +166,58 @@ function getCountdown(target: Date) {
 
 
 
+// async function updateStatusSudahAntar(order) {
+//   try {
+//     const res = await axios.post(`/pelanggan/order/${order.id}/sudah-antar`);
+//     Swal.fire("Berhasil", "Status berhasil diperbarui!", "success");
+//   } catch (err) {
+//     Swal.fire("Gagal", "Terjadi kesalahan", "error");
+//   }
+// }
 async function updateStatusSudahAntar(order) {
-  try {
-    const res = await axios.post(`/pelanggan/order/${order.id}/sudah-antar`);
-    Swal.fire("Berhasil", "Status berhasil diperbarui!", "success");
-  } catch (err) {
-    Swal.fire("Gagal", "Terjadi kesalahan", "error");
-  }
+  Swal.fire({
+    title: "Upload Foto Struk",
+    html: `
+      <input type="file" id="fotoStruk" accept="image/*" 
+        style="margin-top:15px; border:1px solid #ddd; padding:10px; width:100%; border-radius:6px;">
+    `,
+    confirmButtonText: "Kirim",
+    showCancelButton: true,
+    cancelButtonText: "Batal",
+    preConfirm: () => {
+      const file = (document.getElementById("fotoStruk") as HTMLInputElement).files?.[0];
+      if (!file) {
+        Swal.showValidationMessage("Anda harus upload foto struk!");
+      }
+      return file;
+    }
+  }).then(async (result) => {
+    if (!result.value) return;
+
+    const file = result.value;
+    const formData = new FormData();
+    formData.append("foto_struk", file);
+
+    try {
+      const res = await axios.post(
+        `/pelanggan/order/${order.id}/sudah-antar`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      Swal.fire("Berhasil", "Struk berhasil diupload", "success");
+
+      fetchOrder(); // refresh data
+    } catch (err) {
+      Swal.fire("Gagal", "Tidak dapat mengupload struk.", "error");
+    }
+  });
 }
+
 function chatLaundry(order) {
   const phone = order.mitra?.phone || '';
   const msg = `Halo, saya ingin menanyakan order laundry dengan kode ${order.kode_order}`;
-  
+
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
 }
 function bukaMaps(order) {
@@ -216,6 +247,7 @@ function getCountByStatus(status: string) {
 function getStatusClass(status: string) {
   const statusMap = {
     'menunggu_konfirmasi_mitra': 'warning',
+    'ditunggu_mitra': 'warning',
     'diterima': 'info',
     'diproses': 'processing',
     'selesai': 'success',
@@ -226,7 +258,8 @@ function getStatusClass(status: string) {
 
 function getStatusLabel(status: string) {
   const labelMap = {
-    'menunggu_konfirmasi_mitra': 'Menunggu Konfirmasi',
+    'menunggu_konfirmasi_mitra': 'Menunggu Konfirmasi Mitra',
+    'ditunggu_mitra': 'Ditunggu Mitra',
     'diterima': 'Diterima Mitra',
     'diproses': 'Sedang Diproses',
     'selesai': 'Selesai',
@@ -258,26 +291,35 @@ function viewOrderDetail(order) {
 
   const waktuAntar = new Date(createdAt.getTime() + 2 * 60 * 60 * 1000);
   const estimasiSelesai = new Date(waktuAntar.getTime() + 6 * 60 * 60 * 1000);
- 
+
   let htmlContent = '';
 
-if (order.status === 'diterima') {
+ if (order.status === 'ditunggu_mitra') {
+
+  const sudahUpload = !!order.foto_struk;
+
   htmlContent = `
     <p style="font-size:18px; font-weight:600; color:#2563eb;">
       ✓ Order Diterima Mitra → Harap Antar Laundry
     </p>
 
-    <p><strong>Waktu Antar:</strong><br>
-      ${formatTime(waktuAntar)} WIB (${formatDateDay(waktuAntar)})
-    </p>
+    ${
+      !sudahUpload
+        ? `
+          <p><strong>Waktu Antar:</strong><br>
+            ${formatTime(waktuAntar)} WIB (${formatDateDay(waktuAntar)})
+          </p>
 
-    <p><strong>Estimasi Selesai:</strong><br>
-      ${formatTime(estimasiSelesai)} WIB (${formatDateDay(estimasiSelesai)})
-    </p>
+          <p><strong>Estimasi Selesai:</strong><br>
+            ${formatTime(estimasiSelesai)} WIB (${formatDateDay(estimasiSelesai)})
+          </p>
 
-    <p style="margin-top:10px; padding:10px; background:#eef2ff; border-radius:8px; font-weight:600; color:#4338ca;">
-      ${getCountdown(waktuAntar)}
-    </p>
+          <p style="margin-top:10px; padding:10px; background:#eef2ff; border-radius:8px; font-weight:600; color:#4338ca;">
+            ${getCountdown(waktuAntar)}
+          </p>
+        `
+        : ``
+    }
 
     <hr style="margin:14px 0">
 
@@ -286,9 +328,21 @@ if (order.status === 'diterima') {
     <p><strong>Kode Order:</strong> ${order.kode_order}</p>
 
     <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-      <button id="btnSudahAntar" style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
-        ✓ Saya Sudah Antar
-      </button>
+
+      ${
+        !sudahUpload
+          ? `
+            <button id="btnSudahAntar"
+              style="padding:10px; background:#4f46e5; color:white; border-radius:6px; font-weight:600;">
+              ✓ Saya Sudah Antar
+            </button>
+          `
+          : `
+            <div style="padding:10px; background:#d1fae5; color:#065f46; border-radius:6px; font-weight:600;">
+              👍 Anda sudah mengupload struk
+            </div>
+          `
+      }
 
       <button id="btnChat" style="padding:10px; background:#10b981; color:white; border-radius:6px; font-weight:600;">
         💬 Chat Laundry
@@ -297,13 +351,15 @@ if (order.status === 'diterima') {
       <button id="btnMaps" style="padding:10px; background:#2563eb; color:white; border-radius:6px; font-weight:600;">
         📍 Lihat Lokasi Laundry
       </button>
+
     </div>
   `;
 }
 
-/* 🔴 TAMBAHAN BARU */
-else if (order.status === 'ditolak') {
-  htmlContent = `
+
+  /* 🔴 TAMBAHAN BARU */
+  else if (order.status === 'ditolak') {
+    htmlContent = `
     <p style="font-size:18px; font-weight:600; color:#dc2626;">
       ✗ Pesanan Ditolak
     </p>
@@ -324,15 +380,15 @@ else if (order.status === 'ditolak') {
       ${order.alasan_penolakan || 'Tidak ada keterangan dari mitra'}
     </div>
   `;
-}
+  }
 
-/* DEFAULT */
-else {
-  htmlContent = `
+  /* DEFAULT */
+  else {
+    htmlContent = `
     <p>Status: <strong>${getStatusLabel(order.status)}</strong></p>
     <p>Kode Order: <strong>${order.kode_order}</strong></p>
   `;
-}
+  }
 
   // if (order.status === 'diterima') {
   //   htmlContent = `
@@ -387,7 +443,7 @@ else {
       showConfirmButton: true,
       confirmButtonText: "Tutup",
       width: '480px'
-    }).then(() => {});
+    }).then(() => { });
   }, 50);
 
   setTimeout(() => {
@@ -395,9 +451,13 @@ else {
     const btnChat = document.getElementById("btnChat");
     const btnMaps = document.getElementById("btnMaps");
 
-    if (btnSudahAntar) {
+    // if (btnSudahAntar) {
+    //   btnSudahAntar.addEventListener('click', () => updateStatusSudahAntar(order));
+    // }
+    if (!order.foto_struk && btnSudahAntar) {
       btnSudahAntar.addEventListener('click', () => updateStatusSudahAntar(order));
     }
+
 
     if (btnChat) {
       btnChat.addEventListener('click', () => chatLaundry(order));
@@ -670,7 +730,9 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Order List */

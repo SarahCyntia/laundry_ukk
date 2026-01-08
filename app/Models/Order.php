@@ -25,6 +25,9 @@ protected $table = 'order';
         'alasan_penolakan',
         'waktu_pelanggan_antar',
         'waktu_diambil',
+        'foto_struk',
+        'biaya',
+        'status_pembayaran',
     ];
 
     protected $casts = [
@@ -32,8 +35,8 @@ protected $table = 'order';
         'waktu_diambil' => 'datetime',
         'berat_estimasi' => 'decimal:2',
         'berat_actual' => 'decimal:2',
+        'waktu' => 'datetime',
     ];
-
 
     /* ================================
        RELASI

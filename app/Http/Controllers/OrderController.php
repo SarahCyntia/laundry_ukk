@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\JenisLayanan;
 use App\Models\Mitra;
 use App\Models\Order;
+use Carbon\Carbon;
+use Dotenv\Util\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Midtrans\Snap;
 use Midtrans\Config;
 
@@ -77,6 +80,7 @@ class OrderController extends Controller
                 'estimasi_selesai' => $o->estimasi_selesai,
                 'estimasi_jam' => $o->estimasi_jam,
                 'catatan' => $o->catatan,
+                'foto_struk' => $o->foto_struk,
                 'created_at' => $o->created_at->format('Y-m-d H:i'),
             ];
         });
@@ -101,6 +105,7 @@ class OrderController extends Controller
             'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
             'berat_estimasi' => 'nullable',
             'catatan' => 'nullable',
+            'foto_struk' => 'nullable',
 
         ]);
 
@@ -128,6 +133,12 @@ class OrderController extends Controller
             'status' => 'menunggu_konfirmasi_mitra',
               'harga_final' => $hargaFinal, 
         ]);
+
+         if ($request->hasFile('foto_struk')) {
+        $path = $request->file('foto_struk')->store('order_struk', 'public');
+        $order->foto_struk = $path;
+        $order->save();
+    }
 
         return response()->json([
             'success' => true,
@@ -225,7 +236,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        $order->status = "diterima";
+        $order->status = "ditunggu_mitra";
         $order->waktu_pelanggan_antar = now()->addHours(2); // pelanggan harus antar dalam 2 jam
         $order->estimasi_selesai = now()->addHours($order->jenis_layanan->estimasi_jam);
 
@@ -306,7 +317,7 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
-        $allowed = ['dicuci', 'dikeringkan', 'disetrika', 'siap_diambil', 'selesai'];
+        $allowed = ['diterima','dicuci', 'dikeringkan', 'disetrika', 'siap_diambil', 'selesai'];
 
         if (!in_array($request->status, $allowed)) {
             return response()->json(['error' => 'Status tidak valid'], 422);
@@ -360,6 +371,7 @@ class OrderController extends Controller
                 'alasan_penolakan' => $order->alasan_penolakan,
                 'waktu_pelanggan_antar' => $order->waktu_pelanggan_antar,
                 'waktu_diambil' => $order->waktu_diambil,
+                'foto_struk' => $order->foto_struk,
             ],
 
             'pelanggan' => [
@@ -415,28 +427,279 @@ class OrderController extends Controller
     /* ============================================
      *  10. UPDATE ORDER (ADMIN/MITRA)
      * ============================================ */
-    public function update(Request $request, $id)
-    {
-        $order = Order::findOrFail($id);
 
-        if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
-            return response()->json([
-                'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
-            ], 403);
+
+public function update(Request $request, $id)
+{
+    $order = Order::findOrFail($id);
+
+    if (in_array($order->status, ['selesai'])) {
+    return response()->json([
+        'message' => 'Order tidak bisa diedit karena sudah selesai'
+    ], 403);
+}
+
+
+// if ($order->waktu_diambil && !$request->hasFile('foto_struk')) {
+//     return response()->json([
+//         'message' => 'Order tidak bisa diedit karena sudah diambil'
+//     ], 403);
+// }
+
+    // if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
+    //     return response()->json([
+    //         'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
+    //     ], 403);
+    // }
+
+    $request->validate([
+        'pelanggan_id' => 'nullable|numeric',
+        'berat_estimasi' => 'nullable|numeric',
+        'berat_aktual' => 'nullable|numeric',
+        'harga_final' => 'nullable|numeric',
+        'catatan' => 'nullable|string',
+        'status' => 'nullable|string', // 🔥 FIX
+        'alasan_penolakan' => 'nullable|string',
+        'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    $order->update($request->except('foto_struk'));
+
+    if ($request->hasFile('foto_struk')) {
+        if ($order->foto_struk) {
+            Storage::disk('public')->delete($order->foto_struk);
         }
 
-        $request->validate([
-            'pelanggan_id' => 'nullable|numeric',
-            'berat_estimasi' => 'nullable|numeric',
-            'berat_aktual' => 'nullable|numeric',
-            'harga_final' => 'nullable|numeric',
-            'catatan' => 'nullable|string',
-            'status' => 'required|string',
-            'alasan_penolakan' => 'nullable|string',
+        $path = $request->file('foto_struk')->store('order_struk', 'public');
+        $order->foto_struk = $path;
+        $order->save();
+    }
+
+    return response()->json([
+        'message' => 'Order berhasil diperbarui'
+    ]);
+}
+
+    // public function update(Request $request, $id)
+    // {
+    //     $order = Order::findOrFail($id);
+
+    //     if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
+    //         return response()->json([
+    //             'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
+    //         ], 403);
+    //     }
+
+    //     $request->validate([
+    //         'pelanggan_id' => 'nullable|numeric',
+    //         'berat_estimasi' => 'nullable|numeric',
+    //         'berat_aktual' => 'nullable|numeric',
+    //         'harga_final' => 'nullable|numeric',
+    //         'catatan' => 'nullable|string',
+    //         'status' => 'required|string',
+    //         'alasan_penolakan' => 'nullable|string',
+    //         'foto_struk' => 'nullable|string',
+    //     ]);
+
+    //     $order->update($request->all());
+
+    //     return response()->json(['message' => 'Order berhasil diperbarui']);
+    // }
+
+      public function payment(Request $request)
+    {
+        $biaya = $request->order('biaya');
+
+        if (!$biaya || !is_numeric($biaya) || $biaya <= 0) {
+            return response()->json([
+                'message' => 'Biaya ongkir belum valid',
+            ], 400);
+        }
+
+        // $order_id = 'ONGKIR-' . now()->timestamp . '-' . Str::random(4);
+        $order_id = 'ORDER-' . now()->format('Ymd') . '-' . rand(1000, 9999);
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $order_id,
+                'gross_amount' => (int) $biaya,
+            ],
+            'item_details' => [
+                [
+                    'id' => $order_id,
+                    'price' => (int) $biaya,
+                    'quantity' => 1,
+                    'name' => 'Biaya Ongkir Transaksi',
+                ]
+            ],
+            'customer_details' => [
+                'first_name' => $request->order('pengirim') ?? 'User',
+                'email' => 'default@email.com',
+            ],
+            'callbacks' => [
+                // 'finish' => url('/payment/success'),
+                'finish' => env('APP_URL') . '/#/payment/success',
+                'unfinish' => url('/payment/failed'),
+                'error' => url('/payment/error'),
+            ]
+        ];
+
+        $auth = base64_encode(env('MIDTRANS_SERVER_KEY'));
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'Authorization' => "Basic $auth",
+        ])->withBody(json_encode($params), 'application/json')
+            ->post('https://app.sandbox.midtrans.com/snap/v1/transactions');
+
+        $data = json_decode($response->body());
+
+        if (!isset($data->redirect_url)) {
+            return response()->json([
+                'message' => 'Gagal membuat link pembayaran Midtrans',
+                'error' => $data,
+            ], 500);
+        }
+
+        return response()->json([
+            'redirect_url' => $data->redirect_url,
+            'order_id' => $order_id,
+        ]);
+    }
+
+    public function createSnap(Request $request)
+    {
+        $validated = $request->validate([
+            'pelanggan_id' => 'required|string',
+            'jenis_layanan_id' => 'required|string',
+            'berat_aktual' => 'required|string',
+            'harga_final' => 'required|numeric',
+            'biaya' => 'required|numeric|min:1000',
         ]);
 
-        $order->update($request->all());
+        $orderId = 'ORDER-' . Str::uuid();
 
-        return response()->json(['message' => 'Order berhasil diperbarui']);
+        $payload = [
+            'transaction_details' => [
+                'order_id' => $orderId,
+                'gross_amount' => (int) $validated['biaya'],
+            ],
+            'item_details' => [
+                [
+                    'id' => 'ongkir',
+                    'price' => (int) $validated['biaya'],
+                    'quantity' => 1,
+                    'name' => 'Ongkir Kurir',
+                ]
+            ],
+            'customer_details' => [
+                'first_name' => $validated['pelanggan_id'],
+                'email' => 'user@example.com',
+            ],
+            'callbacks' => [
+                'finish' => url('/payment/callback'),
+            ],
+            'custom_field1' => json_encode($validated), // simpan data sementara
+        ];
+
+        $auth = base64_encode(env('MIDTRANS_SERVER_KEY'));
+
+        $res = Http::withHeaders([
+            'Authorization' => "Basic $auth",
+            'Content-Type' => 'application/json',
+        ])->post('https://app.sandbox.midtrans.com/snap/v1/transactions', $payload);
+
+        $body = json_decode($res->body());
+
+        if (isset($body->token)) {
+            return response()->json([
+                'snap_token' => $body->token,
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Gagal membuat token pembayaran',
+            'error' => $body,
+        ], 500);
     }
+
+    public function getSnapToken($id)
+    {
+        // $transaksii = Transaksii::with(['pengguna'])->findOrFail($id);
+        $order = Order::where('id', $id)->firstOrFail();
+        $order->status_pembayaran = 'belum dibayar';
+        $order->save();
+
+        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+        Config::$isProduction = false;
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $order->no_resi,
+                'gross_amount' => (int) $order->biaya,
+            ],
+            'customer_details' => [
+                'first_name' => $order->pengirim,
+                // 'email' => $order->pengguna->email ?? 'user@gmail.com',
+                // 'email' => $order->pengguna_id ? ($order->pengguna->email ?? 'user@gmail.com') : 'user@gmail.com',
+                'email' => optional($order->pengirim)->email ?: 'user@gmail.com',
+            ]
+        ];
+
+        $snapToken = Snap::getSnapToken($params);
+        return response()->json(['snap_token' => $snapToken]);
+    }
+    public function handleCallback(Request $request)
+    {
+        $notif = $request->all();
+
+        if (
+            isset($notif['transaction_status']) &&
+            $notif['transaction_status'] === 'settlement'
+        ) {
+            // Ambil data form dari custom_field1
+            $data = json_decode($notif['custom_field1'], true);
+
+            // Simpan transaksi ke DB
+            $trans = new Order();
+            $trans->fill($data);
+            $trans->status = 'dibayar';
+            $trans->save();
+
+            // Simpan riwayat pembayaran
+            $pay = new Order();
+            $pay->Order_id = $trans->id;
+            $pay->external_id = $notif['order_id'];
+            $pay->status = 'success';
+            $pay->save();
+        }
+
+        return response()->json(['message' => 'Callback diproses']);
+    }
+
+
+
+
+
+
+    public function cekStatus($kode)
+{
+    $order = Order::where('kode_order', $kode)->first();
+
+    if (!$order) {
+        return response()->json([
+            'message' => 'Data tidak ditemukan'
+        ], 404);
+    }
+
+    return response()->json([
+        'kode_order' => $order->kode_order,
+        'status' => $order->status
+    ]);
+}
+
+
+
+    
 }

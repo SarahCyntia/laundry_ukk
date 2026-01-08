@@ -7,7 +7,8 @@
         <p class="subtitle">Kelola pesanan laundry Anda dengan mudah</p>
       </div>
       <div class="quick-actions">
-        <button class="btn-refresh" @click="loadOrder">
+        <button class="btn-refresh" @click="loadDashboard">
+
           <span class="icon">🔄</span>
           Refresh
         </button>
@@ -26,6 +27,22 @@
       </div>
 
       <div class="stat-card processing">
+        <div class="stat-icon">✅</div>
+        <div class="stat-content">
+          <h3>Diterima</h3>
+          <p class="stat-number">{{ order.diterima }}</p>
+          <span class="stat-label">Order Diterima</span>
+        </div>
+      </div>
+      <div class="stat-card processing">
+        <div class="stat-icon">❌</div>
+        <div class="stat-content">
+          <h3>Ditolak</h3>
+          <p class="stat-number">{{ order.ditolak }}</p>
+          <span class="stat-label">Order Ditolak</span>
+        </div>
+      </div>
+      <div class="stat-card processing">
         <div class="stat-icon">⚙️</div>
         <div class="stat-content">
           <h3>Diproses</h3>
@@ -35,7 +52,7 @@
       </div>
 
       <div class="stat-card ready">
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon">📦</div>
         <div class="stat-content">
           <h3>Siap Diambil</h3>
           <p class="stat-number">{{ order.siap_diambil }}</p>
@@ -78,10 +95,13 @@
         <h3>📈 Statistik Order Mingguan</h3>
         <div class="chart-container">
           <div v-for="(day, index) in weeklyStats" :key="index" class="chart-bar">
-            <div class="bar-fill" :style="{ height: getBarHeight(day.count) + '%' }">
-              <span class="bar-value">{{ day.count }}</span>
-            </div>
-            <span class="bar-label">{{ day.day }}</span>
+            <div
+    class="bar-fill"
+    :style="{ height: getBarHeight(day.count) + '%' }"
+  >
+    <span class="bar-value">{{ day.count }}</span>
+  </div>
+              <span class="bar-label">{{ day.day }}</span>
           </div>
         </div>
       </div>
@@ -102,28 +122,48 @@
       </div>
     </div>
 
-    <!-- Recent Orders -->
-    <div class="recent-orders-section">
-      <div class="section-header">
-        <h3>📋 Order Terbaru</h3>
-        <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button>
+<div class="recent-orders-section">
+  <div class="section-header">
+    <h3>📋 Data Order</h3>
+    <!-- <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button> -->
+  </div>
+
+  <div class="orders-list">
+    <div
+      v-for="order in pesananTerbaru"
+      :key="order.id"
+      class="order-item"
+    >
+      <div class="order-info">
+        <div class="order-id">Order {{ order.id }}</div>
+        <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
+        <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
+        <div class="order-time">{{ order.time }}</div>
       </div>
-      <div class="orders-list">
-        <div v-for="order in recentOrder" :key="order.id" class="order-item">
-          <div class="order-info">
-            <div class="order-id">Order #{{ order.id }}</div>
-            <div class="order-customer">{{ order.customer }}</div>
-            <div class="order-time">{{ order.time }}</div>
-          </div>
-          <div class="order-status" :class="order.status">
-            {{ getStatusLabel(order.status) }}
-          </div>
-        </div>
+
+      <div class="order-status" :class="order.status">
+        {{ getStatusLabel(order.status) }}
+      </div>
+
+      <!-- DETAIL MUNCUL DI BAWAH -->
+      <div v-if="openedOrderId === order.id" class="order-detail">
+        <p><b>Status:</b> {{ getStatusLabel(order.status) }}</p>
+        <p><b>Waktu:</b> {{ order.time }}</p>
+
+        <button
+          class="btn-detail"
+          @click.stop="navigateTo(`/order/${order.id}`)"
+        >
+          Lihat Detail
+        </button>
       </div>
     </div>
+  </div>
+</div>
+
 
     <!-- Quick Actions Panel -->
-    <div class="quick-actions-panel">
+    <!-- <div class="quick-actions-panel">
       <h3>⚡ Aksi Cepat</h3>
       <div class="actions-grid">
         <button class="action-btn" @click="navigateTo('/orders')">
@@ -143,7 +183,7 @@
           <span class="action-text">Laporan</span>
         </button>
       </div>
-    </div>
+    </div> -->
 
     <!-- Performance Tips -->
     <div class="tips-section">
@@ -173,7 +213,7 @@ import Swal from "sweetalert2";
 const notif = ref(false);
 const jumlahOrderBaru = ref(0);
 const weeklyStats = ref([]);
-const recentOrders = ref([]);
+const pesananTerbaru = ref([]);
 const todayRevenue = ref(0);
 
 const checkNotif = async () => {
@@ -185,8 +225,8 @@ const checkNotif = async () => {
 
     // ⬇️ Notifikasi ditaruh di sini
     if (adaOrderBaru) {
-      toast.info(`📢 Ada ${jumlah} order baru masuk!`, { autoClose: 3000 });
-      loadOrder(); // refresh tabel order
+      toast.info(`📢 Ada ${jumlah} order baru masuk!`);
+      // loadOrder(); // refresh tabel order
     }
 
   } catch (e) {
@@ -194,72 +234,49 @@ const checkNotif = async () => {
   }
 };
 
-// const checkNotif = async () => {
-//   try {
-//     const res = await axios.get("/notif-order");
+const openedOrderId = ref<number | null>(null);
 
-//     const adaOrderBaru = res.data.new_order;
-//     const jumlah = res.data.count;
-
-//     // Tampilkan notif HANYA jika backend bilang ada order baru
-//     if (adaOrderBaru) {
-//       Swal.fire({
-//         title: "📢 Order Baru!",
-//         text: `Ada ${jumlah} order baru yang menunggu konfirmasi.`,
-//         icon: "info",
-//         toast: false,
-//         confirmButtonText: "Lihat sekarang"
-//       }).then(() => {
-//         loadOrder(); // Refresh data setelah ditekan
-//       });
-//     }
-
-//   } catch (e) {
-//     console.error("Gagal cek notifikasi", e);
-//   }
+// const toggleOrder = (id: number) => {
+//   openedOrderId.value = openedOrderId.value === id ? null : id;
 // };
-// const checkNotif = async () => {
-//   try {
-//     const res = await axios.get("/notif-order");
-//     if (res.data.new_order && !notif.value) {
-//       console.log("Ada order baru");
-//       notif.value = true;
-//       jumlahOrderBaru.value = res.data.count || 1;
-//       toast.info("📢 Ada order baru masuk!", { autoClose: 3000 });
-//       loadOrder(); // Refresh data saat ada order baru
-//     }
-//   } catch (e) {
-//     console.error("Gagal cek notifikasi", e);
-//   }
-// };
+
 
 const order = ref({
   menunggu_konfirmasi_mitra: 0,
+  ditolak: 0,
+  diterima: 0,
   diproses: 0,
   siap_diambil: 0,
   selesai: 0,
 });
 
 
-const dailyTip = ref('Konfirmasi order dalam 5 menit untuk meningkatkan kepuasan pelanggan!');
-
 const getBarHeight = (count: number) => {
-  const maxCount = Math.max(...weeklyStats.value.map(s => s.count));
-  return (count / maxCount) * 100;
+  const max = Math.max(...weeklyStats.value.map(d => d.count));
+
+  if (max === 0) return 0;
+
+  const height = (count / max) * 100;
+
+  return count > 0 ? Math.max(height, 10) : 0;
 };
+
+
+
+
+// const getBarHeight = (count: number) => {
+//   if (!weeklyStats.value.length) return 0;
+
+//   const maxCount = Math.max(...weeklyStats.value.map(s => s.count));
+
+//   if (maxCount === 0) return 0;
+
+//   return (count / maxCount) * 100;
+// };
+
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID').format(value);
-};
-
-const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    pending: 'Menunggu',
-    processing: 'Diproses',
-    ready: 'Siap',
-    completed: 'Selesai'
-  };
-  return labels[status] || status;
 };
 
 const navigateTo = (path: string) => {
@@ -271,26 +288,57 @@ const viewAllOrders = () => {
   navigateTo('/order-masuk');
 };
 
-const loadOrder = async () => {
+const labels = {
+  pending: 'Menunggu',
+  ditolak: 'Ditolak',
+  diterima: 'Diterima',
+  processing: 'Sedang Diproses',
+  ready: 'Siap',
+  completed: 'Selesai'
+};
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    menunggu_konfirmasi_mitra: 'Menunggu Konfirmasi',
+    ditolak: 'Ditolak',
+    diterima: 'Diterima',
+    diproses: 'Sedang Diproses',
+    siap_diambil: 'Siap Diambil',
+    selesai: 'Selesai'
+  };
+  return labels[status] || status;
+};
+
+
+const loadDashboard = async () => {
   try {
-    const res = await axios.post("/order-masuk");
+    const res = await axios.get("/dashboard-data");
+
     order.value = {
-      menunggu_konfirmasi_mitra: res.data.menunggu_konfirmasi_mitra ?? 0,
-      diproses: res.data.diproses ?? 0,
-      siap_diambil: res.data.siap_diambil ?? 0,
-      selesai: res.data.selesai ?? 0,
+      menunggu_konfirmasi_mitra: res.data.order?.menunggu_konfirmasi_mitra ?? 0,
+      diterima: res.data.order?.diterima ?? 0,
+      ditolak: res.data.order?.ditolak ?? 0,
+      diproses: res.data.order?.diproses ?? 0,
+      siap_diambil: res.data.order?.siap_diambil ?? 0,
+      selesai: res.data.order?.selesai ?? 0,
     };
+
+    weeklyStats.value = res.data.weekly ?? [];
+    todayRevenue.value = res.data.today_revenue ?? 0;
+    pesananTerbaru.value = res.data.pesananTerbaru ?? [];
+
   } catch (e) {
-    console.error("Gagal load order", e);
-    toast.error("Gagal memuat data dashboard");
+    toast.error("Gagal memuat dashboard");
   }
 };
+
 
 // Computed properties
 const totalOrderAktif = computed(() => {
   return order.value.menunggu_konfirmasi_mitra +
-         order.value.diproses +
-         order.value.siap_diambil;
+    order.value.diterima +
+    order.value.ditolak +
+    order.value.diproses +
+    order.value.siap_diambil;
 });
 
 const averageOrder = computed(() => {
@@ -305,33 +353,104 @@ const statusMessage = computed(() => {
     return "Ada order siap diambil";
   } else if (order.value.diproses > 0) {
     return "Semua berjalan lancar";
+  } else if (order.value.ditolak > 0) {
+    return "Order ada yang ditolak";
+  } else if (order.value.diterima > 0) {
+    return "Ada order yang diterima";
   }
   return "Tidak ada order aktif";
 });
 
 
-const loadDashboard = async () => {
-  const res = await axios.get("/dashboard");
-
-  order.value = res.data.order;
-  weeklyStats.value = res.data.weekly;
-  todayRevenue.value = res.data.today_revenue;
-  recentOrders.value = res.data.recent_orders;
-};
-
-setInterval(() => {
-  checkNotif();
-}, 5000);
-
 onMounted(() => {
-setInterval(checkNotif, 20000);
   loadDashboard();
-  loadOrder();
-  setInterval(checkNotif, 20000); // Check setiap 20 detik
+  setInterval(checkNotif, 20000);
 });
+
 </script>
 
 <style scoped>
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  height: 180px;
+  gap: 12px;
+}
+
+.chart-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 35%;
+}
+
+.bar-fill {
+  width: 100%;
+  background: linear-gradient(180deg, #7c3aed, #4f46e5);
+  border-radius: 8px 8px 0 0;
+  transition: height 0.3s ease;
+  position: relative;
+}
+
+.bar-value {
+  color: white;
+  font-size: 12px;
+  text-align: center;
+  position: absolute;
+  bottom: 4px;
+  width: 100%;
+}
+
+.bar-label {
+  margin-top: 6px;
+  text-align: center;
+  font-size: 13px;
+}
+
+
+
+
+
+
+
+
+
+
+.order-status {
+  pointer-events: none;
+}
+
+
+.order-item {
+  position: relative;
+  border-bottom: 1px solid #eee;
+  padding: 12px;
+}
+
+.order-item.clickable {
+  cursor: pointer;
+}
+
+.order-detail {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.btn-detail {
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: #2563eb;
+  color: white;
+  border-radius: 6px;
+}
+
+
+
+
 .dashboard-mitra {
   padding: 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -353,7 +472,7 @@ setInterval(checkNotif, 20000);
   font-size: 32px;
   font-weight: 700;
   margin: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .subtitle {
@@ -378,13 +497,13 @@ setInterval(checkNotif, 20000);
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
 }
 
 .btn-refresh:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .icon {
@@ -403,7 +522,7 @@ setInterval(checkNotif, 20000);
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   gap: 20px;
@@ -413,7 +532,7 @@ setInterval(checkNotif, 20000);
 
 .stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card.pending {
@@ -473,7 +592,7 @@ setInterval(checkNotif, 20000);
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   gap: 20px;
@@ -541,6 +660,7 @@ setInterval(checkNotif, 20000);
     transform: translateX(400px);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -548,9 +668,21 @@ setInterval(checkNotif, 20000);
 }
 
 @keyframes ring {
-  0%, 100% { transform: rotate(0deg); }
-  10%, 30% { transform: rotate(-10deg); }
-  20%, 40% { transform: rotate(10deg); }
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  10%,
+  30% {
+    transform: rotate(-10deg);
+  }
+
+  20%,
+  40% {
+    transform: rotate(10deg);
+  }
 }
 
 /* Responsive */
@@ -595,14 +727,16 @@ setInterval(checkNotif, 20000);
   margin-bottom: 24px;
 }
 
-.chart-card, .revenue-card {
+.chart-card,
+.revenue-card {
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.chart-card h3, .revenue-card h3 {
+.chart-card h3,
+.revenue-card h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
   font-weight: 600;
@@ -689,7 +823,7 @@ setInterval(checkNotif, 20000);
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
 }
 
@@ -754,6 +888,11 @@ setInterval(checkNotif, 20000);
   color: #1f2937;
   font-size: 14px;
 }
+.order-kode {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
 
 .order-customer {
   color: #6b7280;
@@ -799,7 +938,7 @@ setInterval(checkNotif, 20000);
   background: white;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   margin-bottom: 24px;
 }
 
@@ -889,7 +1028,3 @@ setInterval(checkNotif, 20000);
   }
 }
 </style>
-
-
-
-

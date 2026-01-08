@@ -68,6 +68,7 @@ const order = ref({
     berat_aktual: "",
     harga_final: "",
     harga_per_kg: 0,
+    satuan: "kg",
     jenis_layanan_id: null,
     catatan: "",
     status: "",
@@ -76,26 +77,52 @@ const order = ref({
 });
 
 // ✅ TARUH TEPAT SETELAH INI
-watch(
-  () => [
-    order.value.berat_estimasi,
-    order.value.berat_aktual,
-    order.value.harga_per_kg
-  ],
-  () => {
-    const berat =
-      order.value.berat_aktual ||
-      order.value.berat_estimasi;
+// watch(
+//   () => [
+//     order.value.berat_estimasi,
+//     order.value.berat_aktual,
+//     order.value.harga_per_kg
+//   ],
+//   () => {
+//     const berat =
+//       order.value.berat_aktual ||
+//       order.value.berat_estimasi;
 
-    if (berat && order.value.harga_per_kg) {
-      order.value.harga_final =
-        Number(berat) * Number(order.value.harga_per_kg);
+//     if (berat && order.value.harga_per_kg) {
+//       order.value.harga_final =
+//         Number(berat) * Number(order.value.harga_per_kg);
+//     } else {
+//       order.value.harga_final = "";
+//     }
+//   },
+//   { immediate: true }
+// );
+
+watch(
+  () => ({
+    berat_estimasi: order.value.berat_estimasi,
+    berat_aktual: order.value.berat_aktual,
+    harga: order.value.harga_per_kg,
+    satuan: order.value.satuan,
+  }),
+  () => {
+    let qty = 0;
+
+    if (order.value.satuan === "kg") {
+      qty = Number(order.value.berat_aktual || order.value.berat_estimasi || 0);
+    } else {
+      qty = 1; // layanan satuan (setrika satuan, dll)
+    }
+
+    if (qty > 0 && order.value.harga_per_kg > 0) {
+      order.value.harga_final = qty * order.value.harga_per_kg;
     } else {
       order.value.harga_final = "";
     }
   },
-  { immediate: true }
+  { deep: true, immediate: true }
 );
+
 
 // watch(
 //     () => order.value.berat_aktual,
@@ -125,19 +152,33 @@ const formSchema = Yup.object().shape({
 });
 
 
-function getHargaLayanan(id) {
-    console.log("Ambil harga layanan ID:", id);
 
+function getHargaLayanan(id) {
     return axios.get(`/jenis-layanan/${id}`)
         .then(res => {
-            console.log("Response harga layanan:", res.data);
-            order.value.harga_per_kg = res.data.harga_per_kg; // sesuaikan kalau beda struktur
+            order.value.harga_per_kg = res.data.harga;
+            order.value.satuan = res.data.satuan; // ⬅ TAMBAH
         })
-        .catch(err => {
-            console.log("ERROR HARGA:", err);
+        .catch(() => {
             order.value.harga_per_kg = 0;
+            order.value.satuan = "kg";
         });
 }
+
+
+// function getHargaLayanan(id) {
+//     console.log("Ambil harga layanan ID:", id);
+
+//     return axios.get(`/jenis-layanan/${id}`)
+//         .then(res => {
+//             console.log("Response harga layanan:", res.data);
+//             order.value.harga_per_kg = res.data.harga_per_kg; // sesuaikan kalau beda struktur
+//         })
+//         .catch(err => {
+//             console.log("ERROR HARGA:", err);
+//             order.value.harga_per_kg = 0;
+//         });
+// }
 
 
 const hargaLayananMap = {};
@@ -354,7 +395,7 @@ watch(
 
             <div class="col-12">
                 <label class="form-label fw-bold">Catatan</label>
-                <Field as="textarea" class="form-control" name="catatan" v-model="order.catatan" />
+                <Field as="textarea" class="form-control" name="catatan" v-model="order.catatan" disabled />
                 <ErrorMessage name="catatan" class="text-danger" />
             </div>
 

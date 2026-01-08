@@ -292,18 +292,121 @@ function showPhotoUpload() {
 
 }
 
+// function showChangePassword() {
+//   Swal.fire({
+//     title: 'Ubah Password',
+//     html: `
+//       <input type="password" id="old-password" class="swal2-input" placeholder="Password Lama">
+//       <input type="password" id="new-password" class="swal2-input" placeholder="Password Baru">
+//       <input type="password" id="confirm-password" class="swal2-input" placeholder="Konfirmasi Password Baru">
+//     `,
+//     showCancelButton: true,
+//     confirmButtonText: 'Ubah Password',
+//     cancelButtonText: 'Batal',
+//     confirmButtonColor: '#667eea',
+//     preConfirm: () => {
+//       const oldPassword = (document.getElementById('old-password') as HTMLInputElement)?.value;
+//       const newPassword = (document.getElementById('new-password') as HTMLInputElement)?.value;
+//       const confirmPassword = (document.getElementById('confirm-password') as HTMLInputElement)?.value;
+
+//       if (!oldPassword || !newPassword || !confirmPassword) {
+//         Swal.showValidationMessage('Semua field harus diisi!');
+//         return false;
+//       }
+
+//       if (newPassword !== confirmPassword) {
+//         Swal.showValidationMessage('Password baru tidak cocok!');
+//         return false;
+//       }
+
+//       if (newPassword.length < 6) {
+//         Swal.showValidationMessage('Password minimal 6 karakter!');
+//         return false;
+//       }
+
+//       return { oldPassword, newPassword };
+//     }
+//   }).then(async (result) => {
+//     if (result.isConfirmed) {
+//       try {
+//         await axios.post('/user/change-password', {
+//           old_password: result.value.oldPassword,
+//           new_password: result.value.newPassword
+//         });
+
+//         Swal.fire({
+//           icon: 'success',
+//           title: 'Berhasil!',
+//           text: 'Password berhasil diubah',
+//           timer: 1500,
+//           showConfirmButton: false
+//         });
+//       } catch (error: any) {
+//         Swal.fire({
+//           icon: 'error',
+//           title: 'Gagal',
+//           text: error.response?.data?.message || 'Gagal mengubah password'
+//         });
+//       }
+//     }
+//   });
+// }
+
+
 function showChangePassword() {
   Swal.fire({
     title: 'Ubah Password',
     html: `
-      <input type="password" id="old-password" class="swal2-input" placeholder="Password Lama">
-      <input type="password" id="new-password" class="swal2-input" placeholder="Password Baru">
-      <input type="password" id="confirm-password" class="swal2-input" placeholder="Konfirmasi Password Baru">
-    `,
+  <div class="swal-input-group">
+    <input type="password" id="old-password" class="swal2-input" placeholder="Password Lama">
+    <i class="bi bi-eye toggle-eye" data-target="old-password"></i>
+  </div>
+
+  <div class="swal-input-group">
+    <input type="password" id="new-password" class="swal2-input" placeholder="Password Baru">
+    <i class="bi bi-eye toggle-eye" data-target="new-password"></i>
+  </div>
+
+  <div class="swal-input-group">
+    <input type="password" id="confirm-password" class="swal2-input" placeholder="Konfirmasi Password Baru">
+    <i class="bi bi-eye toggle-eye" data-target="confirm-password"></i>
+  </div>
+`,
+
     showCancelButton: true,
     confirmButtonText: 'Ubah Password',
     cancelButtonText: 'Batal',
     confirmButtonColor: '#667eea',
+
+    didOpen: () => {
+      // inject CSS
+      const style = document.createElement('style');
+      style.innerHTML = `
+        .swal-input-group {
+          position: relative;
+        }
+        .toggle-eye {
+          position: absolute;
+          right: 18px;
+          top: 50%;
+          transform: translateY(-50%);
+          cursor: pointer;
+          user-select: none;
+          font-size: 18px;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // event toggle
+      document.querySelectorAll('.toggle-eye').forEach((eye) => {
+        eye.addEventListener('click', () => {
+          const targetId = eye.getAttribute('data-target');
+          const input = document.getElementById(targetId!) as HTMLInputElement;
+          input.type = input.type === 'password' ? 'text' : 'password';
+        });
+      });
+    },
+
     preConfirm: () => {
       const oldPassword = (document.getElementById('old-password') as HTMLInputElement)?.value;
       const newPassword = (document.getElementById('new-password') as HTMLInputElement)?.value;
@@ -351,6 +454,8 @@ function showChangePassword() {
     }
   });
 }
+
+
 
 async function fetchProfile() {
   try {

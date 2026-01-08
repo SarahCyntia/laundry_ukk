@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import ApiService from "@/core/services/ApiService";
 import { toast } from "vue3-toastify";
 import axios from "@/libs/axios";
+import { jsx } from "vue/jsx-runtime";
 
 const props = defineProps({
   selected: {
@@ -20,6 +20,8 @@ const formData = ref({
   alamat_laundry: "",
   kecamatan_id: "",
   status_toko: "",
+  jam_buka: "",
+  jam_tutup: "",
   user: {
     name: "",
     email: "",
@@ -33,7 +35,7 @@ const formData = ref({
 function getDetail() {
   loading.value = true;
 
-  ApiService.get(`/mitra/${props.selected}`)
+  axios.get(`/mitra/${props.selected}`)
     .then(({ data }) => {
       formData.value = data.data;
     })
@@ -45,18 +47,20 @@ function getDetail() {
     });
 }
 
+
 // =====================
 // SUBMIT UPDATE
 // =====================
 function submit() {
   loading.value = true;
 
-  ApiService.put(`/mitra/${props.selected}`, {
+  axios.put(`/mitra/${props.selected}`, {
     nama_laundry: formData.value.nama_laundry,
     alamat_laundry: formData.value.alamat_laundry,
     kecamatan: formData.value.kecamatan_id,
     status_toko: formData.value.status_toko,
-
+    jam_buka: formData.value.jam_buka,
+    jam_tutup: formData.value.jam_tutup,
     name: formData.value.user.name,
     email: formData.value.user.email,
     phone: formData.value.user.phone,
@@ -123,7 +127,7 @@ onMounted(() => getDetail());
         <label>No HP</label>
         <input v-model="formData.user.phone" class="form-control" />
       </div>
-      
+
       <div class="mb-3">
         <label>Alamat Laundry</label>
         <textarea v-model="formData.alamat_laundry" class="form-control"></textarea>
@@ -139,7 +143,7 @@ onMounted(() => getDetail());
         </select>
       </div>
 
-      
+
       <div class="mb-3">
         <label>Status Toko</label>
         <select v-model="formData.status_toko" class="form-control">
@@ -147,17 +151,21 @@ onMounted(() => getDetail());
           <option value="tutup">TUTUP</option>
         </select>
       </div>
-      
+
       <div class="mb-3">
         <label>Jam Buka</label>
-        <input v-model="formData.jam_buka" class="form-control" />
+        <input type="time" v-model="formData.jam_buka" class="form-control" />
+        <div class="mb-3">
+          <label>Jam Tutup</label>
+          <input type="time" v-model="formData.jam_tutup" class="form-control" />
+        </div>
       </div>
 
 
-      <div class="mt-4 d-flex gap-2">
-        <button class="btn btn-primary" @click="submit">Simpan</button>
-        <button class="btn btn-danger" @click="emit('close')">Batal</button>
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-primary" @click="submit">Simpan</button>
+          <button class="btn btn-danger" @click="emit('close')">Batal</button>
+        </div>
       </div>
     </div>
-  </div>
 </template>

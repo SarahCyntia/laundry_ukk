@@ -30,12 +30,23 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-    
 
     'midtrans' => [
-        'serverKey' => env('MIDTRANS_SERVER_KEY'),
-        'clientKey' => env('MIDTRANS_CLIENT_KEY'),
-        'isProduction' => false,
-    ],
+    'server_key' => env('MIDTRANS_SERVER_KEY'),
+    'client_key' => env('MIDTRANS_CLIENT_KEY'),
+    'is_production' => env('MIDTRANS_IS_PRODUCTION', false),
+],
+
+'google_maps' => [
+    'key' => env('GOOGLE_MAPS_API_KEY'),
+],
+
+    
+
+    // 'midtrans' => [
+    //     'serverKey' => env('MIDTRANS_SERVER_KEY'),
+    //     'clientKey' => env('MIDTRANS_CLIENT_KEY'),
+    //     'isProduction' => false,
+    // ],
 
 ];

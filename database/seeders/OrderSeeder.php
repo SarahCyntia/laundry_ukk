@@ -30,6 +30,7 @@ class OrderSeeder extends Seeder
                 'berat_estimasi'    => 3,
                 'catatan'           => 'Tolong cepat ya',
                 'status'            => 'menunggu_konfirmasi_mitra',
+                'waktu'             => now(),
             ],
             [
                 'pelanggan_id'      => $pelanggan[1] ?? $pelanggan[0],
@@ -40,6 +41,7 @@ class OrderSeeder extends Seeder
                 'berat_estimasi'    => 5,
                 'catatan'           => 'Pakaian kantor',
                 'status'            => 'diterima',
+                'waktu'             => now(),
             ],
             [
                 'pelanggan_id'      => $pelanggan[2] ?? $pelanggan[0],
@@ -50,6 +52,7 @@ class OrderSeeder extends Seeder
                 'berat_estimasi'    => 2,
                 'catatan'           => null,
                 'status'            => 'diproses',
+                'waktu'             => now(),
             ],
         ];
 

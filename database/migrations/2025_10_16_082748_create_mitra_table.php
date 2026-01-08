@@ -23,8 +23,8 @@ return new class extends Migration
         $table->string('foto_ktp');
         $table->string('foto_toko')->nullable();
         $table->enum('status_toko', ['buka', 'tutup'])->default('buka')->nullable();
-        $table->string('jam_buka')->nullable();
-        $table->string('jam_tutup')->nullable();
+        $table->time('jam_buka')->nullable();
+        $table->time('jam_tutup')->nullable();
         $table->string('deskripsi')->nullable();
         $table->foreignId('kecamatan_id')->constrained('kecamatan')->onDelete('cascade')->nullable();
 

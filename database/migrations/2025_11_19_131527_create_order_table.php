@@ -26,11 +26,13 @@ $table->unsignedBigInteger('jenis_layanan_id')->nullable();
         $table->decimal('berat_estimasi', 5, 2)->nullable();
         $table->decimal('berat_aktual', 5, 2)->nullable();
         $table->integer('harga_final')->nullable();
+        $table->string('foto_struk')->nullable();
         $table->text('catatan')->nullable();
 
         // Status utama
         $table->enum('status', [
             'menunggu_konfirmasi_mitra', // setelah customer pesan
+            'ditunggu_mitra',
             'diterima',                  // mitra menerima
             'ditolak',                   // mitra menolak
             'diproses',                  // setelah customer antar & berat aktual dicatat
@@ -50,6 +52,10 @@ $table->unsignedBigInteger('jenis_layanan_id')->nullable();
         $table->timestamp('estimasi_jam')->nullable();
         $table->timestamp('waktu_pelanggan_antar')->nullable();
         $table->timestamp('waktu_diambil')->nullable();
+         $table->integer('biaya')->nullable();
+        $table->enum('status_pembayaran', ['belum dibayar', 'settlement', 'pending', 'expire', 'cancel', 'deny', 'failure', 'refund'])->default('belum dibayar');
+        $table->timestamp('waktu')->useCurrent();
+
 
         $table->timestamps();
 

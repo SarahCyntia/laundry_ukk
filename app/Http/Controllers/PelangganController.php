@@ -6,6 +6,7 @@ use App\Models\Pelanggan;
 use App\Http\Requests\StorePelangganRequest;
 use App\Http\Requests\UpdatePelangganRequest;
 use App\Models\Mitra;
+use App\Models\Order;
 use App\Models\Transaksi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -152,6 +153,13 @@ public function update(Request $request, $id)
             ],
         ],
     ]);
+
+
+
+
+
+
+
 }
 
 
@@ -347,16 +355,6 @@ public function update(Request $request, $id)
             ->where('user_id', auth()->id())
             ->findOrFail($id);
     }
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -49,6 +49,10 @@
             <span class="info-label">jam Buka</span>
             <p class="info-value">{{ mitra.jam_buka ?? '-' }}</p>
           </div>
+          <div>
+            <span class="info-label">jam Tutup</span>
+            <p class="info-value">{{ mitra.jam_tutup ?? '-' }}</p>
+          </div>
         </div>
 
         <hr />
@@ -74,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axios from '@/libs/axios';
 import Form from './form.vue';
 
@@ -96,13 +100,32 @@ const getMitra = async () => {
     loading.value = false;
   }
 };
+const form = ref({
+  nama_laundry: '',
+  alamat_laundry: '',
+  kecamatan_id: null,
+  status_toko: '',
+  jam_buka: '',
+  jam_tutup: '',
+  deskripsi: '',
+  name: '',
+  email: '',
+  phone: ''
+})
+
+
 
 const editMitra = () => {
   if (!mitra.value.id) return alert('ID mitra tidak ditemukan!');
   selected.value = mitra.value.id;
   openForm.value = true;
 };
+const props = defineProps<{
+  selected: string | number | null
+}>()
+
 </script>
+
 
 <style scoped>
 .profile-wrapper {

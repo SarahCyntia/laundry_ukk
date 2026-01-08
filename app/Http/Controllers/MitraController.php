@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Kecamatan;
+use App\Services\GeocodingService;
 
 class MitraController extends Controller
 {
@@ -116,27 +118,26 @@ class MitraController extends Controller
     //     ]);
     // }
 
-    public function show()
-{
-    $mitra = Mitra::with('user', 'kecamatan')
-        ->where('id', auth()->user()->mitra_id)
-        ->firstOrFail();
-
-    return response()->json([
-        "success" => true,
-        "data" => $mitra
-    ]);
-}
-
 //     public function show($id)
 // {
-//     $mitra = Mitra::with('user', 'kecamatan')->findOrFail($id);
+//     $mitra = Mitra::with('user', 'kecamatan')
+//         ->where('id', auth()->user()->mitra_id)
+//         ->firstOrFail();
 
 //     return response()->json([
 //         "success" => true,
 //         "data" => $mitra
 //     ]);
 // }
+public function show($id)
+{
+    $mitra = Mitra::with('user', 'kecamatan')->findOrFail($id);
+
+    return response()->json([
+        'success' => true,
+        'data' => $mitra
+    ]);
+}
 
 
     // public function update(UpdateMitraRequest $request, Mitra $mitra)
@@ -189,28 +190,46 @@ class MitraController extends Controller
     //     ]);
     // }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $id, GeocodingService $geo)
 {
     Log::info("All request data: ", $request->all());
-    // $mitra = Mitra::findOrFail($id);
+
     $mitra = Mitra::where('id', $id)
-    ->where('user_id', auth()->id())
-    ->firstOrFail();
+        ->where('user_id', auth()->id())
+        ->firstOrFail();
 
+    // ================================
+    // 🔹 AMBIL KECAMATAN OTOMATIS
+    // ================================
+    $kecamatanId = $request->kecamatan; // default dari frontend
 
+    if (!$kecamatanId && $request->alamat_laundry) {
+        // Ambil nama kecamatan dari alamat
+        $namaKecamatan = $geo->getKecamatanFromAddress($request->alamat_laundry);
 
+        if ($namaKecamatan) {
+            $kecamatan = Kecamatan::where('nama', 'LIKE', "%$namaKecamatan%")->first();
+            $kecamatanId = $kecamatan?->id;
+        }
+    }
+
+    // ================================
+    // 🔹 UPDATE DATA MITRA
+    // ================================
     $mitra->update([
         "nama_laundry"   => $request->nama_laundry,
         "alamat_laundry" => $request->alamat_laundry,
-        "kecamatan_id" => $request->kecamatan,
+        "kecamatan_id"   => $kecamatanId,
         "status_toko"    => $request->status_toko,
-        "jam_buka"    => $request->jam_buka,
-        "jam_tutup"    => $request->jam_tutup,
-        "deskripsi"    => $request->deskripsi,
-        "foto_toko"    => $request->foto_toko,
+        "jam_buka"       => $request->jam_buka,
+        "jam_tutup"      => $request->jam_tutup,
+        "deskripsi"      => $request->deskripsi,
+        "foto_toko"      => $request->foto_toko,
     ]);
 
-    // update user
+    // ================================
+    // 🔹 UPDATE USER
+    // ================================
     if ($mitra->user) {
         $mitra->user->update([
             "name"  => $request->name,
@@ -224,6 +243,43 @@ class MitraController extends Controller
         "message" => "Profil mitra berhasil diperbarui"
     ]);
 }
+
+//SEBELUMNYA
+//     public function update(Request $request, $id)
+// {
+//     Log::info("All request data: ", $request->all());
+//     // $mitra = Mitra::findOrFail($id);
+//     $mitra = Mitra::where('id', $id)
+//     ->where('user_id', auth()->id())
+//     ->firstOrFail();
+
+
+
+//     $mitra->update([
+//         "nama_laundry"   => $request->nama_laundry,
+//         "alamat_laundry" => $request->alamat_laundry,
+//         "kecamatan_id" => $request->kecamatan,
+//         "status_toko"    => $request->status_toko,
+//         "jam_buka"    => $request->jam_buka,
+//         "jam_tutup"    => $request->jam_tutup,
+//         "deskripsi"    => $request->deskripsi,
+//         "foto_toko"    => $request->foto_toko,
+//     ]);
+
+//     // update user
+//     if ($mitra->user) {
+//         $mitra->user->update([
+//             "name"  => $request->name,
+//             "email" => $request->email,
+//             "phone" => $request->phone,
+//         ]);
+//     }
+
+//     return response()->json([
+//         "success" => true,
+//         "message" => "Profil mitra berhasil diperbarui"
+//     ]);
+// }
 
 public function get(Request $request)
 {
@@ -416,7 +472,7 @@ public function get(Request $request)
 public function listMitra()
 {
     $mitra = Mitra::with('jenis_layanan', 'kecamatan') // ambil relasi layanan
-        ->select('id', 'nama_laundry', 'alamat_laundry', 'foto_toko', 'status_toko', 'jam_buka', 'jam_tutup', 'deskripsi', 'foto_toko')
+        ->select('id', 'nama_laundry', 'alamat_laundry','kecamatan_id', 'foto_toko', 'status_toko', 'jam_buka', 'jam_tutup', 'deskripsi', 'foto_toko')
         ->where('status_validasi', 'diterima')
         ->get();
 

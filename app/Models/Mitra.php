@@ -42,7 +42,10 @@ class Mitra extends Authenticatable
     //     return $this->hasMany(Transaksi::class, 'mitra_id');
     // }
 
-
+protected $casts = [
+    'jam_buka' => 'datetime:H:i',
+    'jam_tutup' => 'datetime:H:i',
+];
     public function kecamatan()
     {
         return $this->belongsTo(Kecamatan::class, 'kecamatan_id');

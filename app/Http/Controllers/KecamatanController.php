@@ -116,7 +116,21 @@ public function trash()
 }
 
 
+ public function deteksi(Request $request)
+    {
+        $alamat = strtolower($request->alamat);
 
+        foreach (Kecamatan::all() as $kecamatan) {
+            if (str_contains($alamat, strtolower($kecamatan->nama))) {
+                return response()->json([
+                    'id' => $kecamatan->id,
+                    'nama' => $kecamatan->nama
+                ]);
+            }
+        }
+
+        return response()->json(null);
+    }
     // public function trash()      {
     //     $data = Kecamatan::onlyTrashed()
     // ->paginate(10)

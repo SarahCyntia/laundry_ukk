@@ -17,6 +17,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JenisItemController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\AntarJemputController;
+use App\Http\Controllers\Api\LaundryController;
 use App\Http\Controllers\PenjemputanController;
 use App\Http\Controllers\JenisLayananController;
 use App\Http\Controllers\KecamatanController;
@@ -36,6 +37,7 @@ use App\Http\Controllers\TransaksiLayananController;
 use App\Http\Controllers\WilayahController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MidtransWebhookController; // if separate
+use App\Http\Controllers\PelangganOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -179,10 +181,12 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index']);
     // Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/dashboard/data', [DashboardController::class, 'getData']);
+    Route::get('/dashboard-data', [DashboardController::class, 'getData']);
     Route::post('/update-status', [DashboardController::class, 'updateStatus']);
+    
 
 
+Route::get('/laundry/status/{kode}', [OrderController::class, 'cekStatus']);
 
 
 
@@ -214,7 +218,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
 
 
 
-    Route::get('mitra', [MitraController::class, 'get']);
+    // Route::get('mitra', [MitraController::class, 'get']);
 
     Route::post('mitra', [MitraController::class, 'index'])->withoutMiddleware('can:mitra');
     Route::get('/profile', [MitraController::class, 'profile'])->withoutMiddleware('can:mitra');
@@ -228,38 +232,25 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::delete('mitra/{id}/force-delete', [MitraController::class, 'forceDelete']);
 
 
-    //     Route::get('/mitra/verifikasi', [MitraVerifikasiController::class, 'index']);
-//     Route::post('/mitra/verifikasi/{id}/diterima', [MitraVerifikasiController::class, 'verifikasiDiterima']);
-//     Route::post('/mitra/verifikasi/{id}/ditolak', [MitraVerifikasiController::class, 'verifikasiDitolak']);
-// });
-
-
     // routes/api.php
     Route::get('/mitra/{id}', [MitraController::class, 'show']);
+    // Route::get('mitra', [MitraController::class, 'get']);
+    Route::get('mitra', [MitraController::class, 'index']);
+    Route::put('/mitra/{id}', [MitraController::class, 'update']);
 
     // Route::get('/mitra', [MitraController::class, 'publicList']); // untuk halaman pilih laundry
     Route::get('/mitra/all', [MitraController::class, 'all']);
+    Route::get('/deteksi-kecamatan', [KecamatanController::class, 'deteksi']);
+
+;
+
+    // webhook midtrans (public)
+    Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
 
-    // Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-//     Route::get('/admin/dashboard', [AdminController::class, 'index']);
-// });
-
-
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/payment/create', [PaymentController::class, 'create']);
-    Route::get('/payment/token/{id}', [PaymentController::class, 'token']);
-    Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
-    // transaksi management
-    Route::get('/transaksi', [TransaksiController::class, 'index']);
-    Route::get('/transaksi/{id}', [TransaksiController::class, 'show']);
-    Route::get('/transaksi/{id}/download', [TransaksiController::class, 'downloadPdf']);
-});
-
-// webhook midtrans (public)
-Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
-
-
+    Route::get('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+Route::post('/midtrans/notification', [PaymentController::class, 'handleNotification']);
+Route::post('/manual-update-status', [Paymentcontroller::class, 'manualUpdateStatus']);
 
     // Route::get('/transaksi', [MitraTransaksiController::class, 'index']);
     // Route::put('/transaksi/{id}/status', [MitraTransaksiController::class, 'updateStatus']);
@@ -275,7 +266,7 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
     //     Route::get('/transaksi/{id}', [PelangganTransaksiController::class, 'show']); // detail transaksi
     // });
 
-
+Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
 
 
 
@@ -301,7 +292,16 @@ Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
 
 
-     Route::get('/dashboard', [MitraDashboardController::class, 'index'])->withoutMiddleware('can:mitra');
+
+    Route::prefix('pelanggan')->group(function () {
+        Route::post('/order/{order}/sudah-antar', [PelangganOrderController::class, 'sudahAntar']);
+        Route::post('/order/{order}/sudah-ambil', [PelangganOrderController::class, 'sudahAmbil']);
+    });
+
+
+
+
+    Route::get('/dashboard', [MitraDashboardController::class, 'index'])->withoutMiddleware('can:mitra');
     Route::get('/notif-order', [MitraOrderController::class, 'notifOrderBaru'])->withoutMiddleware('can:mitra');
 
 
