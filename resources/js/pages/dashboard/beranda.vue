@@ -137,51 +137,102 @@
       </div>
       <!-- Cek Status Laundry -->
     </div>
-  
 
 
 
 
-<div class="cek-status-section">
-  <div class="content-wrapper">
-    <h2 class="text-center mt-20">Cek Status Laundry</h2>
-    <p class="section-desc text-kecil" id="kecil">
-      Masukkan kode order untuk mengetahui status laundry Anda
-    </p>
+
+    <div class="cek-status-section">
+      <div class="content-wrapper">
+        <h2 class="text-center mt-20">Cek Status Laundry</h2>
+        <p class="section-desc text-kecil" id="kecil">
+          Masukkan kode order untuk mengetahui status laundry Anda
+        </p>
 
 
 
-    <p>Masukkan Kode Order</p>
-    <div class="search-kode" id="kode">
-      <input
-        v-model="KodeOrder"
-        type="text"
-        placeholder="Contoh: ORD-123456"
-        class="search-input"
-        @keyup.enter="cekStatus"
-      />
+        <p>Masukkan Kode Order</p>
+        <div class="search-kode" id="kode">
+          <input v-model="kode_order" type="text" placeholder="Contoh: ORD-123456" class="search-input"
+            @keyup.enter="cekStatus" />
 
-      <!-- <button class="btn-search" @click="cekStatus" :disabled="loading"> -->
-        <button
-  type="button"
-  class="btn-search"
-  @click="cekStatus"
->
-        {{ loading ? "Mencari..." : "🔍 Cari" }}
-      </button>
+          <!-- <button class="btn-search" @click="cekStatus" :disabled="loading"> -->
+          <button type="button" class="btn-search" @click="cekStatus">
+            {{ loading ? "Mencari..." : "🔍 Cari" }}
+          </button>
+        </div>
+
+        <div v-if="statusResult" class="status-result">
+          <span class="status-badgee" :class="getStatusClass(statusResult)">
+            {{ getStatusIcon(statusResult) }} {{ statusResult }}
+          </span>
+        </div>
+        <!-- <div v-if="statusResult" class="status-result">
+          <span class="status-badge">
+            {{ statusResult }}
+          </span>
+        </div> -->
+      </div>
     </div>
 
-    <div v-if="statusResult" class="status-result">
-      <span class="status-badge">
-        {{ statusResult }}
-      </span>
+
+
+
+
+
+<footer class="footer-section">
+  <div class="footer-content">
+    <!-- Layanan -->
+    <div class="footer-column">
+      <h4>Layanan</h4>
+      <ul class="footer-links">
+        <li><a href="#cari">Cari Laundry</a></li>
+        <li><a href="#kode">Cek Status</a></li>
+        <li><a href="#" @click.prevent="confirmMitra">Daftar Mitra</a></li>
+        <li><a href="#">Cara Kerja</a></li>
+      </ul>
+    </div>
+
+    <!-- Dukungan -->
+    <div class="footer-column">
+      <h4>Dukungan</h4>
+      <ul class="footer-links">
+        <li><a href="#">Pusat Bantuan</a></li>
+        <li><a href="#">FAQ</a></li>
+        <li><a href="#">Kebijakan Privasi</a></li>
+        <li><a href="#">Syarat & Ketentuan</a></li>
+      </ul>
+    </div>
+
+    <!-- Hubungi Kami -->
+    <div class="footer-column">
+      <h4>Hubungi Kami</h4>
+      <ul class="contact-info">
+        <li>
+          <span class="contact-icon">📧</span>
+          <span>info@laundryku.com</span>
+        </li>
+        <li>
+          <span class="contact-icon">📞</span>
+          <span>+62 812-3456-7890</span>
+        </li>
+        <li>
+          <span class="contact-icon">📍</span>
+          <span>Surabaya, Indonesia</span>
+        </li>
+      </ul>
     </div>
   </div>
-</div>
+
+  <!-- Footer Bottom -->
+  <div class="footer-bottom">
+    <p>&copy; 2026 LaundryKu. All rights reserved.</p>
+    <p class="footer-credits">Made with ❤️ in Indonesia</p>
+  </div>
+</footer>
 
 
 
-  
   </div>
 </template>
 
@@ -194,22 +245,46 @@ import axios from "axios";
 
 const loadingLaundry = ref(false);
 const loadingStatus = ref(false);
+const statusMap: Record<string, string> = {
+  'menunggu_konfirmasi_mitra': "Menunggu Konfirmasi Mitra",
+  'diterima': "Diterima, Silahkan antar laundry anda",
+  'diproses': "Sedang Diproses",
+  'dicuci': "Sedang Dicuci",
+  'disetrika': "Sedang Disetrika",
+  'selesai': "Laundry Selesai",
+  'diantar': "Sedang Diantar",
+};
+
+// async function cekStatus() {
+//   try {
+//     const res = await axios.get(`/cek-status/${kodeOrder.value}`);
+
+//     statusResultLaundry.value =
+//       statusMap[res.data.status] ?? "Status Tidak Diketahui";
+//   } catch (e) {
+//     statusResultLaundry.value = null;
+//     Swal.fire("Gagal", "Kode order tidak ditemukan", "error");
+//   }
+// }
 
 
 
-const kodeOrder = ref("");
+const kode_order = ref("");
 const statusResult = ref<string | null>(null);
-  
 
 async function cekStatus() {
-  if (!kodeOrder.value) {
+  console.log("ISI KODE:", kode_order.value); // 🔍 DEBUG
+
+  if (!kode_order.value) {
     Swal.fire("Oops", "Kode order tidak boleh kosong", "warning");
     return;
   }
 
   try {
-    const res = await axios.get(`/cek-status/${kodeOrder.value}`);
-    statusResult.value = res.data.status_label;
+    const res = await axios.get(`/cek-status/${kode_order.value}`);
+    statusResult.value = res.data.status
+      ? statusMap[res.data.status] || "Status Tidak Diketahui"
+      : "Status Tidak Diketahui";
   } catch (e) {
     statusResult.value = null;
     Swal.fire("Tidak ditemukan", "Kode order tidak valid", "error");
@@ -288,7 +363,60 @@ watch(alamat, async (val) => {
 
 
 
+// function getStatusIcon(status: string) {
+//   const statusLower = status.toLowerCase();
 
+//   if (statusLower.includes('menunggu') || statusLower.includes('pending')) {
+//     return '⏳';
+//   } else if (statusLower.includes('diterima') || statusLower.includes('diterima')) {
+//     return '✅';
+//   } else if (statusLower.includes('diproses') || statusLower.includes('dikerjakan')) {
+//     return '🔄';
+//   } else if (statusLower.includes('selesai') || statusLower.includes('done')) {
+//     return '✅';
+//   } else if (statusLower.includes('batal') || statusLower.includes('cancel')) {
+//     return '❌';
+//   } else if (statusLower.includes('siap') || statusLower.includes('diambil')) {
+//     return '📦';
+//   } else {
+//     return '📋';
+//   }
+// }
+function getStatusIcon(status: string) {
+  const statusLower = status.toLowerCase();
+
+  if (statusLower.includes('menunggu') || statusLower.includes('pending')) {
+    return;
+  } else if (statusLower.includes('diterima') || statusLower.includes('diterima')) {
+    return;
+  } else if (statusLower.includes('diproses') || statusLower.includes('dikerjakan')) {
+    return;
+  } else if (statusLower.includes('selesai') || statusLower.includes('done')) {
+    return;
+  } else if (statusLower.includes('batal') || statusLower.includes('cancel')) {
+    return;
+  } else if (statusLower.includes('siap') || statusLower.includes('diambil')) {
+    return;
+  } else {
+    return;
+  }
+}
+
+function getStatusClass(status: string) {
+  const statusLower = status.toLowerCase();
+
+  if (statusLower.includes('menunggu') || statusLower.includes('pending')) {
+    return 'menunggu';
+  } else if (statusLower.includes('proses') || statusLower.includes('dikerjakan')) {
+    return 'proses';
+  } else if (statusLower.includes('selesai') || statusLower.includes('done')) {
+    return 'selesai';
+  } else if (statusLower.includes('batal') || statusLower.includes('cancel')) {
+    return 'batal';
+  } else {
+    return '';
+  }
+}
 
 
 
@@ -375,6 +503,169 @@ onMounted(async () => {
 </script>
 
 <style>
+/* Footer Section */
+.footer-section {
+  background: #6b7fdb;
+  color: white;
+  padding: 50px 40px 20px;
+  margin-top: 80px;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 60px;
+  margin-bottom: 35px;
+}
+
+/* Footer Column Headings */
+.footer-column h4 {
+  font-size: 19px;
+  font-weight: 700;
+  margin-bottom: 22px;
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+/* Footer Links */
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-links li {
+  margin-bottom: 14px;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.92);
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  display: inline-block;
+  line-height: 1.5;
+}
+
+.footer-links a:hover {
+  color: white;
+  padding-left: 4px;
+}
+
+/* Contact Info */
+.contact-info {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.contact-info li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.contact-icon {
+  font-size: 18px;
+  margin-top: 2px;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-top: 25px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 6px 0;
+  letter-spacing: 0.2px;
+}
+
+.footer-credits {
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .footer-content {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  
+  .footer-column:last-child {
+    grid-column: 1 / -1;
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer-section {
+    padding: 40px 25px 20px;
+  }
+
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .footer-column {
+    text-align: left;
+  }
+
+  .contact-info li {
+    justify-content: flex-start;
+  }
+
+  .footer-links a:hover {
+    padding-left: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-section {
+    padding: 35px 20px 18px;
+  }
+
+  .footer-content {
+    gap: 30px;
+  }
+
+  .footer-column h4 {
+    font-size: 17px;
+  }
+
+  .footer-links a,
+  .contact-info li {
+    font-size: 14px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #kode {
   display: flex;
@@ -447,14 +738,15 @@ onMounted(async () => {
   gap: 15px;
   margin: 0 auto;
 }
-#box{
-    flex: 1;
-    padding: 14px 20px;
-    border: 2px solid #e5e7eb;
-    border-radius: 8px;
-    font-size: 16px;
-    outline: none;
-    transition: border-color 0.3s;
+
+#box {
+  flex: 1;
+  padding: 14px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 0.3s;
 
 }
 
@@ -509,88 +801,143 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
+
+
+
+
+.status-badgee {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px 80px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+  min-width: 480px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .status-result {
   text-align: center;
-  margin-top: 30px;
-  animation: fadeInUp 0.5s ease;
+  margin-top: 40px;
 }
 
 .status-badge {
-  display: inline-block;
-  padding: 15px 35px;
-  background: #ffffff;
-  color: #667eea;
-  font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 30px 60px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  font-size: 1.5rem;
   font-weight: 700;
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  border: 2px solid #667eea;
-  animation: pulse 2s infinite;
+  border-radius: 20px;
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+  min-width: 280px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.status-badge:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+/* Status: Menunggu Konfirmasi */
+.status-badge.menunggu {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  box-shadow: 0 20px 50px rgba(240, 147, 251, 0.5);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .cek-status-section {
-    padding: 60px 20px;
-  }
-
-  .cek-status-section h2 {
-    font-size: 2rem;
-    margin-bottom: 12px;
-  }
-
-  .cek-status-section .section-desc {
-    font-size: 0.95rem;
-    margin-bottom: 30px;
-  }
-
-  .cek-status-box {
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .cek-input {
-    width: 100%;
-    padding: 14px 20px;
-  }
-
-  .btn-cek {
-    width: 100%;
-    padding: 14px 30px;
-    justify-content: center;
-  }
-
-  .status-badge {
-    padding: 12px 28px;
-    font-size: 1rem;
-  }
+.status-badge.menunggu:hover {
+  box-shadow: 0 15px 40px rgba(240, 147, 251, 0.6);
 }
 
-@media (max-width: 480px) {
-  .cek-status-section h2 {
-    font-size: 1.75rem;
-  }
+/* Status: Sedang Diproses */
+.status-badge.proses {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  box-shadow: 0 12px 35px rgba(79, 172, 254, 0.5);
 }
+
+.status-badge.proses:hover {
+  box-shadow: 0 15px 40px rgba(79, 172, 254, 0.6);
+}
+
+/* Status: Selesai */
+.status-badge.selesai {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  box-shadow: 0 12px 35px rgba(67, 233, 123, 0.5);
+}
+
+.status-badge.selesai:hover {
+  box-shadow: 0 15px 40px rgba(67, 233, 123, 0.6);
+}
+
+/* Status: Dibatalkan */
+.status-badge.batal {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  box-shadow: 0 12px 35px rgba(250, 112, 154, 0.5);
+}
+
+.status-badge.batal:hover {
+  box-shadow: 0 15px 40px rgba(250, 112, 154, 0.6);
+}
+
+
+
+/* .status-result { 
+  text-align: center; 
+  margin-top: 40px; 
+} 
+ 
+.status-badge { 
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  padding: 24px 50px; 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff; 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+  border-radius: 50px; 
+  box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5);
+}
+
+.status-badge::before {
+  content: '✓';
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  font-size: 1.4rem;
+  font-weight: bold;
+} */
+
+
+
 /* .btn-profile {
   display: flex;
   align-items: center;
@@ -724,14 +1071,16 @@ html {
   color: #333;
   margin-bottom: 48px;
 }
+
 .text-kecil {
   text-align: center;
   font-size: 18px;
-    color: #666;
+  color: #666;
   max-width: 800px;
   margin: 0 auto;
   line-height: 1.6;
 }
+
 #kecil {
   margin-top: -50px;
 }

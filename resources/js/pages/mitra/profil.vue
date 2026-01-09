@@ -6,7 +6,7 @@
 
     <div v-else class="profile-wrapper">
       <div class="profile-header">
-        <img :src="mitra.foto_ktp ? '/storage/' + mitra.foto_ktp : '/img/default.png'" class="profile-photo" />
+        <img :src="mitra.foto_toko ? '/storage/' + mitra.foto_toko : '/img/default.png'" class="profile-photo" />
 
         <div class="profile-info">
           <h2 class="profile-name">{{ mitra.nama_laundry }}</h2>
@@ -61,7 +61,7 @@
         <h4 class="section-title">Alamat Laundry</h4>
         <p class="info-value">
           {{ mitra.alamat_laundry }},
-          {{ mitra.kecamatan?.nama }}
+          Kecamatan {{ mitra.kecamatan?.nama }}
         </p>
 
       </div>
@@ -110,7 +110,8 @@ const form = ref({
   deskripsi: '',
   name: '',
   email: '',
-  phone: ''
+  phone: '',
+  foto_toko: null,
 })
 
 
@@ -160,7 +161,7 @@ const props = defineProps<{
 }
 
 .status-badge {
-  padding: 6px 14px;
+  padding: 6px 10px;
   border-radius: 15px;
   font-weight: bold;
   font-size: 12px;

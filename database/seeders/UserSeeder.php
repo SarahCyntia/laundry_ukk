@@ -76,6 +76,21 @@ class UserSeeder extends Seeder
             'kode_pos' => '12345',
             'kecamatan_id' => 1,
         ]);
+        $pelangganUser = User::create([
+            'name' => 'Pelanggan 2',
+            'email' => 'pelanggan2@gmail.com',
+            'password' => bcrypt('12345678'),
+            'phone' => '08123859999',
+        ]);
+
+        $pelangganUser->assignRole('pelanggan');
+
+        Pelanggan::create([
+            'user_id' => $pelangganUser->id,
+            'alamat' => 'Jl. Pelanggan No.10',
+            'kode_pos' => '1234567',
+            'kecamatan_id' => 1,
+        ]);
     }
 }
 // class UserSeeder extends Seeder

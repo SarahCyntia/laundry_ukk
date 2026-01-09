@@ -525,47 +525,39 @@ public function updateProfile(UpdatePelangganRequest $request, $id)
     /**
      * Upload foto profil
      */
-    public function uploadPhoto(Request $request, $id)
-    {
-        try {
-            $user = Auth::user();
-            $pelanggan = $user->pelanggan()->findOrFail($id);
+public function uploadPhoto(Request $request, $id)
+{
+    $request->validate([
+        'photo' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-            $request->validate([
-                'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
-            ]);
+    // pastikan user yang login == user yang diupdate
+    $user = Auth::user();
 
-            // Hapus foto lama jika ada
-            if ($user->photo && Storage::disk('public')->exists($user->photo)) {
-                Storage::disk('public')->delete($user->photo);
-            }
-
-            // Upload foto baru
-            $path = $request->file('photo')->store('photos/pelanggan', 'public');
-
-            // Update path di database
-            $user->update(['photo' => $path]);
-
-            // Reload pelanggan dengan user
-            $pelanggan->load('user');
-
-            return response()->json([
-                'message' => 'Foto berhasil diupload',
-                'data' => $pelanggan
-            ]);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'message' => 'Validasi gagal',
-                'error' => $e->error()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Gagal mengupload foto',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+    if ($user->id != $id) {
+        return response()->json([
+            'message' => 'Tidak diizinkan'
+        ], 403);
     }
+
+    // hapus foto lama
+    if ($user->photo && Storage::disk('public')->exists($user->photo)) {
+        Storage::disk('public')->delete($user->photo);
+    }
+
+    // simpan foto baru
+    $path = $request->file('photo')->store('photos/profile', 'public');
+
+    // update user
+    $user->update([
+        'photo' => $path
+    ]);
+
+    return response()->json([
+        'message' => 'Foto berhasil diupdate',
+        'photo' => $path
+    ]);
+}
 
     /**
      * Ubah password

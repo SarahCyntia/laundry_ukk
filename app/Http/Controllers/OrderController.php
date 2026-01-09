@@ -681,23 +681,51 @@ public function update(Request $request, $id)
 
 
 
+ public function cekStatus($kode_order)
+    {
+        $order = Order::where('kode_order', $kode_order)->first();
 
+        if (!$order) {
+            return response()->json([
+                'message' => 'Kode order tidak ditemukan'
+            ], 404);
+        }
 
-    public function cekStatus($kode)
-{
-    $order = Order::where('kode_order', $kode)->first();
-
-    if (!$order) {
         return response()->json([
-            'message' => 'Data tidak ditemukan'
-        ], 404);
+            'kode_order' => $order->kode_order,
+            'status' => $order->status,
+            'status_label' => $this->statusLabel($order->status),
+        ]);
     }
 
-    return response()->json([
-        'kode_order' => $order->kode_order,
-        'status' => $order->status
-    ]);
-}
+    private function statusLabel($status)
+    {
+        return match ($status) {
+            'menunggu' => 'Menunggu Konfirmasi',
+            'diproses' => 'Sedang Diproses',
+            'dicuci'   => 'Sedang Dicuci',
+            'disetrika'=> 'Sedang Disetrika',
+            'selesai'  => 'Laundry Selesai',
+            'diantar'  => 'Sedang Diantar',
+            default    => 'Status Tidak Diketahui',
+        };
+    }
+
+//     public function cekStatus($kode)
+// {
+//     $order = Order::where('kode_order', $kode)->first();
+
+//     if (!$order) {
+//         return response()->json([
+//             'message' => 'Data tidak ditemukan'
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'kode_order' => $order->kode_order,
+//         'status' => $order->status
+//     ]);
+// }
 
 
 

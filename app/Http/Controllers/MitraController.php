@@ -19,7 +19,7 @@ class MitraController extends Controller
 {
 //     public function me(Request $request)
 // {
-//     $user = auth()->user();
+//     $user = auth()->user();U
 
 //     $mitra = Mitra::with('user')->where('id', $user->mitra_id)->first();
 
@@ -190,7 +190,8 @@ public function show($id)
     //     ]);
     // }
 
-    public function update(Request $request, $id, GeocodingService $geo)
+
+public function update(Request $request, $id, GeocodingService $geo)
 {
     Log::info("All request data: ", $request->all());
 
@@ -199,12 +200,11 @@ public function show($id)
         ->firstOrFail();
 
     // ================================
-    // 🔹 AMBIL KECAMATAN OTOMATIS
+    // 🔹 KECAMATAN OTOMATIS
     // ================================
-    $kecamatanId = $request->kecamatan; // default dari frontend
+    $kecamatanId = $request->kecamatan;
 
     if (!$kecamatanId && $request->alamat_laundry) {
-        // Ambil nama kecamatan dari alamat
         $namaKecamatan = $geo->getKecamatanFromAddress($request->alamat_laundry);
 
         if ($namaKecamatan) {
@@ -214,7 +214,22 @@ public function show($id)
     }
 
     // ================================
-    // 🔹 UPDATE DATA MITRA
+    // 🔹 HANDLE FOTO TOKO
+    // ================================
+    if ($request->hasFile('foto_toko')) {
+
+        // hapus foto lama
+        if ($mitra->foto_toko && Storage::disk('public')->exists($mitra->foto_toko)) {
+            Storage::disk('public')->delete($mitra->foto_toko);
+        }
+
+        // simpan foto baru
+        $path = $request->file('foto_toko')->store('mitra', 'public');
+        $mitra->foto_toko = $path;
+    }
+
+    // ================================
+    // 🔹 UPDATE MITRA
     // ================================
     $mitra->update([
         "nama_laundry"   => $request->nama_laundry,
@@ -224,7 +239,6 @@ public function show($id)
         "jam_buka"       => $request->jam_buka,
         "jam_tutup"      => $request->jam_tutup,
         "deskripsi"      => $request->deskripsi,
-        "foto_toko"      => $request->foto_toko,
     ]);
 
     // ================================
@@ -243,6 +257,61 @@ public function show($id)
         "message" => "Profil mitra berhasil diperbarui"
     ]);
 }
+
+//     public function update(Request $request, $id, GeocodingService $geo)
+// {
+//     Log::info("All request data: ", $request->all());
+
+//     $mitra = Mitra::where('id', $id)
+//         ->where('user_id', auth()->id())
+//         ->firstOrFail();
+
+//     // ================================
+//     // 🔹 AMBIL KECAMATAN OTOMATIS
+//     // ================================
+//     $kecamatanId = $request->kecamatan; // default dari frontend
+
+//     if (!$kecamatanId && $request->alamat_laundry) {
+//         // Ambil nama kecamatan dari alamat
+//         $namaKecamatan = $geo->getKecamatanFromAddress($request->alamat_laundry);
+
+//         if ($namaKecamatan) {
+//             $kecamatan = Kecamatan::where('nama', 'LIKE', "%$namaKecamatan%")->first();
+//             $kecamatanId = $kecamatan?->id;
+//         }
+//     }
+
+//     // ================================
+//     // 🔹 UPDATE DATA MITRA
+//     // ================================
+//     $mitra->update([
+//         "nama_laundry"   => $request->nama_laundry,
+//         "alamat_laundry" => $request->alamat_laundry,
+//         "kecamatan_id"   => $kecamatanId,
+//         "status_toko"    => $request->status_toko,
+//         "jam_buka"       => $request->jam_buka,
+//         "jam_tutup"      => $request->jam_tutup,
+//         "deskripsi"      => $request->deskripsi,
+//         "foto_toko"      => $request->foto_toko,
+//     ]);
+    
+
+//     // ================================
+//     // 🔹 UPDATE USER
+//     // ================================
+//     if ($mitra->user) {
+//         $mitra->user->update([
+//             "name"  => $request->name,
+//             "email" => $request->email,
+//             "phone" => $request->phone,
+//         ]);
+//     }
+
+//     return response()->json([
+//         "success" => true,
+//         "message" => "Profil mitra berhasil diperbarui"
+//     ]);
+// }
 
 //SEBELUMNYA
 //     public function update(Request $request, $id)

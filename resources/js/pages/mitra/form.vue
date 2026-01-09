@@ -48,35 +48,56 @@ function getDetail() {
 }
 
 
-// =====================
-// SUBMIT UPDATE
-// =====================
 function submit() {
   loading.value = true;
 
-  axios.put(`/mitra/${props.selected}`, {
-    nama_laundry: formData.value.nama_laundry,
-    alamat_laundry: formData.value.alamat_laundry,
-    kecamatan: formData.value.kecamatan_id,
-    status_toko: formData.value.status_toko,
-    jam_buka: formData.value.jam_buka,
-    jam_tutup: formData.value.jam_tutup,
-    name: formData.value.user.name,
-    email: formData.value.user.email,
-    phone: formData.value.user.phone,
+  const payload = new FormData();
+
+  payload.append("nama_laundry", formData.value.nama_laundry);
+  payload.append("alamat_laundry", formData.value.alamat_laundry);
+  payload.append("kecamatan", String(formData.value.kecamatan_id));
+  payload.append("status_toko", formData.value.status_toko);
+  payload.append("jam_buka", formData.value.jam_buka);
+  payload.append("jam_tutup", formData.value.jam_tutup);
+
+  payload.append("name", formData.value.user.name);
+  payload.append("email", formData.value.user.email);
+  payload.append("phone", formData.value.user.phone);
+
+  // ⬇️ FOTO
+  if (formData.value.photo instanceof File) {
+    payload.append("foto_toko", formData.value.photo);
+  }
+
+  axios.post(`/mitra/${props.selected}?_method=PUT`, payload, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
   })
     .then(() => {
-      toast.success("Profil berhasil diperbarui");
+      toast.success("Berhasil update");
       emit("refresh");
       emit("close");
     })
-    .catch(() => {
-      toast.error("Gagal menyimpan perubahan");
+    .catch((err) => {
+      console.error(err.response?.data);
+      toast.error("Gagal update");
     })
     .finally(() => {
       loading.value = false;
     });
 }
+
+
+
+function onFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    formData.value.photo = file;
+  }
+}
+
+
 
 const kecamatanList = ref([]);
 
@@ -100,14 +121,28 @@ onMounted(() => getDetail());
 </script>
 
 <template>
-  <div class="card p-5">
+  <div class="card p-5 mt-20">
     <h3 class="mb-4">Edit Profil Mitra</h3>
 
     <div v-if="loading" class="text-center">
       <div class="spinner-border"></div>
     </div>
 
+    
+
     <div v-else>
+
+    <div class="mb-3">
+  <label class="form-label fw-bold">Foto Laundry</label>
+  <input
+    type="file"
+    class="form-control"
+    accept="image/*"
+    @change="onFileChange"
+  />
+</div>
+
+
       <div class="mb-3">
         <label>Nama Laundry</label>
         <input v-model="formData.nama_laundry" class="form-control" />

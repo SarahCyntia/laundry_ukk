@@ -186,7 +186,7 @@
     </div> -->
 
     <!-- Performance Tips -->
-    <div class="tips-section">
+    <!-- <div class="tips-section">
       <div class="tip-card">
         <span class="tip-icon">💡</span>
         <div class="tip-content">
@@ -194,7 +194,7 @@
           <p>{{ dailyTip }}</p>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Notification Badge -->
     <div v-if="notif" class="notification-badge">

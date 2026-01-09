@@ -233,17 +233,17 @@ async function saveProfile() {
 function showPhotoUpload() {
   Swal.fire({
     title: 'Upload Foto Profil',
-    html: `
-      <input type="file" id="photo-upload" class="swal2-file" accept="image/*">
-    `,
+    input: 'file',
+    inputAttributes: {
+      accept: 'image/*',
+      'aria-label': 'Upload foto profil'
+    },
     showCancelButton: true,
     confirmButtonText: 'Upload',
     cancelButtonText: 'Batal',
     confirmButtonColor: '#667eea',
-    preConfirm: () => {
-      const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-      const file = fileInput?.files?.[0];
 
+    preConfirm: (file: File) => {
       if (!file) {
         Swal.showValidationMessage('Silakan pilih foto terlebih dahulu');
         return false;
@@ -262,35 +262,44 @@ function showPhotoUpload() {
       return file;
     }
   }).then(async (result) => {
-    if (result.isConfirmed && result.value) {
-      try {
-        const formData = new FormData();
-        formData.append('photo', result.value);
+    if (!result.isConfirmed || !result.value) return;
 
-        await axios.post(`/pelanggan/${userProfile.value.id}/upload-photo`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+    try {
+      const formData = new FormData();
+      formData.append('photo', result.value);
 
-        await fetchProfile();
+      const res = await axios.post(`/profile/${userProfile.value.user.id}/upload-photo`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-        Swal.fire({
-          icon: 'success',
-          title: 'Berhasil!',
-          text: 'Foto profil berhasil diupload',
-          timer: 1500,
-          showConfirmButton: false
-        });
-      } catch (error: any) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Gagal',
-          text: error.response?.data?.message || 'Gagal mengupload foto'
-        });
+      // 🔥 UPDATE FOTO LANGSUNG TANPA FETCH ULANG
+      if (userProfile.value?.user) {
+        userProfile.value.user.photo = res.data.photo;
       }
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Berhasil!',
+        text: 'Foto profil berhasil diperbarui',
+        timer: 1500,
+        showConfirmButton: false
+      });
+
+    } catch (error: any) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal Upload',
+        text:
+          error.response?.data?.message ||
+          error.response?.data?.errors?.photo?.[0] ||
+          'Gagal mengupload foto'
+      });
     }
   });
-
 }
+
 
 // function showChangePassword() {
 //   Swal.fire({
@@ -544,8 +553,14 @@ onMounted(async () => {
       <div class="profile-card">
         <div class="avatar-section">
           <div class="avatar-circle">
-            <img v-if="userProfile?.user?.photo" :src="`/storage/${userProfile.user.photo}`" alt="Foto Profil"
-              class="avatar-img" />
+            <!-- <img v-if="userProfile?.user?.photo" :src="`/storage/${userProfile.user.photo}`" alt="Foto Profil"
+              class="avatar-img" /> -->
+              <img
+  v-if="userProfile?.user?.photo"
+  :src="`/storage/${userProfile.user.photo}`"
+  class="avatar-img"
+/>
+
             <span v-else class="avatar-icon">👤</span>
           </div>
           <button class="btn-change-photo" @click="showPhotoUpload">
@@ -557,10 +572,10 @@ onMounted(async () => {
           <h2>{{ userProfile?.user?.name || 'Nama Pengguna' }}</h2>
           <p class="user-email">{{ userProfile?.user?.email || 'email@example.com' }}</p>
           <p class="user-phone">📱 {{ userProfile?.user?.phone || 'Belum ada nomor telepon' }}</p>
-          <p class="user-role">
+          <!-- <p class="user-role">
             <span class="role-badge">Pelanggan</span>
           </p>
-          <p class="member-since">Bergabung sejak {{ formatDate(userProfile?.created_at) }}</p>
+          <p class="member-since">Bergabung sejak {{ formatDate(userProfile?.created_at) }}</p> -->
         </div>
       </div>
 
@@ -761,8 +776,8 @@ onMounted(async () => {
 }
 
 .profile-container {
-  min-height: 100vh;
-  background: #f7f8fa;
+  min-height: 50vh;
+  /* background: #f7f8fa; */
   padding-bottom: 40px;
 }
 
@@ -840,6 +855,7 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   text-align: center;
   margin-bottom: 24px;
+  margin-top: 60px;
 }
 
 .avatar-section {

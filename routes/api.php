@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardAdminController;
 use App\Models\Penjemputan;
 use App\Models\JenisLayanan;
 use App\Models\LayananPrioritas;
@@ -186,7 +187,7 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     
 
 
-Route::get('/laundry/status/{kode}', [OrderController::class, 'cekStatus']);
+Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
 
 
 
@@ -252,19 +253,11 @@ Route::get('/laundry/status/{kode}', [OrderController::class, 'cekStatus']);
 Route::post('/midtrans/notification', [PaymentController::class, 'handleNotification']);
 Route::post('/manual-update-status', [Paymentcontroller::class, 'manualUpdateStatus']);
 
-    // Route::get('/transaksi', [MitraTransaksiController::class, 'index']);
-    // Route::put('/transaksi/{id}/status', [MitraTransaksiController::class, 'updateStatus']);
-    // Route::get('/transaksi/{id}/print-resi', [MitraTransaksiController::class, 'printResi']);
-    // Route::get('/transaksi/{id}', [MitraTransaksiController::class, 'show']);
 
 
 
-    // // Transaksi khusus Pelanggan
-    // Route::middleware(['auth:sanctum', 'role:pelanggan'])->prefix('pelanggan')->group(function () {
-    //     Route::get('/transaksi', [PelangganTransaksiController::class, 'index']); // daftar transaksi pelanggan
-    //     Route::get('/transaksi/{id}/print-resi', [PelangganTransaksiController::class, 'printResi']); // print resi
-    //     Route::get('/transaksi/{id}', [PelangganTransaksiController::class, 'show']); // detail transaksi
-    // });
+
+Route::get('/dashboard/admin-data', [DashboardAdminController::class, 'index']);
 
 Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
 
@@ -354,7 +347,7 @@ Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
 
     Route::get('/pelanggan/profile', [PelangganController::class, 'profile']);
     Route::put('/pelanggan/{id}', [PelangganController::class, 'updateProfile']);
-    Route::post('/pelanggan/{id}/upload-photo', [PelangganController::class, 'uploadPhoto']);
+    Route::post('/profile/{id}/upload-photo', [PelangganController::class, 'uploadPhoto']);
 
     // Password
     Route::post('/user/change-password', [PelangganController::class, 'changePassword']);
