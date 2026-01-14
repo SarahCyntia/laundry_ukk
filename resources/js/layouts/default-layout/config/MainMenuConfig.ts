@@ -116,18 +116,13 @@ const MainMenuConfig: Array<MenuItem> = [
                     },
                 ],
             },
-             {
-                heading: "Mitra",
-                route: "/mitra",
-                name: "mitra",
-                keenthemesIcon: "setting-2",
-            },
             {
                 heading: "Setting",
                 route: "/dashboard/setting",
                 name: "setting",
                 keenthemesIcon: "setting-2",
             },
+           
           
            
             // {
@@ -159,13 +154,19 @@ const MainMenuConfig: Array<MenuItem> = [
                 heading: "Kecamatan",
                 route: "/kecamatan",
                 name: "kecamatan",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-bank",
             },
+             {
+               heading: "Data Mitra",
+               route: "/mitra",
+               name: "mitra",
+               keenthemesIcon: "bi bi-person-lines-fill",
+           },
             {
                 heading: "Data Pelanggan",
                 route: "/dashboard/data-pelanggan",
                 name: "datapelanggan",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-person-lines-fill",
             },
             
         ],

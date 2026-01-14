@@ -50,40 +50,80 @@ class OrderController extends Controller
 
         // Nomor urut
         $start = ($query->currentPage() - 1) * $per + 1;
-
         $query->getCollection()->transform(function ($o) use (&$start) {
-            return [
-                'no' => $start++,
-                'id' => $o->id,
-                'kode_order' => $o->kode_order,
+    return [
+        'no' => $start++,
+        'id' => $o->id,
+        'kode_order' => $o->kode_order,
 
-                'pelanggan' => [
-                    'id' => $o->pelanggan->id ?? null,
-                    'name' => $o->pelanggan->user->name ?? "-",
-                ],
+        'pelanggan' => [
+            'id' => $o->pelanggan->id ?? null,
+            'name' => $o->pelanggan->user->name ?? "-",
+        ],
 
-                'mitra' => [
-                    'id' => $o->mitra->id ?? null,
-                    'nama_laundry' => $o->mitra->nama_laundry ?? "-",
-                ],
+        'mitra' => [
+            'id' => $o->mitra->id ?? null,
+            'nama_laundry' => $o->mitra->nama_laundry ?? "-",
+        ],
 
-                'jenis_layanan' => [
-                    'id' => $o->jenis_layanan->id ?? null,
-                    'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
-                ],
+        'jenis_layanan' => [
+            'id' => $o->jenis_layanan->id ?? null,
+            'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
+        ],
 
-                'status' => $o->status,
-                'berat_estimasi' => $o->berat_estimasi,
-                'berat_aktual' => $o->berat_aktual,
-                'harga_final' => $o->harga_final,
-                'alasan_penolakan' => $o->alasan_penolakan,
-                'estimasi_selesai' => $o->estimasi_selesai,
-                'estimasi_jam' => $o->estimasi_jam,
-                'catatan' => $o->catatan,
-                'foto_struk' => $o->foto_struk,
-                'created_at' => $o->created_at->format('Y-m-d H:i'),
-            ];
-        });
+        'status' => $o->status,
+        'berat_estimasi' => $o->berat_estimasi,
+        'berat_aktual' => $o->berat_aktual,
+        'harga_final' => $o->harga_final,
+        'alasan_penolakan' => $o->alasan_penolakan,
+        'estimasi_selesai' => $o->estimasi_selesai,
+        'estimasi_jam' => $o->estimasi_jam,
+        'catatan' => $o->catatan,
+        'foto_struk' => $o->foto_struk,
+
+        // 🔥 INI YANG KURANG
+        'waktu_pelanggan_antar' => $o->waktu_pelanggan_antar
+            ? $o->waktu_pelanggan_antar->format('Y-m-d H:i')
+            : null,
+
+        'created_at' => $o->created_at->format('Y-m-d H:i'),
+    ];
+});
+
+
+        // $query->getCollection()->transform(function ($o) use (&$start) {
+        //     return [
+        //         'no' => $start++,
+        //         'id' => $o->id,
+        //         'kode_order' => $o->kode_order,
+
+        //         'pelanggan' => [
+        //             'id' => $o->pelanggan->id ?? null,
+        //             'name' => $o->pelanggan->user->name ?? "-",
+        //         ],
+
+        //         'mitra' => [
+        //             'id' => $o->mitra->id ?? null,
+        //             'nama_laundry' => $o->mitra->nama_laundry ?? "-",
+        //         ],
+
+        //         'jenis_layanan' => [
+        //             'id' => $o->jenis_layanan->id ?? null,
+        //             'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
+        //         ],
+
+        //         'status' => $o->status,
+        //         'berat_estimasi' => $o->berat_estimasi,
+        //         'berat_aktual' => $o->berat_aktual,
+        //         'harga_final' => $o->harga_final,
+        //         'alasan_penolakan' => $o->alasan_penolakan,
+        //         'estimasi_selesai' => $o->estimasi_selesai,
+        //         'estimasi_jam' => $o->estimasi_jam,
+        //         'catatan' => $o->catatan,
+        //         'foto_struk' => $o->foto_struk,
+        //         'created_at' => $o->created_at->format('Y-m-d H:i'),
+        //     ];
+        // });
 
 
 

@@ -79,8 +79,8 @@ class DashboardAdminController extends Controller
         // ===============================
         // KOMPLAIN & LAPORAN
         // ===============================
-        $komplainBelumDitangani = Komplain::where('status', 'pending')->count();
-        $laporanBelumDitinjau  = Laporan::where('status', 'pending')->count();
+        // $komplainBelumDitangani = Komplain::where('status', 'pending')->count();
+        // $laporanBelumDitinjau  = Laporan::where('status', 'pending')->count();
 
         // ===============================
         // RESPONSE
@@ -112,8 +112,8 @@ class DashboardAdminController extends Controller
             'transaksiSelesai'  => $transaksiSelesai,
 
             // Alerts
-            'komplainBelumDitangani' => $komplainBelumDitangani,
-            'laporanBelumDitinjau'   => $laporanBelumDitinjau,
+            // 'komplainBelumDitangani' => $komplainBelumDitangani,
+            // 'laporanBelumDitinjau'   => $laporanBelumDitinjau,
         ]);
     }
 

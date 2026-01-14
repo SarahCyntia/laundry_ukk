@@ -39,6 +39,7 @@ use App\Http\Controllers\WilayahController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MidtransWebhookController; // if separate
 use App\Http\Controllers\PelangganOrderController;
+use Illuminate\Support\Facades\Password;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,8 @@ Route::post('/kecamatan', [KecamatanController::class, 'index']);
 Route::get('/kecamatan', [KecamatanController::class, 'get']);
 
 
+    // Route::get('/mitra-by-kecamatan/{kecamatan}', [KecamatanController::class, 'mitraByKecamatan']);
+    Route::get('/mitra-by-kecamatan/{id}', [MitraController::class, 'mitraByKecamatan']);
 
 
 // routes/api.php
@@ -377,3 +380,26 @@ Route::get('/transaksi/user', [TransaksiController::class, 'getUserTransaksi'])
 
 
 
+    Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
+// Route::post('/reset-password', [AuthController::class, 'reset']);
+
+Route::post('/reset-password', function (Request $request) {
+    $request->validate([
+        'token' => 'required',
+        'email' => 'required|email',
+        'password' => 'required|min:8|confirmed',
+    ]);
+
+    $status = Password::reset(
+        $request->only('email', 'password', 'password_confirmation', 'token'),
+        function ($user, $password) {
+            $user->forceFill([
+                'password' => bcrypt($password),
+            ])->save();
+        }
+    );
+
+    return $status === Password::PASSWORD_RESET
+        ? response()->json(['message' => 'Password berhasil direset'])
+        : response()->json(['message' => 'Token tidak valid'], 422);
+});

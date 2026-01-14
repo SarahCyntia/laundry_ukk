@@ -6,7 +6,7 @@ import KTThemeModeSwitcher from "@/layouts/default-layout/components/theme-mode/
 import { ThemeModeComponent } from "@/assets/ts/layout";
 import { useThemeStore } from "@/stores/theme";
 import { useAuthStore } from "@/stores/auth";
-import { useTahunStore } from "@/stores/tahun";
+// import { useTahunStore } from "@/stores/tahun";
 
 const store = useThemeStore();
 const { user } = useAuthStore();
@@ -18,20 +18,20 @@ const themeMode = computed(() => {
     return store.mode;
 });
 
-const tahun = useTahunStore()
-const tahuns = ref<Array<Number>>([])
-for (let i = new Date().getFullYear(); i >= new Date().getFullYear() - 2; i--) {
-    tahuns.value.push(i)
-}
+// const tahun = useTahunStore()
+// const tahuns = ref<Array<Number>>([])
+// for (let i = new Date().getFullYear(); i >= new Date().getFullYear() - 2; i--) {
+//     tahuns.value.push(i)
+// }
 </script>
 
 <template>
     <!--begin::Navbar-->
     <div class="app-navbar flex-shrink-0">
         <!--begin::Theme mode-->
-        <div class="app-navbar-item me-10">
+        <!-- <div class="app-navbar-item me-10">
             <select2 class="form-select-solid w-125px" :options="tahuns" v-model="tahun.tahun"></select2>
-        </div>
+        </div> -->
         <!--end::Theme mode-->
 
         <!--begin::Theme mode-->

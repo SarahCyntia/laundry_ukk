@@ -17,16 +17,16 @@ class SettingController extends Controller
     {
         if (request()->wantsJson()) {
             $request->validate([
-                'app' => 'required',
+                // 'app' => 'required',
                 'description' => 'nullable',
-                'pemerintah' => 'nullable',
+                // 'pemerintah' => 'nullable',
                 'alamat' => 'nullable',
                 // 'dinas' => 'nullable',
                 'telepon' => 'nullable',
                 'email' => 'nullable',
                 'logo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'bg_auth' => 'nullable|image|mimes:jpeg,png,jpg|max:8192',
-                // 'banner' => 'required|image|mimes:jpeg,png,jpg|max:8192',
+                'banner' => 'required|image|mimes:jpeg,png,jpg|max:8192',
             ]);
 
             $setting = Setting::first();

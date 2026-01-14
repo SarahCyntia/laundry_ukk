@@ -725,10 +725,11 @@ onMounted(async () => {
   display: inline-block;
   padding: 8px 16px;
   border-radius: 20px;
-  font-weight: 600;
+  /* font-weight: 600; */
   font-size: 14px;
   background: #f0f0f0;
   color: #999;
+  
 }
 
 .status-badge.open {

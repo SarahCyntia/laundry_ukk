@@ -327,7 +327,17 @@ column.accessor(row => row.pelanggan?.name ?? "-", {
   },
 }),
 
-  column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
+  // column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
+  column.accessor("waktu_pelanggan_antar", {
+  header: "Waktu Antar",
+  cell: ({ getValue }) => {
+    const val = getValue()
+    return val
+      ? new Date(val).toLocaleString("id-ID")
+      : "-"
+  }
+}),
+
   column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
   column.accessor("foto_struk", {
   header: "Foto Struk",
@@ -338,7 +348,7 @@ column.accessor(row => row.pelanggan?.name ?? "-", {
       return h("span", { style: "color:#888;" }, "Tidak ada foto");
     }
 
-    const url = `${import.meta.env.VITE_API_URL}/storage/${foto}`;
+    const url = `http://localhost:8000/storage/${foto}`;
 
 
     console.log("URL FINAL:", url);

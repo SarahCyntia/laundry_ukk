@@ -54,12 +54,43 @@
           </p>
         </div>
 
-        <!-- Filter & Search -->
+
         <div class="search-box">
-          <input v-model="searchQuery" type="text" placeholder="Cari laundry berdasarkan lokasi..."
+          <input type="text" v-model="keyword" placeholder="Cari Kecamatan..." class="search-input"
+            @focus="showDropdown = true" @input="showDropdown = true" @blur="hideDropdown" />
+
+        
+          <ul v-if="showDropdown && filteredKecamatan.length" class="dropdown mt-17 ">
+            <li v-for="k in filteredKecamatan" :key="k.id" @mousedown.prevent="pilihKecamatan(k)">
+              {{ k.nama }}
+            </li>
+          </ul>
+
+          <button @click="cariMitra" class="btn-search">
+            Cari
+          </button>
+        </div>
+
+
+        <!-- <div class="search-box">
+          <select v-model="kecamatan" class="search-input" @change="cariMitra">
+            <option value="">Pilih Kecamatan</option>
+            <option v-for="k in listKecamatan" :key="k.id" :value="k.id">
+              {{ k.nama }}
+            </option>
+          </select>
+
+
+          <button @click="cariMitra" class="btn-search">
+            Cari
+          </button>
+        </div> -->
+
+        <!-- <div class="search-box">
+          <input v-model="searchQuery" type="text" placeholder="Cari laundry berdasarkan kecamata..."
             class="search-input" />
           <button class="btn-search" @click="filterLaundry">🔍 Cari</button>
-        </div>
+        </div> -->
 
         <!-- Loading State -->
         <div v-if="loading" class="loading-state">
@@ -67,21 +98,61 @@
         </div>
 
         <!-- Laundry Cards Grid -->
+        <!-- ADA MITRA -->
+        <!-- <div v-if="filteredMitraList.length > 0" class="laundry-grid">
+          <div v-for="m in filteredMitraList" :key="m.id" class="laundry-card">
+
+            <div class="laundry-image">
+              <div class="placeholder-img">🧺</div>
+              <span class="laundry-badge" v-if="m.status_toko === 'buka'">✓ Buka</span>
+              <span class="laundry-badge closed" v-else>✗ Tutup</span>
+            </div>
+            <div class="laundry-info">
+              <h3>{{ m.nama_laundry }}</h3>
+              <p class="location">
+                📍 {{ m.alamat_laundry }}, Kecamatan {{ m.kecamatan?.nama }}
+              </p>
+
+              <div v-if="m.jenis_layanan && m.jenis_layanan.length" class="layanan-list">
+                <h4>Layanan Tersedia:</h4>
+                <ul>
+                  <li v-for="l in m.jenis_layanan" :key="l.id">
+                    <strong>{{ l.nama_layanan }}</strong><br />
+                    <span class="desc">{{ l.deskripsi }}</span><br />
+                    <span class="price">
+                      Rp {{ Number(l.harga).toLocaleString('id-ID') }} / {{ l.satuan }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-else class="no-service">
+                <p>Belum ada layanan tersedia</p>
+              </div>
+
+              <button class="btn-order" @click="goToLaundry(m.id)" :disabled="m.status_toko !== 'buka'">
+                {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Sedang Tutup' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-else-if="!loading && kecamatan" class="no-service">
+          <p>Belum ada mitra laundry di kecamatan ini</p>
+        </div> -->
+
         <div v-else-if="filteredMitraList.length > 0" class="laundry-grid">
           <div v-for="m in filteredMitraList" :key="m.id" class="laundry-card">
-            <!-- Header Image -->
             <div class="laundry-image">
               <div class="placeholder-img">🧺</div>
               <span class="laundry-badge" v-if="m.status_toko === 'buka'">✓ Buka</span>
               <span class="laundry-badge closed" v-else>✗ Tutup</span>
             </div>
 
-            <!-- Card Info -->
             <div class="laundry-info">
               <h3>{{ m.nama_laundry }}</h3>
               <p class="location">📍 {{ m.alamat_laundry }}, Kecamatan {{ m.kecamatan?.nama }}</p>
 
-              <!-- Layanan List -->
               <div v-if="m.jenis_layanan && m.jenis_layanan.length" class="layanan-list">
                 <h4>Layanan Tersedia:</h4>
                 <ul>
@@ -96,16 +167,6 @@
               <div v-else class="no-service">
                 <p>Belum ada layanan tersedia</p>
               </div>
-
-              <!-- Action Button -->
-              <!-- <router-link
-  :to="m.status_toko === 'buka' ? { name: 'DetailLaundry', params: { id: m.id } } : null"
-  @click="Logging"
-  class="btn-order"
-  :class="{ disabled: m.status_toko !== 'buka' }"
->
-  {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Tutup' }}
-</router-link> -->
 
 
               <button class="btn-order" @click="goToLaundry(m.id)" :disabled="m.status_toko !== 'buka'">
@@ -180,56 +241,56 @@
 
 
 
-<footer class="footer-section">
-  <div class="footer-content">
-    <!-- Layanan -->
-    <div class="footer-column">
-      <h4>Layanan</h4>
-      <ul class="footer-links">
-        <li><a href="#cari">Cari Laundry</a></li>
-        <li><a href="#kode">Cek Status</a></li>
-        <li><a href="#" @click.prevent="confirmMitra">Daftar Mitra</a></li>
-        <li><a href="#">Cara Kerja</a></li>
-      </ul>
-    </div>
+    <footer class="footer-section">
+      <div class="footer-content">
+        <!-- Layanan -->
+        <div class="footer-column">
+          <h4>Layanan</h4>
+          <ul class="footer-links">
+            <li><a href="#cari">Cari Laundry</a></li>
+            <li><a href="#kode">Cek Status</a></li>
+            <li><a href="#" @click.prevent="confirmMitra">Daftar Mitra</a></li>
+            <li><a href="#">Cara Kerja</a></li>
+          </ul>
+        </div>
 
-    <!-- Dukungan -->
-    <div class="footer-column">
-      <h4>Dukungan</h4>
-      <ul class="footer-links">
-        <li><a href="#">Pusat Bantuan</a></li>
-        <li><a href="#">FAQ</a></li>
-        <li><a href="#">Kebijakan Privasi</a></li>
-        <li><a href="#">Syarat & Ketentuan</a></li>
-      </ul>
-    </div>
+        <!-- Dukungan -->
+        <div class="footer-column">
+          <h4>Dukungan</h4>
+          <ul class="footer-links">
+            <li><a href="#">Pusat Bantuan</a></li>
+            <li><a href="#">FAQ</a></li>
+            <li><a href="#">Kebijakan Privasi</a></li>
+            <li><a href="#">Syarat & Ketentuan</a></li>
+          </ul>
+        </div>
 
-    <!-- Hubungi Kami -->
-    <div class="footer-column">
-      <h4>Hubungi Kami</h4>
-      <ul class="contact-info">
-        <li>
-          <span class="contact-icon">📧</span>
-          <span>info@laundryku.com</span>
-        </li>
-        <li>
-          <span class="contact-icon">📞</span>
-          <span>+62 812-3456-7890</span>
-        </li>
-        <li>
-          <span class="contact-icon">📍</span>
-          <span>Surabaya, Indonesia</span>
-        </li>
-      </ul>
-    </div>
-  </div>
+        <!-- Hubungi Kami -->
+        <div class="footer-column">
+          <h4>Hubungi Kami</h4>
+          <ul class="contact-info">
+            <li>
+              <span class="contact-icon">📧</span>
+              <span>info@laundryku.com</span>
+            </li>
+            <li>
+              <span class="contact-icon">📞</span>
+              <span>+62 812-3456-7890</span>
+            </li>
+            <li>
+              <span class="contact-icon">📍</span>
+              <span>Surabaya, Indonesia</span>
+            </li>
+          </ul>
+        </div>
+      </div>
 
-  <!-- Footer Bottom -->
-  <div class="footer-bottom">
-    <p>&copy; 2026 LaundryKu. All rights reserved.</p>
-    <p class="footer-credits">Made with ❤️ in Indonesia</p>
-  </div>
-</footer>
+      <!-- Footer Bottom -->
+      <div class="footer-bottom">
+        <p>&copy; 2026 LaundryKu. All rights reserved.</p>
+        <p class="footer-credits">Made with ❤️ in Indonesia</p>
+      </div>
+    </footer>
 
 
 
@@ -241,7 +302,10 @@ import Swal from "sweetalert2";
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import axios from "axios";
+import axios from "@/libs/axios";
+// import vSelect from "vue-select";
+// import "vue-select/dist/vue-select.css";
+
 
 const loadingLaundry = ref(false);
 const loadingStatus = ref(false);
@@ -255,17 +319,134 @@ const statusMap: Record<string, string> = {
   'diantar': "Sedang Diantar",
 };
 
-// async function cekStatus() {
-//   try {
-//     const res = await axios.get(`/cek-status/${kodeOrder.value}`);
+const keyword = ref("")
+const kecamatan = ref<number | null>(null)
+const showDropdown = ref(false)
 
-//     statusResultLaundry.value =
-//       statusMap[res.data.status] ?? "Status Tidak Diketahui";
-//   } catch (e) {
-//     statusResultLaundry.value = null;
-//     Swal.fire("Gagal", "Kode order tidak ditemukan", "error");
+const filteredKecamatan = computed(() => {
+  if (!keyword.value) return listKecamatan.value
+  return listKecamatan.value.filter(k =>
+    k.nama.toLowerCase().includes(keyword.value.toLowerCase())
+  )
+})
+
+function pilihKecamatan(k: any) {
+  keyword.value = k.nama
+  kecamatan.value = k.id     // 🔑 PAKAI ID
+  showDropdown.value = false
+}
+
+function hideDropdown() {
+  setTimeout(() => {
+    showDropdown.value = false
+  }, 150)
+}
+
+
+// const keyword = ref("");
+// const kecamatan = ref<number | null>(null);
+// const showDropdown = ref(false);
+
+// const filteredKecamatan = computed(() => {
+//   return listKecamatan.value.filter(k =>
+//     k.nama.toLowerCase().includes(keyword.value.toLowerCase())
+//   );
+// });
+
+// function pilihKecamatan(k: any) {
+//   keyword.value = k.nama;   // tampil di input
+//   kecamatan.value = k.id;   // ID untuk backend
+//   showDropdown.value = false;
+//   cariMitra();              // fetch mitra
+// }
+
+// function hideDropdown() {
+//   setTimeout(() => (showDropdown.value = false), 150);
+// }
+
+
+// const kecamatan = ref("");
+const listKecamatan = ref([]);
+const loadingKecamatan = ref(false);
+// const mitraList = ref([]);
+// const loading = ref(false);
+async function getKecamatan() {
+  loadingKecamatan.value = true;
+  try {
+    const res = await axios.get("/kecamatan");
+    // listKecamatan.value = res.data;
+    listKecamatan.value = res.data.data ?? res.data;
+  } catch (e) {
+    console.error("Gagal ambil kecamatan", e);
+  } finally {
+    loadingKecamatan.value = false;
+  }
+}
+
+// const kecamatan = ref<number | "">("");
+// const mitraList = ref([]);
+//sebelumnya
+// async function cariMitra() {
+//   if (!kecamatan.value) return;
+
+//   try {
+//     const res = await axios.get(
+//       `/mitra-by-kecamatan/${kecamatan.value}`
+//     );
+//     mitraList.value = res.data.data ?? res.data;
+//   } catch (err) {
+//     console.error(err);
 //   }
 // }
+async function cariMitra() {
+  if (!kecamatan.value) {
+    Swal.fire("Pilih kecamatan dulu")
+    return
+  }
+
+  const res = await axios.get(
+    `/mitra-by-kecamatan/${kecamatan.value}`
+  )
+
+  mitraList.value = res.data.data
+}
+
+watch(kecamatan, async (id) => {
+  if (!id) return;
+
+  const res = await axios.get(`/mitra-by-kecamatan/${id}`);
+  mitraList.value = res.data.data ?? res.data;
+});
+
+// async function cariMitra() {
+//   if (!kecamatan.value) {
+//     Swal.fire("Oops", "Pilih kecamatan dulu", "warning");
+//     return;
+//   }
+
+//   loading.value = true;
+//   try {
+//     const res = await axios.get(
+//       `/mitra-by-kecamatan/${kecamatan.value}`
+//     );
+//     mitraList.value = res.data.data;
+//   } catch (e) {
+//     mitraList.value = [];
+//     Swal.fire(
+//       "Tidak ditemukan",
+//       "Belum ada mitra laundry di kecamatan ini",
+//       "info"
+//     );
+//   } finally {
+//     loading.value = false;
+//   }
+// }
+
+
+
+
+
+
 
 
 
@@ -292,27 +473,42 @@ async function cekStatus() {
 }
 
 
+
+
+
 const router = useRouter();
 const authStore = useAuthStore();
 
 // State
 const mitraList = ref([]);
-const searchQuery = ref('');
 const loading = ref(false);
 // const laundryId = route.params.id;
 
 // Computed
 const isLoggedIn = computed(() => authStore.isAuthenticated);
 
+
+
+const searchQuery = ref("");
+const isSearching = ref(false);
+
+
+function doSearch() {
+  isSearching.value = true;
+}
+
+
 const filteredMitraList = computed(() => {
-  if (!searchQuery.value) {
+  if (!isSearching.value || !searchQuery.value) {
     return mitraList.value;
   }
 
+  const q = searchQuery.value.toLowerCase().trim();
+
   return mitraList.value.filter(m =>
-    m.nama_laundry.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    m.alamat_laundry.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    m.kecamatan?.nama?.toLowerCase().includes(q)
+    m.kecamatan &&
+    m.kecamatan.nama &&
+    m.kecamatan.nama.toLowerCase().includes(q)
   );
 });
 
@@ -337,26 +533,26 @@ function goToProfile() {
 
 
 
+//tidak dibutuhkan
+// const alamat = ref('')
+// const kecamatan_id = ref<number | null>(null)
+// const kecamatans = ref([])
+// onMounted(async () => {
+//   const res = await axios.get('kecamatan')
+//   kecamatans.value = res.data
+// })
 
-const alamat = ref('')
-const kecamatan_id = ref<number | null>(null)
-const kecamatans = ref([])
-onMounted(async () => {
-  const res = await axios.get('kecamatan')
-  kecamatans.value = res.data
-})
+// watch(alamat, async (val) => {
+//   if (val.length < 10) return
 
-watch(alamat, async (val) => {
-  if (val.length < 10) return
+//   const res = await axios.post('/deteksi-kecamatan', {
+//     alamat: val
+//   })
 
-  const res = await axios.post('/deteksi-kecamatan', {
-    alamat: val
-  })
-
-  if (res.data?.id) {
-    kecamatan_id.value = res.data.id
-  }
-})
+//   if (res.data?.id) {
+//     kecamatan_id.value = res.data.id
+//   }
+// })
 
 
 
@@ -481,6 +677,9 @@ const confirmMitra = () => {
 
 
 
+onMounted(() => {
+  getKecamatan();
+});
 
 // Lifecycle
 onMounted(async () => {
@@ -503,6 +702,36 @@ onMounted(async () => {
 </script>
 
 <style>
+.searchable-select {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  width: 41%;
+  max-height: 220px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  z-index: 50;
+}
+
+.dropdown li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.dropdown li:hover {
+  background: #f3f4f6;
+}
+
+
+
+
+
+
+
 /* Footer Section */
 .footer-section {
   background: #6b7fdb;
@@ -602,7 +831,7 @@ onMounted(async () => {
     grid-template-columns: 1fr 1fr;
     gap: 40px;
   }
-  
+
   .footer-column:last-child {
     grid-column: 1 / -1;
     max-width: 350px;

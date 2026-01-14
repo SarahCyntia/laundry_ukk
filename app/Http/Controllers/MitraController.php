@@ -41,13 +41,19 @@ class MitraController extends Controller
                     ->orWhere('nama_laundry', 'like', "%$search%")
                     ->orWhere('status_validasi', 'like', "%$search%")
                     ->orWhere('alamat_laundry', 'like', "%$search%")
-                    ->orWhere('kecamatan_id', 'like', "%$search%")
+                    // ->orWhere('kecamatan_id', 'like', "%$search%")
                     ->orWhere('foto_ktp', 'like', "%$search%")
                     ->orWhere('status_toko', 'like', "%$search%")
                     ->orWhere('deskripsi', 'like', "%$search%")
                     ->orWhere('jam_buka', 'like', "%$search%")
                     ->orWhere('jam_tutup', 'like', "%$search%")
-                    ->orWhere('foto_toko', 'like', "%$search%");
+                    // ->orWhereHas('kecamatan', function ($k) use ($search) {
+                    //     $k->where('nama', 'like', "%$search%");
+                    // })
+                    ->orWhere('foto_toko', 'like', "%$search%")
+                     ->whereHas('kecamatan', function ($q) use ($search) {
+        $q->where('nama', 'like', "%{$search}%");
+    });
             })->latest()->paginate($per);
     
 
@@ -630,6 +636,19 @@ public function search(Request $request)
             'message' => 'Mitra tidak ditemukan'
         ], 404);
     }
+
+    return response()->json([
+        'data' => $mitra
+    ]);
+}
+
+
+
+   public function mitraByKecamatan($id)
+{
+    $mitra = Mitra::with('kecamatan', 'jenis_layanan')
+        ->where('kecamatan_id', $id)
+        ->get();
 
     return response()->json([
         'data' => $mitra

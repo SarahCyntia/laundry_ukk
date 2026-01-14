@@ -29,6 +29,10 @@
         <div class="border-bottom border-gray-300 w-100 mt-5 mb-10"></div>
 
         <div class="text-center daftar">
+          Lupa password?
+          <router-link to="/sign-in/lupa-password" class="link-daftar">Lupa Password</router-link>
+        </div>
+        <div class="text-center daftar">
           Belum punya akun?
           <router-link to="/sign-up" class="link-daftar">Daftar</router-link>
         </div>

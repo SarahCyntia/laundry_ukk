@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kecamatan;
+use App\Models\Mitra;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class KecamatanController extends Controller
 {
@@ -29,7 +31,10 @@ class KecamatanController extends Controller
             $item->no = $no++;
         }
 
-        return response()->json($data);
+          return response()->json([
+        'data' => Kecamatan::select('id', 'nama')->orderBy('nama')->get()
+    ]);
+        // return response()->json($data);
     }
 
     // 🔹 Simpan data baru
@@ -74,15 +79,15 @@ class KecamatanController extends Controller
     }
 
     // 🔹 Delete
-    public function destroy($id)
-{
-    $kecamatan = Kecamatan::findOrFail($id); // cari modelnya
-    $kecamatan->delete();                    // hapus model
-    return response()->json([
-        'success' => true,
-        'message' => 'Data kecamatan$kecamatan item berhasil dihapus'
-    ]);
-}
+//     public function destroy($id)
+// {
+//     $kecamatan = Kecamatan::findOrFail($id); // cari modelnya
+//     $kecamatan->delete();                    // hapus model
+//     return response()->json([
+//         'success' => true,
+//         'message' => 'Data kecamatan$kecamatan item berhasil dihapus'
+//     ]);
+// }
 
     // public function destroy($id)
     // {
@@ -93,27 +98,27 @@ class KecamatanController extends Controller
     //     ]);
     // }
 
-public function trash()
-{
-    $data = Kecamatan::onlyTrashed()
-        ->paginate(10)
-        ->through(function ($item) {
-            return [
-                'id'   => $item->id,
-                'nama' => $item->nama,
+// public function trash()
+// {
+//     $data = Kecamatan::onlyTrashed()
+//         ->paginate(10)
+//         ->through(function ($item) {
+//             return [
+//                 'id'   => $item->id,
+//                 'nama' => $item->nama,
 
-                'created_at' => optional($item->created_at)
-                    ->timezone('Asia/Jakarta')
-                    ->format('d F Y H:i'),
+//                 'created_at' => optional($item->created_at)
+//                     ->timezone('Asia/Jakarta')
+//                     ->format('d F Y H:i'),
 
-                'deleted_at' => optional($item->deleted_at)
-                    ->timezone('Asia/Jakarta')
-                    ->format('d F Y H:i'),
-            ];
-        });
+//                 'deleted_at' => optional($item->deleted_at)
+//                     ->timezone('Asia/Jakarta')
+//                     ->format('d F Y H:i'),
+//             ];
+//         });
 
-    return response()->json($data);
-}
+//     return response()->json($data);
+// }
 
 
  public function deteksi(Request $request)
@@ -175,4 +180,52 @@ public function forceDelete($id)
         Log::info("masuk all");   
         return Kecamatan::get();
     }
+
+
+
+
+     public function destroy($id)
+    {
+        $kecamatan = Kecamatan::findOrFail($id);
+        if ($kecamatan->photo) {
+            Storage::disk('public')->delete($kecamatan->photo);
+        }
+
+        $kecamatan->delete();
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
+
+
+    public function mitraByKecamatan($id)
+{
+    $mitra = Mitra::with('kecamatan')
+        ->where('kecamatan_id', $id)
+        ->get();
+
+    return response()->json([
+        'data' => $mitra
+    ]);
+}
+// public function mitraByKecamatan($kecamatanId)
+// {
+    
+//     $mitra = Mitra::where('kecamatan_id', $kecamatanId)
+//         ->where('status_toko', 'buka')
+//         ->get();
+
+//     if ($mitra->isEmpty()) {
+//         return response()->json([
+//             'message' => 'Data tidak ditemukan'
+//         ], 404);
+//     }
+
+//     return response()->json([
+//         'data' => $mitra
+//     ]);
+// }
+
+    
 }

@@ -352,6 +352,18 @@ const routes: Array<RouteRecordRaw> = [
         component: () => import("@/pages/auth/sign-up/Index.vue"),
         meta: { pageTitle: "Sign Up", middleware: "guest" },
       },
+      {
+        path: "/sign-in/lupa-password",
+        name: "sign-in/lupa-password",
+        component: () => import("@/pages/auth/sign-in/lupa-password.vue"),
+        meta: { pageTitle: "Forgot Password", middleware: "guest" },
+      },
+      {
+        path: "/sign-in/reset-password",
+        name: "sign-in/reset-password",
+        component: () => import("@/pages/auth/sign-in/reset-password.vue"),
+        meta: { pageTitle: "Reset Password", middleware: "guest" },
+      },
 
       //               {
       //     path: "/pelanggan",

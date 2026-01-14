@@ -95,13 +95,10 @@
         <h3>📈 Statistik Order Mingguan</h3>
         <div class="chart-container">
           <div v-for="(day, index) in weeklyStats" :key="index" class="chart-bar">
-            <div
-    class="bar-fill"
-    :style="{ height: getBarHeight(day.count) + '%' }"
-  >
-    <span class="bar-value">{{ day.count }}</span>
-  </div>
-              <span class="bar-label">{{ day.day }}</span>
+            <div class="bar-fill" :style="{ height: getBarHeight(day.count) + '%' }">
+              <span class="bar-value">{{ day.count }}</span>
+            </div>
+            <span class="bar-label">{{ day.day }}</span>
           </div>
         </div>
       </div>
@@ -122,44 +119,37 @@
       </div>
     </div>
 
-<div class="recent-orders-section">
-  <div class="section-header">
-    <h3>📋 Data Order</h3>
-    <!-- <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button> -->
-  </div>
-
-  <div class="orders-list">
-    <div
-      v-for="order in pesananTerbaru"
-      :key="order.id"
-      class="order-item"
-    >
-      <div class="order-info">
-        <div class="order-id">Order {{ order.id }}</div>
-        <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
-        <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
-        <div class="order-time">{{ order.time }}</div>
+    <div class="recent-orders-section">
+      <div class="section-header">
+        <h3>📋 Data Order</h3>
+        <!-- <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button> -->
       </div>
 
-      <div class="order-status" :class="order.status">
-        {{ getStatusLabel(order.status) }}
-      </div>
+      <div class="orders-list">
+        <div v-for="order in pesananTerbaru" :key="order.id" class="order-item">
+          <div class="order-info">
+            <div class="order-id">Order {{ order.id }}</div>
+            <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
+            <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
+            <div class="order-time">{{ order.time }}</div>
+          </div>
 
-      <!-- DETAIL MUNCUL DI BAWAH -->
-      <div v-if="openedOrderId === order.id" class="order-detail">
-        <p><b>Status:</b> {{ getStatusLabel(order.status) }}</p>
-        <p><b>Waktu:</b> {{ order.time }}</p>
+          <div class="order-status" :class="order.status">
+            {{ getStatusLabel(order.status) }}
+          </div>
 
-        <button
-          class="btn-detail"
-          @click.stop="navigateTo(`/order/${order.id}`)"
-        >
-          Lihat Detail
-        </button>
+          <!-- DETAIL MUNCUL DI BAWAH -->
+          <div v-if="openedOrderId === order.id" class="order-detail">
+            <p><b>Status:</b> {{ getStatusLabel(order.status) }}</p>
+            <p><b>Waktu:</b> {{ order.time }}</p>
+
+            <button class="btn-detail" @click.stop="navigateTo(`/order/${order.id}`)">
+              Lihat Detail
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
 
     <!-- Quick Actions Panel -->
@@ -888,6 +878,7 @@ onMounted(() => {
   color: #1f2937;
   font-size: 14px;
 }
+
 .order-kode {
   font-weight: 600;
   color: #1f2937;

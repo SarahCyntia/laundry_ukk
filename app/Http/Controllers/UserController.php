@@ -6,10 +6,12 @@ use App\Models\User;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Role;
+use Dotenv\Util\Str;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
@@ -125,7 +127,23 @@ class UserController extends Controller
         ]);
     }
 
+public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
 
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Link reset password sudah dikirim ke email Anda.'])
+            : response()->json(['message' => 'Email tidak ditemukan atau gagal mengirim link reset password.'], 400);
+    }
+
+    // Reset password
+   
     
 }
 

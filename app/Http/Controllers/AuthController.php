@@ -10,10 +10,12 @@ use App\Models\MitraPendaftaran;
 use App\Models\Pelanggan;
 use App\Models\Role;
 use App\Models\User;
+use Dotenv\Util\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
@@ -701,5 +703,54 @@ public function login(Request $request)
     {
         auth()->logout();
         return response()->json(['success' => true]);
+    }
+
+
+
+
+
+
+
+
+
+public function sendResetLink(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
+
+        return $status === Password::RESET_LINK_SENT
+            ? response()->json(['message' => 'Link reset password sudah dikirim ke email Anda.'])
+            : response()->json(['message' => 'Email tidak ditemukan atau gagal mengirim link reset password.'], 400);
+    }
+     public function reset(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => [
+                'required',
+                'min:8',
+                'confirmed', // cek otomatis password_confirmation
+            ],
+        ]);
+
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill([
+                    'password' => Hash::make($password),
+                    'remember_token' => Str::random(60),
+                ])->save();
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? response()->json(['message' => 'Password berhasil direset. Silakan login dengan password baru.'])
+            : response()->json(['message' => 'Token reset tidak valid atau sudah kedaluwarsa.'], 400);
     }
 }

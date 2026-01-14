@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Events\UserRoleUpdated;
 use App\Traits\Uuid;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -14,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use Uuid, HasRoles;
+    use Uuid, HasRoles,Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -50,6 +51,13 @@ class User extends Authenticatable implements JWTSubject
 
     protected $appends = ['permission', 'role'];
 
+
+    public function sendPasswordResetNotification($token)
+{
+    $url = config('app.frontend_url') . "/reset-password/$token";
+
+    $this->notify(new ResetPassword($token, $url));
+}
      protected static function booted()
     {
         static::saved(function ($user) {
