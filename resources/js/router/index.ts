@@ -225,6 +225,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () =>
           import("@/pages/kecamatan/index.vue"),
       },
+      {
+        path: "/data-order",
+        name: "data-order",
+        component: () =>
+          import("@/pages/data-order/index.vue"),
+      },
 
     ],
   },

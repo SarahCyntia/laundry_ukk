@@ -13,65 +13,37 @@ class Transaksi extends Model
 
     protected $fillable = [
         'order_id',
-        'user_id',
-        'mitra_id',
-        'berat',
-        'harga_final',
-        'midtrans_order_id',
-        'snap_token',
-        'payment_type',
-        'status_transaksi',
-        'payment_code',
-        'pdf_url',
+        'total_bayar',
+        // 'biaya_admin',
+        // 'diskon',
+        'status_pembayaran',
+        'metode_pembayaran',
+        'payment_reference',
+        'waktu_bayar',
     ];
 
-    // RELASI ORDER
+    protected $casts = [
+        'waktu_bayar' => 'datetime',
+    ];
+
+    /* ================= RELATION ================= */
+
     public function order()
     {
         return $this->belongsTo(Order::class);
     }
 
-    // RELASI USER (Pelanggan)
-    public function user()
+    /* ================= QUERY SCOPE ================= */
+
+    public function scopeSettlement($query)
     {
-        return $this->belongsTo(User::class);
+        return $query->where('status_pembayaran', 'settlement');
     }
 
-    // RELASI MITRA
-    public function mitra()
+    public function scopeMitra($query, $mitraId)
     {
-        return $this->belongsTo(Mitra::class);
+        return $query->whereHas('order', function ($q) use ($mitraId) {
+            $q->where('mitra_id', $mitraId);
+        });
     }
 }
-
-
-
-// namespace App\Models;
-
-// use Illuminate\Database\Eloquent\Model;
-// use Spatie\Permission\Traits\HasRoles;
-
-// class Transaksi extends Model
-// {
-//      use HasRoles;
-
-//      protected $table = 'transaksi';
-
-//     protected $fillable = [
-//         'user_id',
-//         'mitra_id',
-//         'berat',
-//         'total_harga',
-//         'status'
-//     ];
-
-//     public function mitra()
-//     {
-//         return $this->belongsTo(Mitra::class);
-//     }
-
-//     public function user()
-//     {
-//         return $this->belongsTo(User::class);
-//     }
-// }

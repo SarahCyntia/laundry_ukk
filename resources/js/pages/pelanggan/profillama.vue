@@ -191,7 +191,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import axios from 'axios';
+import axios from '@/libs/axios';
 import Swal from 'sweetalert2';
 
 const router = useRouter();

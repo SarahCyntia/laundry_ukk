@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Midtrans\Config;
@@ -30,22 +31,22 @@ class PaymentController extends Controller
         // $grossAmount = (float) $order->harga_final;
 
         $grossAmount = (int) round($order->harga_final);
-if ($grossAmount < 1) {
-    return response()->json([
-        'message' => 'Biaya order harus lebih dari 0'
-    ], 422);
-}
+        if ($grossAmount < 1) {
+            return response()->json([
+                'message' => 'Biaya order harus lebih dari 0'
+            ], 422);
+        }
 
-$payload = [
-    'transaction_details' => [
-        'order_id' => $order->kode_order,
-        'gross_amount' => $grossAmount,
-    ],
-    'customer_details' => [
-        'first_name' => $order->pelanggan->name ?? 'Customer',
-        'email' => $order->pelanggan->email ?? 'user@gmail.com',
-    ],
-];
+        $payload = [
+            'transaction_details' => [
+                'order_id' => $order->kode_order,
+                'gross_amount' => $grossAmount,
+            ],
+            'customer_details' => [
+                'first_name' => $order->pelanggan->name ?? 'Customer',
+                'email' => $order->pelanggan->email ?? 'user@gmail.com',
+            ],
+        ];
 
         // $payload = [
         //     'transaction_details' => [
@@ -106,21 +107,64 @@ $payload = [
 
         return response()->json(['message' => 'OK']);
     }
-
     public function manualUpdateStatus(Request $request)
-    {
-        $order = Order::where('kode_order', $request->order_id)->first();
+{
+    $request->validate([
+        'order_id' => 'required',
+        'transaction_status' => 'required',
+        'payment_type' => 'nullable'
+    ]);
 
-        if (!$order) {
-            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
-        }
+    $order = Order::with('transaksi')->findOrFail($request->order_id);
 
+    $transaksi = $order->transaksi;
+
+    // Mapping status Midtrans → status database
+    $mapStatus = [
+        'settlement' => 'settlement',
+        'pending'    => 'pending',
+        'expire'     => 'expire',
+        'cancel'     => 'cancel',
+        'deny'       => 'deny',
+        'failure'    => 'failure',
+        'refund'     => 'refund',
+    ];
+
+    $status = $mapStatus[$request->transaction_status] ?? 'pending';
+
+    $transaksi->update([
+        'status_pembayaran' => $status,
+        'metode_pembayaran' => $request->payment_type,
+        'payment_reference' => $request->order_id,
+        'waktu_bayar' => $status === 'settlement' ? Carbon::now() : null,
+    ]);
+
+    // OPTIONAL: update status order kalau lunas
+    if ($status === 'settlement') {
         $order->update([
-            'status_pembayaran' => $request->transaction_status ?? 'settlement'
+            'status' => 'diproses'
         ]);
-
-        Log::info("Manual update order {$order->kode_order}");
-
-        return response()->json(['message' => 'Status pembayaran diperbarui']);
     }
+
+    return response()->json([
+        'message' => 'Transaksi berhasil diperbarui'
+    ]);
+}
+
+    // public function manualUpdateStatus(Request $request)
+    // {
+    //     $order = Order::where('kode_order', $request->order_id)->first();
+
+    //     if (!$order) {
+    //         return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+    //     }
+
+    //     $order->update([
+    //         'status_pembayaran' => $request->transaction_status ?? 'settlement'
+    //     ]);
+
+    //     Log::info("Manual update order {$order->kode_order}");
+
+    //     return response()->json(['message' => 'Status pembayaran diperbarui']);
+    // }
 }

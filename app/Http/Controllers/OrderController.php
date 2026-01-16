@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JenisLayanan;
 use App\Models\Mitra;
 use App\Models\Order;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Dotenv\Util\Str;
 use Illuminate\Http\Request;
@@ -137,55 +138,116 @@ class OrderController extends Controller
      * ============================================ */
 
     //sebelumnya
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'pelanggan_id' => 'required',
+    //         'mitra_id' => 'required',
+    //         'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
+    //         'berat_estimasi' => 'nullable',
+    //         'catatan' => 'nullable',
+    //         'foto_struk' => 'nullable',
+
+    //     ]);
+
+    //     $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
+    //     $hargaPerKg = $layanan->harga; // contoh: 8000
+
+    //     // 🔥 HITUNG TOTAL
+    //     $hargaFinal = $request->berat_estimasi * $hargaPerKg;
+
+    //     $pelanggan = auth()->user()->pelanggan;
+
+    //     if (!$pelanggan) {
+    //         return response()->json([
+    //             'message' => 'Akun ini tidak memiliki data pelanggan'
+    //         ], 400);
+    //     }
+
+    //     $order = Order::create([
+    //         'pelanggan_id' => $pelanggan->id,
+    //         'mitra_id' => $request->mitra_id,
+    //         'jenis_layanan_id' => $request->jenis_layanan_id, // FIX
+    //         'kode_order' => 'ORD-' . time(),
+    //         'berat_estimasi' => $request->berat_estimasi,
+    //         'catatan' => $request->catatan,
+    //         'status' => 'menunggu_konfirmasi_mitra',
+    //           'harga_final' => $hargaFinal, 
+    //     ]);
+
+    //      if ($request->hasFile('foto_struk')) {
+    //     $path = $request->file('foto_struk')->store('order_struk', 'public');
+    //     $order->foto_struk = $path;
+    //     $order->save();
+    // }
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Order berhasil dibuat',
+    //         'data' => $order
+    //     ]);
+    // }
+
+
     public function store(Request $request)
-    {
-        $request->validate([
-            'pelanggan_id' => 'required',
-            'mitra_id' => 'required',
-            'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
-            'berat_estimasi' => 'nullable',
-            'catatan' => 'nullable',
-            'foto_struk' => 'nullable',
+{
+    $request->validate([
+        'mitra_id' => 'required|exists:mitra,id',
+        'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
+        'berat_estimasi' => 'required|numeric|min:1',
+        'catatan' => 'nullable|string',
+        'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        ]);
+    // Ambil pelanggan dari user login
+    $pelanggan = auth()->user()->pelanggan;
 
-        $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
-        $hargaPerKg = $layanan->harga; // contoh: 8000
-
-        // 🔥 HITUNG TOTAL
-        $hargaFinal = $request->berat_estimasi * $hargaPerKg;
-
-        $pelanggan = auth()->user()->pelanggan;
-
-        if (!$pelanggan) {
-            return response()->json([
-                'message' => 'Akun ini tidak memiliki data pelanggan'
-            ], 400);
-        }
-
-        $order = Order::create([
-            'pelanggan_id' => $pelanggan->id,
-            'mitra_id' => $request->mitra_id,
-            'jenis_layanan_id' => $request->jenis_layanan_id, // FIX
-            'kode_order' => 'ORD-' . time(),
-            'berat_estimasi' => $request->berat_estimasi,
-            'catatan' => $request->catatan,
-            'status' => 'menunggu_konfirmasi_mitra',
-              'harga_final' => $hargaFinal, 
-        ]);
-
-         if ($request->hasFile('foto_struk')) {
-        $path = $request->file('foto_struk')->store('order_struk', 'public');
-        $order->foto_struk = $path;
-        $order->save();
-    }
-
+    if (!$pelanggan) {
         return response()->json([
-            'success' => true,
-            'message' => 'Order berhasil dibuat',
-            'data' => $order
+            'message' => 'Akun ini tidak memiliki data pelanggan'
+        ], 400);
+    }
+
+    // Ambil layanan
+    $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
+    $hargaPerKg = $layanan->harga;
+
+    // Hitung total harga
+    $hargaFinal = $request->berat_estimasi * $hargaPerKg;
+
+    // Simpan order
+    $order = Order::create([
+        'pelanggan_id' => $pelanggan->id,
+        'mitra_id' => $request->mitra_id,
+        'jenis_layanan_id' => $request->jenis_layanan_id,
+        'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . rand(100,999),
+        'berat_estimasi' => $request->berat_estimasi,
+        'catatan' => $request->catatan,
+        'status' => 'menunggu_konfirmasi_mitra',
+        'harga_final' => $hargaFinal,
+    ]);
+
+    // Upload foto struk (opsional)
+    if ($request->hasFile('foto_struk')) {
+        $path = $request->file('foto_struk')->store('order_struk', 'public');
+        $order->update([
+            'foto_struk' => $path
         ]);
     }
+
+    // 🔥 BUAT TRANSAKSI (WAJIB)
+    $order->transaksi()->create([
+        'total_bayar' => $hargaFinal,
+        'status_pembayaran' => 'belum_dibayar'
+    ]);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Order berhasil dibuat',
+        'data' => $order->load('transaksi')
+    ], 201);
+}
+
 
 
     //BUAT BESOK
@@ -606,61 +668,61 @@ public function update(Request $request, $id)
         ]);
     }
 
-    public function createSnap(Request $request)
-    {
-        $validated = $request->validate([
-            'pelanggan_id' => 'required|string',
-            'jenis_layanan_id' => 'required|string',
-            'berat_aktual' => 'required|string',
-            'harga_final' => 'required|numeric',
-            'biaya' => 'required|numeric|min:1000',
-        ]);
+    // public function createSnap(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'pelanggan_id' => 'required|string',
+    //         'jenis_layanan_id' => 'required|string',
+    //         'berat_aktual' => 'required|string',
+    //         'harga_final' => 'required|numeric',
+    //         'biaya' => 'required|numeric|min:1000',
+    //     ]);
 
-        $orderId = 'ORDER-' . Str::uuid();
+    //     $orderId = 'ORDER-' . Str::uuid();
 
-        $payload = [
-            'transaction_details' => [
-                'order_id' => $orderId,
-                'gross_amount' => (int) $validated['biaya'],
-            ],
-            'item_details' => [
-                [
-                    'id' => 'ongkir',
-                    'price' => (int) $validated['biaya'],
-                    'quantity' => 1,
-                    'name' => 'Ongkir Kurir',
-                ]
-            ],
-            'customer_details' => [
-                'first_name' => $validated['pelanggan_id'],
-                'email' => 'user@example.com',
-            ],
-            'callbacks' => [
-                'finish' => url('/payment/callback'),
-            ],
-            'custom_field1' => json_encode($validated), // simpan data sementara
-        ];
+    //     $payload = [
+    //         'transaction_details' => [
+    //             'order_id' => $orderId,
+    //             'gross_amount' => (int) $validated['biaya'],
+    //         ],
+    //         'item_details' => [
+    //             [
+    //                 'id' => 'ongkir',
+    //                 'price' => (int) $validated['biaya'],
+    //                 'quantity' => 1,
+    //                 'name' => 'Ongkir Kurir',
+    //             ]
+    //         ],
+    //         'customer_details' => [
+    //             'first_name' => $validated['pelanggan_id'],
+    //             'email' => 'user@example.com',
+    //         ],
+    //         'callbacks' => [
+    //             'finish' => url('/payment/callback'),
+    //         ],
+    //         'custom_field1' => json_encode($validated), // simpan data sementara
+    //     ];
 
-        $auth = base64_encode(env('MIDTRANS_SERVER_KEY'));
+    //     $auth = base64_encode(env('MIDTRANS_SERVER_KEY'));
 
-        $res = Http::withHeaders([
-            'Authorization' => "Basic $auth",
-            'Content-Type' => 'application/json',
-        ])->post('https://app.sandbox.midtrans.com/snap/v1/transactions', $payload);
+    //     $res = Http::withHeaders([
+    //         'Authorization' => "Basic $auth",
+    //         'Content-Type' => 'application/json',
+    //     ])->post('https://app.sandbox.midtrans.com/snap/v1/transactions', $payload);
 
-        $body = json_decode($res->body());
+    //     $body = json_decode($res->body());
 
-        if (isset($body->token)) {
-            return response()->json([
-                'snap_token' => $body->token,
-            ]);
-        }
+    //     if (isset($body->token)) {
+    //         return response()->json([
+    //             'snap_token' => $body->token,
+    //         ]);
+    //     }
 
-        return response()->json([
-            'message' => 'Gagal membuat token pembayaran',
-            'error' => $body,
-        ], 500);
-    }
+    //     return response()->json([
+    //         'message' => 'Gagal membuat token pembayaran',
+    //         'error' => $body,
+    //     ], 500);
+    // }
 
     public function getSnapToken($id)
     {
@@ -676,7 +738,7 @@ public function update(Request $request, $id)
 
         $params = [
             'transaction_details' => [
-                'order_id' => $order->no_resi,
+                'order_id' => $order->no_kode,
                 'gross_amount' => (int) $order->biaya,
             ],
             'customer_details' => [
@@ -718,7 +780,39 @@ public function update(Request $request, $id)
         return response()->json(['message' => 'Callback diproses']);
     }
 
+public function downloadKode($noKode)
+{
+    $data = Order::with(['pelanggan', 'mitra', 'jenis_layanan'])
+        ->where('kode_order', $noKode)
+        ->firstOrFail();
 
+        Pdf::setOption([
+    'dpi' => 72,
+    'defaultFont' => 'Courier',
+]);
+
+    return Pdf::loadView('cetak-kode-pdf', compact('data'))
+     ->setPaper([0, 0, 164, 300], 'portrait') // ±58mm
+    
+        ->download("STRUK-{$data->kode_order}.pdf");
+}
+
+
+//  public function downloadKode($noKode)
+//     {
+//         $data = Order::where('kode_order', $noKode)->first();
+
+//         if (!$data) {
+//             abort(404, 'Data tidak ditemukan');
+//         }
+
+//         // Gunakan view yang sama
+//         $pdf = Pdf::loadView('cetak-kode-pdf', compact('data'));
+//         $pdf->setPaper([165, 566], 'portrait'); // 58mm x 200mm
+
+//         return $pdf->download("struk-{$noKode}.pdf"); // download otomatis
+//     }
+   
 
 
  public function cekStatus($kode_order)
@@ -769,5 +863,20 @@ public function update(Request $request, $id)
 
 
 
+
+
+ public function destroy($id)
+    {
+        $order = Order::findOrFail($id);
+        if ($order->photo) {
+            Storage::disk('public')->delete($order->photo);
+        }
+
+        $order->delete();
+
+        return response()->json([
+            'success' => true
+        ]);
+    }
     
 }

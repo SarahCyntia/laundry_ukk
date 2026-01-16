@@ -168,6 +168,12 @@ const MainMenuConfig: Array<MenuItem> = [
                 name: "datapelanggan",
                 keenthemesIcon: "bi bi-person-lines-fill",
             },
+            {
+                heading: "Data Order",
+                route: "/data-order",
+                name: "data-order",
+                keenthemesIcon: "bi bi-person-lines-fill",
+            },
             
         ],
         

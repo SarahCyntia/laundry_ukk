@@ -7,6 +7,9 @@ import { h } from "vue";
 // import Form from "./form-order-masuk.vue";
 import Swal from "sweetalert2";
 import axios from "@/libs/axios";
+import { saveAs } from 'file-saver';
+
+// const url = "/order";
 
 const mitraId = ref<number | null>(null);
 const column = createColumnHelper();
@@ -46,6 +49,7 @@ const inputData = ref<Order | null>(null);
 
 const statusSteps = [
   "menunggu_konfirmasi_mitra",
+  "ditunggu_mitra",
   "diterima",
   "ditolak",
   "diproses",
@@ -75,8 +79,8 @@ const statusColors = {
   diterima: "bg-success",
   ditolak: "bg-danger",
   diproses: "bg-warning",
-  dicuci: "bg-primary",
-  dikeringkan: "bg-primary",
+  dicuci: "bg-muted",
+  dikeringkan: "bg-warning",
   disetrika: "bg-primary",
   siap_diambil: "bg-info",
   selesai: "bg-success"
@@ -97,26 +101,29 @@ const statusIcons = {
 
 
 
+const pollingInterval = ref<number | null>(null);
+
+const startAutoRefresh = () => {
+  // Jalankan pertama kali
+  refresh();
+
+  // Set interval polling setiap 5 detik (5000ms)
+  pollingInterval.value = setInterval(() => {
+    refresh(); // Memanggil fungsi refresh tabel
+  }, 5000);
+};
+
+
+
+
+
+
 const url = computed(() => {
   const params = new URLSearchParams();
-
-  // Status yang tidak ditampilkan
-  [
-    'menunggu_konfirmasi_mitra',
-    'ditunggu_mitra',
-    'ditolak',
-    'diterima',
-    'siap_ambil',
-    'selesai'
-  ].forEach(status => {
-    params.append('exclude_status[]', status);
-  });
+  params.append("status", "diproses");
 
   return `/order?${params.toString()}`;
 });
-
-
-
 
 
 
@@ -146,8 +153,12 @@ const updateStatus = async (row: Row<Order>) => {
 };
 
 
+
+
+
+const noKode = ref("");
+
 const columns = [
-  
   column.accessor("no", { header: "No" }),
   // column.accessor("pelanggan.user.name", { header: "Nama Pelanggan" }),
   column.accessor(row => row.pelanggan?.name ?? "-", {
@@ -158,28 +169,31 @@ const columns = [
   column.accessor("jenis_layanan.nama_layanan", { header: "Jenis Layanan" }),
 
 
-  //   column.accessor("pelanggan.user.name", {
-  //   header: "Nama Pelanggan",
-  //   cell: ({ row }) => row.original.pelanggan?.user?.name ?? "-",
-  // }),
-  //   column.accessor("mitra_id", { header: "Nama Laundry" }),
-  //   // column.accessor("jenis_layanan_id", { header: "Jenis Layanan" }),
-  //   column.accessor("jenis_layanan.nama_layanan", {
-  //     header: "Jenis Layanan",
-  //     cell: ({ row }) => row.original.jenis_layanan?.nama_layanan ?? "-",
-  //   }),
   column.accessor("kode_order", { header: "Kode Order" }),
   column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
-  column.accessor("harga_final", { header: "Harga Final" }),
+  column.accessor("harga_final", { header: "Harga" }),
   column.accessor("catatan", { header: "Catatan" }),
-  column.accessor("alasan_penolakan", { header: "Alasan Penolakan" }),
-  column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
-  column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
+  column.accessor("foto_struk", {
+    header: "Foto Struk",
+    cell: ({ getValue }) => {
+      const foto = getValue();
+
+      if (!foto) {
+        return h("span", { style: "color:#888;" }, "Tidak ada foto");
+      }
+
+      const url = `http://localhost:8000/storage/${foto}`;
 
 
+      console.log("URL FINAL:", url);
 
-
+      return h("img", {
+        src: url,
+        style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
+      });
+    }
+  }),
 
 
   column.accessor("status", {
@@ -198,89 +212,17 @@ const columns = [
       );
     }
   }),
+
+
   column.accessor("id", {
     header: "Aksi",
     cell: (cell) => {
       const row = cell.row.original;
-      const actions = [];
+      const actions: any[] = [];
 
-      // === Jika status masih menunggu konfirmasi ===
-      if (row.status === "menunggu_konfirmasi_mitra") {
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-success",
-              onClick: async () => {
-                const ok = await Swal.fire({
-                  icon: "question",
-                  title: "Terima order ini?",
-                  showCancelButton: true
-                }).then(r => r.isConfirmed);
+      
 
-                if (!ok) return;
-
-                await axios.post(`/order/${row.id}/konfirmasi`, {
-                  status: "diterima"
-                });
-
-                Swal.fire("Berhasil", "Order diterima!", "success");
-                await refresh();
-              },
-            },
-            "Terima"
-          )
-        );
-
-        // Tombol Tolak
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-danger",
-              onClick: async () => {
-                const { value: alasan } = await Swal.fire({
-                  title: "Alasan penolakan",
-                  input: "text",
-                  inputPlaceholder: "Tulis alasan...",
-                  showCancelButton: true,
-                });
-
-                if (!alasan) return;
-
-                await axios.post(`/order/${row.id}/tolak`, {
-                  status: "ditolak",
-                  alasan_penolakan: alasan
-                });
-
-                Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-                await refresh();
-              },
-            },
-            "Tolak"
-          )
-        );
-      }
-
-      // === Jika status ditolak -> hanya bisa hapus ===
-      if (row.status !== "ditolak") {
-        // Tombol Edit
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-icon btn-info",
-              onClick: () => {
-                selected.value = cell.getValue();
-                openForm.value = true;
-              },
-            },
-            h("i", { class: "la la-pencil fs-2" })
-          )
-        );
-      }
-
-      // === Tombol hapus tetap ada untuk semua kecuali selesai (opsional) ===
+      // === Tombol Hapus (selalu ada) ===
       actions.push(
         h(
           "button",
@@ -289,17 +231,38 @@ const columns = [
             onClick: () => deleteOrder(`order/${cell.getValue()}`),
           },
           h("i", { class: "la la-trash fs-2" })
-        )
+        ),
       );
 
-      return h("div", { class: "d-flex gap-2" }, actions);
+      // 
+      return h(
+        "div",
+        { class: "d-flex gap-2 flex-nowrap align-items-center" },
+        actions
+      );
     },
 
+    
   }),
 
-];
 
-onMounted(refresh);
+
+];
+onMounted(() => {
+  if (!window.snap) {
+    const script = document.createElement("script");
+    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
+    script.setAttribute("data-client-key", "SB-Mid-client-XXXXX"); // ganti sesuai client key kamu
+    script.async = true;
+    document.body.appendChild(script);
+  }
+});
+// onMounted(refresh);
+onMounted(async () => {
+  await nextTick();
+  refresh();
+});
+
 </script>
 
 
@@ -311,7 +274,10 @@ onMounted(refresh);
     <div class="card-header align-items-center">
       <h2 class="mb-0">Orderan</h2>
     </div>
+    <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
+
     <paginate ref="paginateRef" :url="url" :columns="columns" />
+
 
     <!-- <paginate ref="paginateRef" id="table-order" :url="url" :columns="columns" /> -->
   </div>

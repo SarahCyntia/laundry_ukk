@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardAdminController;
+use App\Http\Controllers\DataOrderController;
 use App\Models\Penjemputan;
 use App\Models\JenisLayanan;
 use App\Models\LayananPrioritas;
@@ -18,7 +19,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JenisItemController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\AntarJemputController;
-use App\Http\Controllers\Api\LaundryController;
+use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\PenjemputanController;
 use App\Http\Controllers\JenisLayananController;
 use App\Http\Controllers\KecamatanController;
@@ -158,6 +159,7 @@ Route::post('/jenis-layanan/list', [JenisLayananController::class, 'list']);
 
 
 
+
 Route::middleware(['auth', 'verified', 'json'])->group(function () {
     Route::prefix('setting')->middleware('can:setting')->group(function () {
         Route::post('', [SettingController::class, 'update']);
@@ -273,7 +275,7 @@ Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
     Route::post('/order/{id}/accept', [MitraOrderController::class, 'accept']);
     Route::post('/order/{id}/reject', [MitraOrderController::class, 'reject']);
     // Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
-
+Route::delete('/order/{id}', [OrderController::class, 'destroy']);
     // Order Diproses
     Route::post('/order-proses', [OrderController::class, 'index']);
     Route::post('/order/{id}/update-status', [MitraOrderController::class, 'updateStatus']);
@@ -371,7 +373,7 @@ Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
 Route::get('/mitra', [MitraController::class, 'listMitra'])->withoutMiddleware('can:mitra');
 Route::get('/mitra/search', [MitraController::class, 'search']);
 Route::get('/mitraa/{id}', [MitraController::class, 'showdashboard']);
-
+Route::get('/download-struk/{noKode}', [OrderController::class, 'downloadKode'])->name('download.struk');
 
 
 
@@ -403,3 +405,8 @@ Route::post('/reset-password', function (Request $request) {
         ? response()->json(['message' => 'Password berhasil direset'])
         : response()->json(['message' => 'Token tidak valid'], 422);
 });
+
+Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
+
+
+Route::post('/data-order', [DataOrderController::class, 'index']);
