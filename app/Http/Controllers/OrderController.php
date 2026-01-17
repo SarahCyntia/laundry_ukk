@@ -792,7 +792,7 @@ public function downloadKode($noKode)
 ]);
 
     return Pdf::loadView('cetak-kode-pdf', compact('data'))
-     ->setPaper([0, 0, 164, 300], 'portrait') // ±58mm
+     ->setPaper([0, 0, 164, 200], 'portrait') // ±58mm
     
         ->download("STRUK-{$data->kode_order}.pdf");
 }

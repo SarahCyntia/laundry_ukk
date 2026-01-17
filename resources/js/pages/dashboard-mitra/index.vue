@@ -131,7 +131,11 @@
             <div class="order-id">Order {{ order.id }}</div>
             <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
             <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
-            <div class="order-time">{{ order.time }}</div>
+            <!-- <div class="order-time">{{ order.time }} </div> -->
+             <div class="order-time">
+  {{ order.tanggal }} {{ order.jam }}
+</div>
+
           </div>
 
           <div class="order-status" :class="order.status">

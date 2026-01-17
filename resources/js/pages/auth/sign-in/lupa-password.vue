@@ -1,59 +1,46 @@
 <template>
-  <VForm class="form w-100" @submit="submit" :validation-schema="schema">
-    <!--begin::Heading-->
+  <VForm class="form w-100 max-w-400px mx-auto" @submit="submit" :validation-schema="schema">
+    <!-- Logo -->
     <div class="text-center mb-10">
       <router-link to="/">
-        <img :src="setting?.logo" :alt="setting?.app" class="w-200px mb-8" />
+        <img :src="setting?.logo" :alt="setting?.app" class="h-70px mb-5" />
       </router-link>
-      <!--begin::Title-->
-      <h1 class="mb-3">
-        <h1 class="text-dark mb-3">Lupa Password</h1>
-      </h1>
-      <!--end::Title-->
-    </div>
-    <!--begin::Heading-->
-    <!-- Heading -->
-    <div class="text-center mb-10">
-      <!-- <h1 class="text-dark mb-3">Lupa Password</h1> -->
-      <div class="text-gray-500 fw-semibold fs-6">
-        Masukkan email Anda untuk mereset password
+
+      <h1 class="text-dark fw-bold mb-2">Lupa Password?</h1>
+      <div class="text-gray-500 fs-6">
+        Kami akan mengirimkan link reset ke email Anda
       </div>
     </div>
 
-    <!-- Input Email -->
-    <div class="fv-row mb-10 ">
+    <!-- Email -->
+    <div class="fv-row mb-10">
       <div class="position-relative">
-        <img src="/storage/photo/mail.png" alt="email icon"
-          class="position-absolute top-50 start-0 translate-middle-y ms-3" style="width: 18px; height: 18px;" />
+        <i
+          class="bi bi-envelope position-absolute top-50 start-0 translate-middle-y ms-4 text-gray-400"
+        ></i>
 
-        <Field type="email" name="email" v-model="form.email"
-          class="form-control form-control-lg form-control-solid ps-12" placeholder="Masukkan email"
-          autocomplete="off" />
+        <Field
+          type="email"
+          name="email"
+          v-model="form.email"
+          class="form-control form-control-lg form-control-solid ps-12"
+          placeholder="Masukkan email"
+          autocomplete="off"
+        />
       </div>
-      <!-- Icon -->
 
-      <!-- Error -->
-      <div class="fv-plugins-message-container">
-        <div class="fv-help-block">
-          <ErrorMessage name="email" />
-        </div>
-      </div>
+      <ErrorMessage name="email" class="text-danger fs-7 mt-1 d-block" />
     </div>
 
-    <!-- Submit Button -->
-    <div class="d-flex flex-wrap justify-content-center pb-lg-0">
-      <button type="submit" ref="submitButton" class="btn btn-primary w-100 mb-5">
-        <span class="indicator-label">Kirim Link Reset</span>
-        <span class="indicator-progress">
-          <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-        </span>
-      </button>
-    </div>
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary w-100 mb-5">
+      Kirim Link Reset
+    </button>
 
-    <!-- Back to Login -->
+    <!-- Back -->
     <div class="text-center">
-      <router-link to="/sign-in" class="link-primary fw-bold">
-        Kembali ke Login
+      <router-link to="/sign-in" class="link-primary fw-semibold">
+        ← Kembali ke Login
       </router-link>
     </div>
   </VForm>
@@ -66,6 +53,8 @@ import * as Yup from "yup";
 import axios from "@/libs/axios";
 import Swal from "sweetalert2";
 import { useSetting } from "@/services";
+
+const setting = useSetting();
 
 const form = ref({
   email: "",
@@ -86,8 +75,7 @@ const submit = async () => {
     await Swal.fire({
       icon: "success",
       title: "Berhasil!",
-      text: res.data.message || "Link reset password telah dikirim ke email Anda",
-      confirmButtonText: "OK",
+      text: res.data.message || "Link reset password telah dikirim",
     });
 
     form.value.email = "";

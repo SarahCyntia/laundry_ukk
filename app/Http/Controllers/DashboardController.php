@@ -44,18 +44,21 @@ Carbon::setLocale('id');
 
 $weekly = [];
 
-$start = Carbon::now()->startOfWeek(Carbon::MONDAY);
-
-for ($i = 0; $i < 7; $i++) {
-    $date = $start->copy()->addDays($i);
+for ($i = 6; $i >= 0; $i--) {
+    $date = Carbon::today()->subDays($i);
 
     $weekly[] = [
         'day' => $date->translatedFormat('D'), // Sen, Sel, Rab
         'count' => (clone $baseQuery)
-            ->whereDate('waktu', $date)
-            ->count(),
+    ->whereDate('created_at', $date)
+    ->count(),
+
+        // 'count' => (clone $baseQuery)
+        //     ->whereDate('waktu', $date)
+        //     ->count(),
     ];
 }
+
 
 
 
@@ -91,7 +94,9 @@ for ($i = 0; $i < 7; $i++) {
         'id' => $item->id,
         'kode_order' => $item->kode_order, // ✅ INI YANG HILANG
         'pelanggan_id' => $item->pelanggan_id,
-        'time' => Carbon::parse($item->waktu)->format('H:i'),
+        'tanggal' => Carbon::parse($item->created_at)->format('d/m/Y'),
+        'jam' => Carbon::parse($item->created_at)->format('H:i'),
+        // 'time' => Carbon::parse($item->waktu)->format('H:i'),
         'status' => $item->status,
     ]);
 

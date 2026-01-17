@@ -1,87 +1,85 @@
 <template>
-  <VForm class="form w-100" @submit="submit" :validation-schema="schema">
+  <VForm class="form w-100 max-w-400px mx-auto" @submit="submit" :validation-schema="schema">
     <!-- Heading -->
     <div class="text-center mb-10">
-      <h1 class="text-dark mb-3">Reset Password</h1>
-      <div class="text-gray-500 fw-semibold fs-6">
-        Masukkan password baru untuk akun Anda
+      <h1 class="text-dark fw-bold mb-3">Reset Password</h1>
+      <div class="text-gray-500 fs-6">
+        Buat password baru untuk akun Anda
       </div>
     </div>
 
     <!-- Password Baru -->
-    <div class="fv-row mb-10 position-relative">
-      <Field
-        :type="showPassword ? 'text' : 'password'"
-        name="password"
-        v-model="form.password"
-        class="form-control form-control-lg form-control-solid pe-10"
-        placeholder="Password baru"
-      />
-      <!-- tombol toggle -->
-      <span
-        class="btn btn-sm btn-icon position-absolute top-50 end-0 translate-middle-y me-3"
-        style="cursor: pointer"
-        @click="showPassword = !showPassword"
-      >
-        <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-      </span>
+    <div class="fv-row mb-7">
+      <div class="position-relative">
+        <i class="bi bi-lock position-absolute top-50 start-0 translate-middle-y ms-4 text-gray-400"></i>
 
-      <div class="fv-plugins-message-container">
-        <div class="fv-help-block">
-          <ErrorMessage name="password" />
-        </div>
+        <Field
+          :type="showPassword ? 'text' : 'password'"
+          name="password"
+          v-model="form.password"
+          class="form-control form-control-lg form-control-solid ps-12 pe-12"
+          placeholder="Password baru"
+        />
+
+        <span
+          class="position-absolute top-50 end-0 translate-middle-y me-4 text-gray-500"
+          style="cursor: pointer"
+          @click="showPassword = !showPassword"
+        >
+          <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+        </span>
       </div>
+
+      <ErrorMessage name="password" class="text-danger fs-7 mt-1 d-block" />
     </div>
 
     <!-- Konfirmasi Password -->
-    <div class="fv-row mb-10 position-relative">
-      <Field
-        :type="showPasswordConfirm ? 'text' : 'password'"
-        name="password_confirmation"
-        v-model="form.password_confirmation"
-        class="form-control form-control-lg form-control-solid pe-10"
-        placeholder="Konfirmasi password"
-      />
-      <!-- tombol toggle -->
-      <span
-        class="btn btn-sm btn-icon position-absolute top-50 end-0 translate-middle-y me-3"
-        style="cursor: pointer"
-        @click="showPasswordConfirm = !showPasswordConfirm"
-      >
-        <i :class="showPasswordConfirm ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-      </span>
+    <div class="fv-row mb-10">
+      <div class="position-relative">
+        <i class="bi bi-lock-fill position-absolute top-50 start-0 translate-middle-y ms-4 text-gray-400"></i>
 
-      <div class="fv-plugins-message-container">
-        <div class="fv-help-block">
-          <ErrorMessage name="password_confirmation" />
-        </div>
-      </div>
-    </div>
+        <Field
+          :type="showPasswordConfirm ? 'text' : 'password'"
+          name="password_confirmation"
+          v-model="form.password_confirmation"
+          class="form-control form-control-lg form-control-solid ps-12 pe-12"
+          placeholder="Konfirmasi password"
+        />
 
-    <!-- Submit Button -->
-    <div class="d-flex flex-wrap justify-content-center pb-lg-0">
-      <button
-        type="submit"
-        ref="submitButton"
-        class="btn btn-primary w-100 mb-5"
-        :disabled="loading"
-      >
-        <span v-if="!loading" class="indicator-label">Reset Password</span>
-        <span v-else class="indicator-progress">
-          <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-          Proses...
+        <span
+          class="position-absolute top-50 end-0 translate-middle-y me-4 text-gray-500"
+          style="cursor: pointer"
+          @click="showPasswordConfirm = !showPasswordConfirm"
+        >
+          <i :class="showPasswordConfirm ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
         </span>
-      </button>
+      </div>
+
+      <ErrorMessage name="password_confirmation" class="text-danger fs-7 mt-1 d-block" />
     </div>
 
-    <!-- Back to Login -->
-    <div class="text-center">
-      <router-link to="/sign-in" class="link-primary fw-bold">
-        Kembali ke Login
+    <!-- Submit -->
+    <button
+      type="submit"
+      class="btn btn-primary w-100"
+      :disabled="loading"
+    >
+      <span v-if="!loading">Reset Password</span>
+      <span v-else>
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Proses...
+      </span>
+    </button>
+
+    <!-- Back -->
+    <div class="text-center mt-7">
+      <router-link to="/sign-in" class="link-primary fw-semibold">
+        ← Kembali ke Login
       </router-link>
     </div>
   </VForm>
 </template>
+
 
 <script setup lang="ts">
 import { ref } from "vue";
@@ -112,10 +110,10 @@ const email = (route.query.email as string) || "";
 const schema = Yup.object().shape({
   password: Yup.string()
     .required("Password wajib diisi")
-    .min(8, "Minimal 8 karakter")
-    .matches(/^[A-Z]/, "Password harus diawali huruf besar")
-    .matches(/[0-9]/, "Password harus mengandung angka")
-    .matches(/[!@#$%^&*(),.?\":{}|<>]/, "Password harus mengandung simbol"),
+    .min(8, "Minimal 8 karakter"),
+    // .matches(/^[A-Z]/, "Password harus diawali huruf besar")
+    // .matches(/[0-9]/, "Password harus mengandung angka")
+    // .matches(/[!@#$%^&*(),.?\":{}|<>]/, "Password harus mengandung simbol"),
   password_confirmation: Yup.string()
     .oneOf([Yup.ref("password")], "Konfirmasi password tidak sama")
     .required("Konfirmasi password wajib diisi"),
