@@ -27,6 +27,7 @@ class SettingSeeder extends Seeder
             'alamat' =>  '',
             'telepon' =>  '',
             'email' =>  '',
+            'name' => 'Slaundry',
         ]);
     }
 }

@@ -204,6 +204,13 @@ const MainMenuConfig: Array<MenuItem> = [
                 keenthemesIcon: "bi bi-truck",
             },
              
+            {
+                heading: "Laporan Laundry",
+                route: "/mitra/laporan-laundry",
+                name: "laporan-laundry",
+                keenthemesIcon: "bi bi-truck",
+            },
+             
         ],
         
     },

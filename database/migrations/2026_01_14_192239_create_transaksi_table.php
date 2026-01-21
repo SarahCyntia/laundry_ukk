@@ -25,7 +25,7 @@ return new class extends Migration
     // Pembayaran
     $table->enum('status_pembayaran', [
         'belum_dibayar',
-        // 'menunggu_pembayaran',
+        'menunggu_pembayaran',  
         'dibayar',
         'kadaluarsa',
         'dibatalkan',
@@ -44,7 +44,7 @@ $table->enum('metode_pembayaran', [
 
     // $table->string('metode_pembayaran')->nullable(); // cash, transfer, midtrans
     $table->string('payment_reference')->nullable(); // id dari payment gateway
-
+    $table->string('snap_token')->nullable(); // url untuk membayar (midtrans)
     // Waktu
     $table->timestamp('waktu_bayar')->nullable();
 

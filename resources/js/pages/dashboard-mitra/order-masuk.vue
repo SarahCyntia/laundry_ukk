@@ -229,30 +229,35 @@ const map = {
 //         Swal.fire({ icon: 'error', title: 'Error mengambil token' });
 //     }
 // };
-const redirectToPayment = async (orderId: number) => {
+const redirectToPayment = async (orderId: number, snapToken?: string) => {
   try {
-    const { data } = await axios.post(`/payment/token/${orderId}`);
-    const snapToken = data.snap_token;
+    let token = snapToken;
 
-    if (!snapToken) {
+    // 🔥 kalau belum ada token → ambil dari backend
+    if (!token) {
+      const { data } = await axios.post(`/payment/token/${orderId}`);
+      token = data.snap_token;
+    }
+
+    if (!token) {
       Swal.fire("Error", "Snap token tidak tersedia", "error");
       return;
     }
 
-    window.snap.pay(snapToken, {
+    window.snap.pay(token, {
       onSuccess: () => {
         Swal.fire(
-          "Pembayaran diproses",
-          "Status akan diperbarui otomatis",
-          "info"
+          "Berhasil",
+          "Pembayaran berhasil. Menunggu konfirmasi sistem.",
+          "success"
         );
-        refresh();
+        refresh(); // tunggu callback
       },
 
       onPending: () => {
         Swal.fire(
-          "Menunggu pembayaran",
-          "Silakan selesaikan pembayaran",
+          "Pending",
+          "Menunggu pembayaran diselesaikan",
           "info"
         );
         refresh();
@@ -263,14 +268,15 @@ const redirectToPayment = async (orderId: number) => {
       },
 
       onClose: () => {
-        Swal.fire("Dibatalkan", "Popup ditutup", "warning");
-      }
+        Swal.fire("Ditutup", "Popup pembayaran ditutup", "warning");
+      },
     });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     Swal.fire("Error", "Gagal mengambil snap token", "error");
   }
 };
+
 
 
 
@@ -394,26 +400,26 @@ const columns = [
   }),
 
   column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
-  column.accessor("foto_struk", {
-    header: "Foto Struk",
-    cell: ({ getValue }) => {
-      const foto = getValue();
+  // column.accessor("foto_struk", {
+  //   header: "Foto Struk",
+  //   cell: ({ getValue }) => {
+  //     const foto = getValue();
 
-      if (!foto) {
-        return h("span", { style: "color:#888;" }, "Tidak ada foto");
-      }
+  //     if (!foto) {
+  //       return h("span", { style: "color:#888;" }, "Tidak ada foto");
+  //     }
 
-      const url = `http://localhost:8000/storage/${foto}`;
+  //     const url = `http://localhost:8000/storage/${foto}`;
 
 
-      console.log("URL FINAL:", url);
+  //     console.log("URL FINAL:", url);
 
-      return h("img", {
-        src: url,
-        style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
-      });
-    }
-  }),
+  //     return h("img", {
+  //       src: url,
+  //       style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
+  //     });
+  //   }
+  // }),
 
 
   column.accessor("status", {
@@ -566,22 +572,46 @@ column.display({
   id: "paymentAction",
   header: "Pembayaran",
 cell: ({ row }) => {
-  const status = row.original.transaksi?.status_pembayaran;
+  const transaksi = row.original.transaksi;
+  const status = transaksi?.status_pembayaran;
 
+  // 🟡 MENUNGGU PEMBAYARAN
+  if (status === "menunggu_pembayaran" && transaksi?.snap_token) {
+    return h(
+      "button",
+      {
+        class: "btn btn-sm btn-warning",
+        onClick: () => {
+          window.snap.pay(transaksi.snap_token);
+        },
+      },
+      [
+        h("i", { class: "bi bi-arrow-repeat me-1" }),
+        "Lanjut Bayar",
+      ]
+    );
+  }
+
+  // 🟢 SUDAH DIBAYAR
   if (status === "dibayar") {
     return h("span", { class: "badge bg-success" }, "Lunas");
   }
 
+  // 🔵 DEFAULT
   return h(
     "button",
     {
       class: "btn btn-sm btn-success",
       onClick: () => redirectToPayment(row.original.id),
     },
-    [h("i", { class: "bi bi-credit-card me-1" }), "Bayar"]
+    [
+      h("i", { class: "bi bi-credit-card me-1" }),
+      "Bayar",
+    ]
   );
 },
 }),
+
 column.accessor(
   row => row.transaksi?.status_pembayaran ?? 'belum_dibayar',
   {

@@ -426,13 +426,14 @@ Route::post('/data-order', [DataOrderController::class, 'index']);
 
     Route::post('payment/create-snap', [OrderController::class, 'createSnap']);
     Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
-    Route::post('/midtrans/notification', [PaymentController::class, 'handleNotification']);
     // Route::post('/payment/snap', [PaymentController::class, 'createCharge']);
     // Route::post('/input/snap', [PaymentController::class, 'snap']);
     Route::get('/payment/token', [PaymentController::class, 'getToken'])->middleware('auth:sanctum');
-
-Route::post('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
-Route::post('/midtrans/callback', [PaymentController::class, 'midtransCallback']);
+    
+    Route::post('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+    Route::post('/midtrans/callback', [PaymentController::class, 'midtransCallback']);
+    // Route::post('/midtrans/callback', [PaymentController::class, 'handle']);
+    // Route::post('/midtrans/notification', [PaymentController::class, 'handle']);
 Route::post('/payment/sync/{orderId}', [PaymentController::class, 'syncMidtransStatus']);
 
 

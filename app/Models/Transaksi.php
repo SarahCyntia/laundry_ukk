@@ -20,6 +20,7 @@ class Transaksi extends Model
         'metode_pembayaran',
         'payment_reference',
         'waktu_bayar',
+        'snap_token',
     ];
 
     protected $casts = [

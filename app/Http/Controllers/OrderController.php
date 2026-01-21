@@ -229,7 +229,10 @@ class OrderController extends Controller
         'pelanggan_id' => $pelanggan->id,
         'mitra_id' => $request->mitra_id,
         'jenis_layanan_id' => $request->jenis_layanan_id,
-        'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . rand(100,999),
+        // 'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . rand(100,999),
+        'kode_order' => 'ORD-' . now()->format('md') . rand(10, 99),
+// 'kode_order' => 'ORD-' . now()->format('md') . rand(1000, 9999),
+
         'berat_estimasi' => $request->berat_estimasi,
         'catatan' => $request->catatan,
         'status' => 'menunggu_konfirmasi_mitra',
@@ -324,20 +327,6 @@ class OrderController extends Controller
     //     ]);
     // }
 
-
-
-
-    /* ============================================
-     *  3. MITRA MENERIMA ORDER
-     * ============================================ */
-    public function accept($id)
-    {
-        $order = Order::findOrFail($id);
-        $order->status = 'diterima';
-        $order->save();
-
-        return response()->json(['message' => 'Order diterima']);
-    }
 
 
     /* ============================================

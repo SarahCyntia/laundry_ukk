@@ -85,7 +85,24 @@
             <small class="form-hint">Nama diambil dari akun Anda</small>
           </div>
 
-          <div class="form-group">
+<div class="form-group">
+  <label>Nomor Telepon</label>
+  <input
+    v-model="noTelepon"
+    type="tel"
+    class="form-control"
+    placeholder="Contoh: 08123456789"
+    @input="onlyNumber"
+  />
+
+  <small v-if="noTelepon && !isPhoneValid" class="text-danger">
+    Nomor telepon harus diawali 08 dan terdiri dari 11-12 angka
+  </small>
+</div>
+
+
+
+          <!-- <div class="form-group">
             <label>Nomor Telepon</label>
             <input 
               v-model="noTelepon" 
@@ -93,7 +110,7 @@
               placeholder="Contoh: 08123456789"
               class="form-control"
             />
-          </div>
+          </div> -->
 
           <div class="form-group">
             <label>Catatan (Opsional)</label>
@@ -234,12 +251,34 @@ const noTelepon = ref('');
 const catatan = ref('');
 
 // Computed
-const canSubmit = computed(() => {
-  return selectedLayanan.value && 
-         beratEstimasi.value > 0 && 
-         noTelepon.value.trim() !== '';
+// const canSubmit = computed(() => {
+//   return selectedLayanan.value && 
+//          beratEstimasi.value > 0 && 
+//          noTelepon.value.trim() !== '';
+// });
+
+
+
+
+
+const onlyNumber = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  // hanya angka + maksimal 13 digit
+  noTelepon.value = input.value.replace(/[^0-9]/g, "").slice(0, 13);
+};
+
+const isPhoneValid = computed(() => {
+  // 08 + sisa 9–12 digit = total 11–13
+  return /^08\d{9,12}$/.test(noTelepon.value);
 });
 
+const canSubmit = computed(() => {
+  const validPhone = /^08\d{9,12}$/.test(noTelepon.value);
+
+  return selectedLayanan.value &&
+         beratEstimasi.value > 0 &&
+         validPhone;
+});
 
 
 

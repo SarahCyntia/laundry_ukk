@@ -23,7 +23,7 @@ class PermissionSeeder extends Seeder
         $menuWebsite = ['mitra','website', 'setting', 'data-order','datapelanggan', 'tambahpelanggan','pendaftaran', 'kecamatan'];
         // $menuLayanan = ['layanan', 'jenisitem', 'jenislayanan', 'hargajenislayanan', 'layananprioritas', 'layanantambahan'];
         $menuTransaksi = ['menunggu-verifikasi'];
-        $menuMitra = ['profil', 'layanan', 'order-masuk', 'order-proses', 'order-siap-ambil', 'order-selesai'];
+        $menuMitra = ['profil', 'layanan','laporan-laundry', 'order-masuk', 'order-proses', 'order-siap-ambil', 'order-selesai'];
         $permissionsByRole = [
             'admin' => ['dashboard', ...$menuMaster, ...$menuWebsite],
             'pelangan' => ['beranda', 'pelanggan', 'antar', 'jemput', 'riwayat'],

@@ -189,50 +189,126 @@ class PaymentController extends Controller
     //     ]);
     // }
     
-public function getSnapToken($id)
-    {
-        $order = Order::with('mitra')->findOrFail($id);
+    public function getSnapToken($id)
+{
+    $order = Order::with('mitra')->findOrFail($id);
 
-        if ($order->harga_final <= 0) {
-            return response()->json(['message' => 'Harga tidak valid'], 400);
-        }
+    if ($order->harga_final <= 0) {
+        return response()->json(['message' => 'Harga tidak valid'], 400);
+    }
 
-        // Midtrans config
-        Config::$serverKey = config('services.midtrans.server_key');
-        Config::$isProduction = false; // true kalau production
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
+    // Midtrans config
+    Config::$serverKey = config('services.midtrans.server_key');
+    Config::$isProduction = false;
+    Config::$isSanitized = true;
+    Config::$is3ds = true;
 
-        // ✅ ORDER ID STABIL (WAJIB)
-        $orderIdMidtrans = $order->kode_order;
+    $orderIdMidtrans = $order->kode_order;
 
-        $params = [
-            'transaction_details' => [
-                'order_id' => $orderIdMidtrans,
-                'gross_amount' => (int) $order->harga_final,
-            ],
-            'customer_details' => [
-                'first_name' => $order->mitra->nama_laundry ?? 'User',
-                'email' => $order->mitra->email ?? 'user@email.com',
-            ],
-        ];
+    // 🔎 Cari transaksi dulu
+    $transaksi = Transaksi::where('order_id', $order->id)->first();
 
-        $snapToken = Snap::getSnapToken($params);
+    if ($transaksi && $transaksi->status_pembayaran === 'menunggu_pembayaran' && $transaksi->snap_token) {
+        return response()->json([
+            'snap_token' => $transaksi->snap_token
+        ]);
+    }
 
-        // ✅ SIMPAN / UPDATE TRANSAKSI
-        Transaksi::updateOrCreate(
-            ['order_id' => $order->id],
-            [
+    // ✅ Kalau snap_token sudah ada & belum dibayar → pakai ulang
+    if ($transaksi && $transaksi->snap_token && $transaksi->status_pembayaran !== 'dibayar') {
+        return response()->json([
+            'snap_token' => $transaksi->snap_token
+        ]);
+    }
+
+    $params = [
+        'transaction_details' => [
+            'order_id' => $orderIdMidtrans,
+            'gross_amount' => (int) $order->harga_final,
+        ],
+        'customer_details' => [
+            'first_name' => $order->mitra->nama_laundry ?? 'User',
+            'email' => $order->mitra->email ?? 'user@email.com',
+        ],
+        'expiry' => [
+            'start_time' => now()->format('Y-m-d H:i:s O'),
+            'unit' => 'minute',
+            'duration' => 30
+        ],
+    ];
+
+    $snapToken = Snap::getSnapToken($params);
+
+    // ✅ SIMPAN / UPDATE TRANSAKSI
+    if ($transaksi) {
+        // Jangan reset kalau sudah dibayar
+        if ($transaksi->status_pembayaran !== 'dibayar') {
+            $transaksi->update([
+                'snap_token' => $snapToken,
                 'payment_reference' => $orderIdMidtrans,
                 'total_bayar' => $order->harga_final,
                 'status_pembayaran' => 'menunggu_pembayaran',
-            ]
-        );
-
-        return response()->json([
-            'snap_token' => $snapToken
+            ]);
+        }
+    } else {
+        Transaksi::create([
+            'order_id' => $order->id,
+            'payment_reference' => $orderIdMidtrans,
+            'total_bayar' => $order->harga_final,
+            'snap_token' => $snapToken,
+            'status_pembayaran' => 'menunggu_pembayaran',
         ]);
     }
+
+    return response()->json([
+        'snap_token' => $snapToken
+    ]);
+}
+
+// public function getSnapToken($id)
+//     {
+//         $order = Order::with('mitra')->findOrFail($id);
+
+//         if ($order->harga_final <= 0) {
+//             return response()->json(['message' => 'Harga tidak valid'], 400);
+//         }
+
+//         // Midtrans config
+//         Config::$serverKey = config('services.midtrans.server_key');
+//         Config::$isProduction = false; // true kalau production
+//         Config::$isSanitized = true;
+//         Config::$is3ds = true;
+
+//         // ✅ ORDER ID STABIL (WAJIB)
+//         $orderIdMidtrans = $order->kode_order;
+
+//         $params = [
+//             'transaction_details' => [
+//                 'order_id' => $orderIdMidtrans,
+//                 'gross_amount' => (int) $order->harga_final,
+//             ],
+//             'customer_details' => [
+//                 'first_name' => $order->mitra->nama_laundry ?? 'User',
+//                 'email' => $order->mitra->email ?? 'user@email.com',
+//             ],
+//         ];
+
+//         $snapToken = Snap::getSnapToken($params);
+
+//         // ✅ SIMPAN / UPDATE TRANSAKSI
+//         Transaksi::updateOrCreate(
+//             ['order_id' => $order->id],
+//             [
+//                 'payment_reference' => $orderIdMidtrans,
+//                 'total_bayar' => $order->harga_final,
+//                 'status_pembayaran' => 'menunggu_pembayaran',
+//             ]
+//         );
+
+//         return response()->json([
+//             'snap_token' => $snapToken
+//         ]);
+//     }
 
     public function midtransCallback(Request $request)
     {
@@ -525,23 +601,57 @@ public function getSnapToken($id)
         // Kirim ke view atau langsung redirect
         return view('payment.show', compact('order', 'snapToken'));
     }
-    public function handleNotification(Request $request)
-    {
-        $notification = new Notification();
+  public function handle(Request $request)
+{
+    \Log::info('MIDTRANS CALLBACK', $request->all());
 
-        $transactionStatus = $notification->transaction_status;
-        $orderId = $notification->id;
+    $serverKey = config('services.midtrans.server_key');
 
-        $order = Order::find($orderId);
-        if (!$order) {
-            return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
-        }
+    $signatureKey = hash(
+        'sha512',
+        $request->order_id .
+        $request->status_code .
+        $request->gross_amount .
+        $serverKey
+    );
 
-        $order->status_pembayaran = $transactionStatus;
-        $order->save();
-
-        return response()->json(['message' => 'Notifikasi diproses']);
+    if ($signatureKey !== $request->signature_key) {
+        return response()->json(['message' => 'Invalid signature'], 403);
     }
+
+    $transaksi = Transaksi::where('payment_reference', $request->order_id)->first();
+
+    if (!$transaksi) {
+        return response()->json(['message' => 'Transaksi tidak ditemukan'], 404);
+    }
+
+    $statusMap = [
+        'pending'    => 'menunggu_pembayaran',
+        'settlement' => 'dibayar',
+        'expire'     => 'kadaluarsa',
+        'cancel'     => 'dibatalkan',
+        'refund'     => 'dikembalikan',
+    ];
+
+    $statusPembayaran = $statusMap[$request->transaction_status] ?? 'menunggu_pembayaran';
+
+    $transaksi->update([
+        'status_pembayaran' => $statusPembayaran,
+        'metode_pembayaran' => $request->payment_type,
+        'waktu_bayar' => $request->transaction_status === 'settlement'
+            ? now()
+            : null,
+    ]);
+
+    // OPTIONAL kalau order punya status bayar
+    if ($transaksi->order) {
+        $transaksi->order->update([
+            'status_pembayaran' => $statusPembayaran,
+        ]);
+    }
+
+    return response()->json(['message' => 'OK']);
+}
 
 
 
