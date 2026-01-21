@@ -40,6 +40,7 @@ use App\Http\Controllers\WilayahController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MidtransWebhookController; // if separate
 use App\Http\Controllers\PelangganOrderController;
+use App\Http\Controllers\LaporanOrderController;
 use Illuminate\Support\Facades\Password;
 
 /*
@@ -82,8 +83,8 @@ Route::post('/kecamatan', [KecamatanController::class, 'index']);
 Route::get('/kecamatan', [KecamatanController::class, 'get']);
 
 
-    // Route::get('/mitra-by-kecamatan/{kecamatan}', [KecamatanController::class, 'mitraByKecamatan']);
-    Route::get('/mitra-by-kecamatan/{id}', [MitraController::class, 'mitraByKecamatan']);
+// Route::get('/mitra-by-kecamatan/{kecamatan}', [KecamatanController::class, 'mitraByKecamatan']);
+Route::get('/mitra-by-kecamatan/{id}', [MitraController::class, 'mitraByKecamatan']);
 
 
 // routes/api.php
@@ -189,10 +190,10 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
     // Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/dashboard-data', [DashboardController::class, 'getData']);
     Route::post('/update-status', [DashboardController::class, 'updateStatus']);
-    
 
 
-Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
+
+    Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
 
 
 
@@ -248,7 +249,7 @@ Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
     Route::get('/mitra/all', [MitraController::class, 'all']);
     Route::get('/deteksi-kecamatan', [KecamatanController::class, 'deteksi']);
 
-;
+    ;
 
 
 
@@ -256,9 +257,9 @@ Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
 
 
 
-Route::get('/dashboard/admin-data', [DashboardAdminController::class, 'index']);
+    Route::get('/dashboard/admin-data', [DashboardAdminController::class, 'index']);
 
-Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
+    Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
 
 
 
@@ -269,7 +270,7 @@ Route::get('/laundry/cari', [LaundryController::class, 'cariLaundry']);
     Route::post('/order/{id}/accept', [MitraOrderController::class, 'accept']);
     Route::post('/order/{id}/reject', [MitraOrderController::class, 'reject']);
     // Route::post('/order-masuk', [OrderController::class, 'orderMitra']);
-Route::delete('/order/{id}', [OrderController::class, 'destroy']);
+    Route::delete('/order/{id}', [OrderController::class, 'destroy']);
     // Order Diproses
     Route::post('/order-proses', [OrderController::class, 'index']);
     Route::post('/order/{id}/update-status', [MitraOrderController::class, 'updateStatus']);
@@ -374,7 +375,7 @@ Route::get('/transaksi/user', [TransaksiController::class, 'getUserTransaksi'])
 
 
 
-    Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
+Route::post('/forgot-password', [AuthController::class, 'sendResetLink']);
 // Route::post('/reset-password', [AuthController::class, 'reset']);
 
 Route::post('/reset-password', function (Request $request) {
@@ -406,39 +407,51 @@ Route::post('/data-order', [DataOrderController::class, 'index']);
 
 
 
-    Route::post('/api/payments', [OrderController::class, 'payment']);
-    // Route::get('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+Route::post('/api/payments', [OrderController::class, 'payment']);
+// Route::get('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
 
-    Route::middleware('can:payment')->group(function () {
-        Route::get('payment', [OrderController::class, 'get'])->withoutMiddleware('can:payment');
-        // Route::post('payment', [OrderController::class, 'index']);
-        Route::post('payment/store', [OrderController::class, 'store']);
-        // Route::get('/payment/token/{id}', [OrderController::class, 'getSnapToken']);
-        Route::apiResource('payment', OrderController::class)
+Route::middleware('can:payment')->group(function () {
+    Route::get('payment', [OrderController::class, 'get'])->withoutMiddleware('can:payment');
+    // Route::post('payment', [OrderController::class, 'index']);
+    Route::post('payment/store', [OrderController::class, 'store']);
+    // Route::get('/payment/token/{id}', [OrderController::class, 'getSnapToken']);
+    Route::apiResource('payment', OrderController::class)
         ->except(['index', 'store']);
-        // Route::get('/payment/{id}', [OrderController::class, 'show'])->name('payment.show');
-        
-        // Route::post('/gudang/masuk', [OrderController::class, 'masuk']);
-        // Route::post('/gudang/keluar', [OrderController::class, 'keluar']);
-        
-    });
+    // Route::get('/payment/{id}', [OrderController::class, 'show'])->name('payment.show');
+
+    // Route::post('/gudang/masuk', [OrderController::class, 'masuk']);
+    // Route::post('/gudang/keluar', [OrderController::class, 'keluar']);
+
+});
 
 
-    Route::post('payment/create-snap', [OrderController::class, 'createSnap']);
-    Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
-    // Route::post('/payment/snap', [PaymentController::class, 'createCharge']);
-    // Route::post('/input/snap', [PaymentController::class, 'snap']);
-    Route::get('/payment/token', [PaymentController::class, 'getToken'])->middleware('auth:sanctum');
-    
-    Route::post('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
-    Route::post('/midtrans/callback', [PaymentController::class, 'midtransCallback']);
-    // Route::post('/midtrans/callback', [PaymentController::class, 'handle']);
-    // Route::post('/midtrans/notification', [PaymentController::class, 'handle']);
+Route::post('payment/create-snap', [OrderController::class, 'createSnap']);
+Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
+// Route::post('/payment/snap', [PaymentController::class, 'createCharge']);
+// Route::post('/input/snap', [PaymentController::class, 'snap']);
+Route::get('/payment/token', [PaymentController::class, 'getToken'])->middleware('auth:sanctum');
+
+Route::post('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+Route::post('/midtrans/callback', [PaymentController::class, 'midtransCallback']);
+// Route::post('/midtrans/callback', [PaymentController::class, 'handle']);
+// Route::post('/midtrans/notification', [PaymentController::class, 'handle']);
 Route::post('/payment/sync/{orderId}', [PaymentController::class, 'syncMidtransStatus']);
 
 
 // Route::post('/manual-update-status', [OrderController::class, 'manualUpdateStatus']);
-    Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
+Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
 
 
-    Route::post('/payment/method/{id}', [PaymentController::class, 'setPaymentMethod']);
+Route::post('/payment/method/{id}', [PaymentController::class, 'setPaymentMethod']);
+
+
+
+Route::get('/order/export-pdf', [OrderController::class, 'exportPDF']);
+// Route::get('/laporan-order', [OrderController::class, 'index']);
+
+// Route::post('/laporan-order', [OrderController::class, 'laporanOrder']);
+
+Route::get('/laporan-order', [LaporanOrderController::class, 'index']);
+Route::post('/laporan-order', [LaporanOrderController::class, 'index']);
+
+Route::get('/laporan-order/export-pdf', [LaporanOrderController::class, 'exportPdf']);

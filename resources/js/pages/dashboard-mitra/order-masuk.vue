@@ -8,8 +8,7 @@ import Form from "./form-order-masuk.vue";
 import Swal from "sweetalert2";
 import axios from "@/libs/axios";
 import { saveAs } from 'file-saver';
-
-// const url = "/order";
+import * as XLSX from 'xlsx';
 
 const mitraId = ref<number | null>(null);
 const column = createColumnHelper();
@@ -17,6 +16,58 @@ const column = createColumnHelper();
 const selected = ref<string>("");
 const openForm = ref<boolean>(false);
 const order = ref<Order | null>(null); // Data pelanggan yang terkait dengan user login
+
+
+
+
+  const filterType = ref<'daily' | 'weekly' | 'monthly'>('monthly');
+const selectedDate = ref<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
+const selectedMonth = ref<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
+const selectedWeek = ref<string>('');
+
+const weekOptions = computed(() => {
+  if (!selectedMonth.value) return [];
+  const [year, month] = selectedMonth.value.split('-').map(Number);
+  const weeks: Array<{label: string, start: string, end: string}> = [];
+  
+  const firstDay = new Date(year, month - 1, 1);
+  const lastDay = new Date(year, month, 0);
+  
+  let currentWeek = 1;
+  let weekStart = new Date(firstDay);
+  
+  while (weekStart <= lastDay) {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    
+    if (weekEnd > lastDay) {
+      weeks.push({
+        label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${lastDay.getDate()})`,
+        start: weekStart.toISOString().split('T')[0],
+        end: lastDay.toISOString().split('T')[0]
+      });
+    } else {
+      weeks.push({
+        label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${weekEnd.getDate()})`,
+        start: weekStart.toISOString().split('T')[0],
+        end: weekEnd.toISOString().split('T')[0]
+      });
+    }
+    
+    weekStart = new Date(weekEnd);
+    weekStart.setDate(weekEnd.getDate() + 1);
+    currentWeek++;
+  }
+  
+  return weeks;
+});
+
+
+
+
+
+
+
 
 // AMBIL MITRA_ID DARI PROFILE USER
 onMounted(async () => {
@@ -118,24 +169,6 @@ const bayar = async (rowData) => {
   jenis_layanan_id: rowData.selectedService?.id,
 };
 
-
-// const draft = {
-//   id: rowData.id,
-
-//   // Berat & harga
-//   berat_estimasi: rowData.berat_estimasi,
-//   berat_aktual: rowData.berat_aktual,
-//   harga_final: rowData.harga_final,
-//   biaya: rowData.biaya,
-
-//   // Layanan
-//   jenis_layanan_id: rowData.selectedService?.id ?? rowData.selectedService,
-
-//   // Catatan tambahan (opsional)
-//   catatan: rowData.catatan ?? null,
-// };
-
-
   sessionStorage.setItem("draftTransaksi", JSON.stringify(draft));
 
   try {
@@ -177,58 +210,9 @@ const map = {
   belum_dibayar: "badge bg-secondary",
 };
 
-    return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
+    return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
 };
 
-// const redirectToPayment = async (id: number) => {
-//     try {
-//         const { data } = await axios.post(`/payment/token/${id}`);
-//         const snapToken = data.snap_token;
-
-//         if (!snapToken) {
-//             Swal.fire({ icon: 'error', title: 'Token Tidak Tersedia' });
-//             return;
-//         }
-
-//         if (typeof window.snap === 'undefined') {
-//             Swal.fire({ icon: 'error', title: 'Snap Belum Siap' });
-//             return;
-//         }
-
-//         window.snap.pay(snapToken, {
-//             onSuccess: async (result: any) => {
-//                 await axios.post('/manual-update-status', {
-//                     order_id: id,
-//                     transaction_status: result.transaction_status,
-//                     payment_type: result.payment_type
-//                 });
-//                 // Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil' }).then(() => {
-//                 //   refresh();
-//                 //   });
-//                 Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil' }).then(
-//                     refresh()
-//                 );
-//             },
-//             onPending: async (result: any) => {
-//                 await axios.post('/manual-update-status', {
-//                     order_id: result.order_id,
-//                     transaction_status: result.transaction_status,
-//                     payment_type: result.payment_type
-//                 });
-//                 Swal.fire({ icon: 'info', title: 'Menunggu Pembayaran' });
-//             },
-//             onError: () => {
-//                 Swal.fire({ icon: 'error', title: 'Pembayaran Gagal' });
-//             },
-//             onClose: () => {
-//                 Swal.fire({ icon: 'warning', title: 'Dibatalkan' });
-//             }
-//         });
-//     } catch (error) {
-//         console.error("❌ Gagal ambil token:", error);
-//         Swal.fire({ icon: 'error', title: 'Error mengambil token' });
-//     }
-// };
 const redirectToPayment = async (orderId: number, snapToken?: string) => {
   try {
     let token = snapToken;
@@ -299,8 +283,202 @@ const url = computed(() => {
     params.append('exclude_status[]', status);
   });
 
+
+
+
+
+
+
+
+
+   if (filterType.value === 'daily' && selectedDate.value) {
+    params.append('filter_date', selectedDate.value);
+  } else if (filterType.value === 'weekly' && selectedWeek.value) {
+    const [start, end] = selectedWeek.value.split('|');
+    params.append('filter_start_date', start);
+    params.append('filter_end_date', end);
+  } else if (filterType.value === 'monthly' && selectedMonth.value) {
+    params.append('filter_month', selectedMonth.value);
+  }
+
+
+
+
+
+
+
+  if (mitraId.value) {
+    params.append('mitra_id', mitraId.value.toString());
+  }
+
+
   return `/order?${params.toString()}`;
 });
+
+
+
+
+
+
+const exportToExcel = async () => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Ambil semua data tanpa pagination
+    params.append('per_page', '9999');
+    
+    // Filter berdasarkan tipe
+    if (filterType.value === 'daily' && selectedDate.value) {
+      params.append('filter_date', selectedDate.value);
+    } else if (filterType.value === 'weekly' && selectedWeek.value) {
+      const [start, end] = selectedWeek.value.split('|');
+      params.append('filter_start_date', start);
+      params.append('filter_end_date', end);
+    } else if (filterType.value === 'monthly' && selectedMonth.value) {
+      params.append('filter_month', selectedMonth.value);
+    }
+
+    const { data } = await axios.get(`/order?${params.toString()}`);
+    const orders = data.data || [];
+
+    if (orders.length === 0) {
+      Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
+      return;
+    }
+
+    // Format data untuk Excel
+    const excelData = orders.map((order, index) => ({
+      'No': index + 1,
+      'Nama Pelanggan': order.pelanggan?.name || '-',
+      'Nama Laundry': order.mitra?.nama_laundry || '-',
+      'Jenis Layanan': order.jenis_layanan?.nama_layanan || '-',
+      'Kode Order': order.kode_order,
+      'Berat Estimasi': order.berat_estimasi,
+      'Berat Aktual': order.berat_aktual,
+      'Harga': order.harga_final,
+      'Catatan': order.catatan || '-',
+      'Waktu Antar': order.waktu_pelanggan_antar 
+        ? new Date(order.waktu_pelanggan_antar).toLocaleString('id-ID')
+        : '-',
+      'Status': order.status?.replaceAll('_', ' ') || '-',
+      'Status Pembayaran': order.transaksi?.status_pembayaran?.replaceAll('_', ' ') || 'belum_dibayar'
+    }));
+
+    // Buat workbook
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Order');
+
+    // Generate filename
+    let filename = 'Laporan_Order_';
+    if (filterType.value === 'daily') {
+      filename += `Harian_${selectedDate.value}`;
+    } else if (filterType.value === 'weekly') {
+      const [start, end] = selectedWeek.value.split('|');
+      filename += `Mingguan_${start}_${end}`;
+    } else {
+      filename += `Bulanan_${selectedMonth.value}`;
+    }
+    filename += '.xlsx';
+
+    // Download
+    XLSX.writeFile(wb, filename);
+    
+    Swal.fire('Berhasil', 'Laporan berhasil diekspor ke Excel', 'success');
+  } catch (error) {
+    console.error('Error exporting to Excel:', error);
+    Swal.fire('Error', 'Gagal mengekspor ke Excel', 'error');
+  }
+};
+
+
+
+const exportToPDF = async () => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Filter berdasarkan tipe
+    if (filterType.value === 'daily' && selectedDate.value) {
+      params.append('filter_date', selectedDate.value);
+    } else if (filterType.value === 'weekly' && selectedWeek.value) {
+      const [start, end] = selectedWeek.value.split('|');
+      params.append('filter_start_date', start);
+      params.append('filter_end_date', end);
+    } else if (filterType.value === 'monthly' && selectedMonth.value) {
+      params.append('filter_month', selectedMonth.value);
+    }
+
+    const response = await axios.get(`/order/export-pdf?${params.toString()}`, {
+      responseType: 'blob'
+    });
+
+    // Generate filename
+    let filename = 'Laporan_Order_';
+    if (filterType.value === 'daily') {
+      filename += `Harian_${selectedDate.value}`;
+    } else if (filterType.value === 'weekly') {
+      const [start, end] = selectedWeek.value.split('|');
+      filename += `Mingguan_${start}_${end}`;
+    } else {
+      filename += `Bulanan_${selectedMonth.value}`;
+    }
+    filename += '.pdf';
+
+    saveAs(response.data, filename);
+    Swal.fire('Berhasil', 'Laporan berhasil diekspor ke PDF', 'success');
+  } catch (error) {
+    console.error('Error exporting to PDF:', error);
+    Swal.fire('Error', 'Gagal mengekspor ke PDF', 'error');
+  }
+};
+
+
+
+
+
+
+
+
+
+
+const handleSearch = () => {
+  let params: any = {
+    filter_type: filterType.value,
+  }
+
+  if (filterType.value === 'daily') {
+    params.date = selectedDate.value
+  }
+
+  if (filterType.value === 'weekly') {
+    const [start, end] = selectedWeek.value.split('|')
+    params.start_date = start
+    params.end_date = end
+  }
+
+  if (filterType.value === 'monthly') {
+    params.month = selectedMonth.value
+  }
+
+  fetchData(params)
+}
+const fetchData = async (params: any) => {
+  const res = await axios.get('/laporan-order', {
+    params
+  })
+  data.value = res.data
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -354,17 +532,6 @@ const columns = [
   column.accessor("mitra.nama_laundry", { header: "Nama Laundry" }),
   column.accessor("jenis_layanan.nama_layanan", { header: "Jenis Layanan" }),
 
-
-  //   column.accessor("pelanggan.user.name", {
-  //   header: "Nama Pelanggan",
-  //   cell: ({ row }) => row.original.pelanggan?.user?.name ?? "-",
-  // }),
-  //   column.accessor("mitra_id", { header: "Nama Laundry" }),
-  //   // column.accessor("jenis_layanan_id", { header: "Jenis Layanan" }),
-  //   column.accessor("jenis_layanan.nama_layanan", {
-  //     header: "Jenis Layanan",
-  //     cell: ({ row }) => row.original.jenis_layanan?.nama_layanan ?? "-",
-  //   }),
   column.accessor("kode_order", { header: "Kode Order" }),
   column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
@@ -400,26 +567,6 @@ const columns = [
   }),
 
   column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
-  // column.accessor("foto_struk", {
-  //   header: "Foto Struk",
-  //   cell: ({ getValue }) => {
-  //     const foto = getValue();
-
-  //     if (!foto) {
-  //       return h("span", { style: "color:#888;" }, "Tidak ada foto");
-  //     }
-
-  //     const url = `http://localhost:8000/storage/${foto}`;
-
-
-  //     console.log("URL FINAL:", url);
-
-  //     return h("img", {
-  //       src: url,
-  //       style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
-  //     });
-  //   }
-  // }),
 
 
   column.accessor("status", {
@@ -668,6 +815,109 @@ onMounted(async () => {
       <h2 class="mb-0">Orderan</h2>
     </div>
     <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
+
+
+        <div class="card-body border-bottom">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Tipe Filter</label>
+          <select v-model="filterType" class="form-select" @change="refresh">
+            <option value="daily">Harian</option>
+            <option value="weekly">Mingguan</option>
+            <option value="monthly">Bulanan</option>
+          </select>
+        </div>
+
+        <!-- Filter Harian -->
+        <div v-if="filterType === 'daily'" class="col-md-3">
+          <label class="form-label fw-bold">Pilih Tanggal</label>
+          <input 
+            v-model="selectedDate" 
+            type="date" 
+            class="form-control"
+            @change="refresh"
+          />
+        </div>
+
+        <!-- Filter Mingguan -->
+        <div v-if="filterType === 'weekly'" class="col-md-3">
+          <label class="form-label fw-bold">Pilih Bulan</label>
+          <input 
+            v-model="selectedMonth" 
+            type="month" 
+            class="form-control"
+          />
+        </div>
+        <div v-if="filterType === 'weekly'" class="col-md-3">
+          <label class="form-label fw-bold">Pilih Minggu</label>
+          <select v-model="selectedWeek" class="form-select" @change="refresh">
+            <option 
+              v-for="week in weekOptions" 
+              :key="week.start" 
+              :value="`${week.start}|${week.end}`"
+            >
+              {{ week.label }}
+            </option>
+          </select>
+        </div>
+
+
+
+
+
+        <!-- Tombol Cari -->
+<div class="col-md-2">
+  <label class="form-label fw-bold invisible">Cari</label>
+  <button
+    class="btn btn-primary w-100"
+    @click="handleSearch"
+  >
+    <i class="la la-search fs-4"></i> Cari
+  </button>
+</div>
+
+
+
+
+
+        <!-- Filter Bulanan -->
+        <div v-if="filterType === 'monthly'" class="col-md-3">
+          <label class="form-label fw-bold">Pilih Bulan</label>
+          <input 
+            v-model="selectedMonth" 
+            type="month" 
+            class="form-control"
+            @change="refresh"
+          />
+        </div>
+
+        <!-- Tombol Export -->
+        <div class="col-md-3">
+          <div class="d-flex gap-2">
+            <button 
+              @click="exportToExcel" 
+              class="btn btn-success"
+              title="Export ke Excel"
+            >
+              <i class="la la-file-excel fs-3"></i> Excel
+            </button>
+            <button 
+              @click="exportToPDF" 
+              class="btn btn-danger"
+              title="Export ke PDF"
+            >
+              <i class="la la-file-pdf fs-3"></i> PDF
+            </button>
+          </div>
+        </div>
+
+
+
+        
+      </div>
+    </div>
+
+
 
     <paginate ref="paginateRef" :url="url" :columns="columns" />
 

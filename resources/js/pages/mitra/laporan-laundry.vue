@@ -8,78 +8,91 @@ import { h } from "vue";
 import Swal from "sweetalert2";
 import axios from "@/libs/axios";
 import { saveAs } from 'file-saver';
-// import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 const mitraId = ref<number | null>(null);
 const column = createColumnHelper();
+// const paginateRef = ref<any>(null);
 const selected = ref<string>("");
 const openForm = ref<boolean>(false);
-const order = ref<Order | null>(null);
+const order = ref<Order | null>(null); // Data pelanggan yang terkait dengan user login
 
-// ===== FILTER LAPORAN =====
+
+
+
 const filterType = ref<'daily' | 'weekly' | 'monthly'>('monthly');
 const selectedDate = ref<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
 const selectedMonth = ref<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
 const selectedWeek = ref<string>('');
 
-// Generate minggu dalam bulan
+  const formatDate = (d: Date) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+
 const weekOptions = computed(() => {
-  if (!selectedMonth.value) return [];
-  const [year, month] = selectedMonth.value.split('-').map(Number);
-  const weeks: Array<{label: string, start: string, end: string}> = [];
-  
-  const firstDay = new Date(year, month - 1, 1);
-  const lastDay = new Date(year, month, 0);
-  
-  let currentWeek = 1;
-  let weekStart = new Date(firstDay);
-  
+  if (!selectedMonth.value) return []
+
+  const [year, month] = selectedMonth.value.split('-').map(Number)
+  const weeks: Array<{ label: string; start: string; end: string }> = []
+
+  const firstDay = new Date(year, month - 1, 1)
+  const lastDay = new Date(year, month, 0)
+
+  let currentWeek = 1
+  let weekStart = new Date(firstDay)
+
   while (weekStart <= lastDay) {
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    
-    if (weekEnd > lastDay) {
-      weeks.push({
-        label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${lastDay.getDate()})`,
-        start: weekStart.toISOString().split('T')[0],
-        end: lastDay.toISOString().split('T')[0]
-      });
-    } else {
-      weeks.push({
-        label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${weekEnd.getDate()})`,
-        start: weekStart.toISOString().split('T')[0],
-        end: weekEnd.toISOString().split('T')[0]
-      });
-    }
-    
-    weekStart = new Date(weekEnd);
-    weekStart.setDate(weekEnd.getDate() + 1);
-    currentWeek++;
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+
+    const endDate = weekEnd > lastDay ? lastDay : weekEnd
+
+    weeks.push({
+      label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${endDate.getDate()})`,
+      start: formatDate(weekStart),
+      end: formatDate(endDate)
+    })
+
+    weekStart = new Date(endDate)
+    weekStart.setDate(endDate.getDate() + 1)
+    currentWeek++
   }
-  
-  return weeks;
-});
+
+  return weeks
+})
+
+
+
+
+
+
 
 // AMBIL MITRA_ID DARI PROFILE USER
 onMounted(async () => {
   const { data } = await axios.get("/mitra");
+  // pastikan API ini mengembalikan user + mitra_id
   mitraId.value = data.mitra_id;
-  
-  // Set default minggu pertama
-  if (weekOptions.value.length > 0) {
-    selectedWeek.value = `${weekOptions.value[0].start}|${weekOptions.value[0].end}`;
-  }
 });
 
-// Watch untuk update selectedWeek saat bulan berubah
-watch(selectedMonth, () => {
-  if (weekOptions.value.length > 0) {
-    selectedWeek.value = `${weekOptions.value[0].start}|${weekOptions.value[0].end}`;
-  }
-});
+const props = defineProps<{ selected: string }>();
+const selectedId = ref(null);
+const showForm = ref(false);
+
+function openEdit(id) {
+  selectedId.value = id;
+  showForm.value = true;
+}
+
+// const url = "/order-masuk"; // <--- WAJIB ADA
 
 const paginateRef = ref<any>(null);
 const refresh = () => paginateRef.value?.refetch();
+
+// const column = createColumnHelper<Order>();
 
 const { delete: deleteOrder } = useDelete({
   onSuccess: () => paginateRef.value.refetch(),
@@ -139,44 +152,164 @@ const statusIcons = {
   selesai: "success"
 };
 
-// URL dengan filter tanggal
+
+
+
+
+
+
+
+const bayar = async (rowData) => {
+  if (rowData.isPaying) return;
+
+  rowData.isPaying = true;
+  const draft = {
+    order_id: rowData.id,
+    berat_estimasi: rowData.berat_barang,
+    harga_final: rowData.total_harga,
+    biaya: rowData.biaya,
+    jenis_layanan_id: rowData.selectedService?.id,
+  };
+
+  sessionStorage.setItem("draftTransaksi", JSON.stringify(draft));
+
+  try {
+    const res = await axios.post(`/api/payment/token/${row.id}`);
+    // const res = await axios.post("/payment/create", draft);
+    const { snap_token } = res.data;
+
+    if (!snap_token) throw new Error("Token pembayaran tidak ditemukan.");
+
+    window.snap.pay(snap_token, {
+      onSuccess: function (result) {
+        console.log("✅ Pembayaran berhasil:", result);
+        rowData.status = "paid";
+      },
+      onPending: function (result) {
+        console.log("⏳ Menunggu pembayaran:", result);
+        rowData.status = "pending";
+      },
+      onError: function (result) {
+        console.error("❌ Pembayaran gagal:", result);
+      },
+      onClose: function () {
+        console.log("❎ Popup ditutup");
+      },
+    });
+  } catch (err) {
+    console.error("❌ Terjadi kesalahan:", err);
+  } finally {
+    rowData.isPaying = false;
+  }
+};
+const getPembayaranBadgeClass = (status: string | undefined) => {
+  const map = {
+    dibayar: "badge bg-success",
+    menunggu_pembayaran: "badge bg-warning text-dark",
+    kadaluarsa: "badge bg-secondary",
+    dibatalkan: "badge bg-danger",
+    dikembalikan: "badge bg-info text-dark",
+    belum_dibayar: "badge bg-secondary",
+  };
+
+  return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
+};
+
+const redirectToPayment = async (orderId: number, snapToken?: string) => {
+  try {
+    let token = snapToken;
+
+    // 🔥 kalau belum ada token → ambil dari backend
+    if (!token) {
+      const { data } = await axios.post(`/payment/token/${orderId}`);
+      token = data.snap_token;
+    }
+
+    if (!token) {
+      Swal.fire("Error", "Snap token tidak tersedia", "error");
+      return;
+    }
+
+    window.snap.pay(token, {
+      onSuccess: () => {
+        Swal.fire(
+          "Berhasil",
+          "Pembayaran berhasil. Menunggu konfirmasi sistem.",
+          "success"
+        );
+        refresh(); // tunggu callback
+      },
+
+      onPending: () => {
+        Swal.fire(
+          "Pending",
+          "Menunggu pembayaran diselesaikan",
+          "info"
+        );
+        refresh();
+      },
+
+      onError: () => {
+        Swal.fire("Gagal", "Pembayaran gagal", "error");
+      },
+
+      onClose: () => {
+        Swal.fire("Ditutup", "Popup pembayaran ditutup", "warning");
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    Swal.fire("Error", "Gagal mengambil snap token", "error");
+  }
+};
+
+
+
+
+
+
+
+
 const url = computed(() => {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams()
 
-  // Status yang tidak ditampilkan
-  [
-    'diproses',
-    'dicuci',
-    'dikeringkan',
-    'disetrika',
-    'siap_ambil',
-    'selesai'
-  ].forEach(status => {
-    params.append('exclude_status[]', status);
-  });
+  // 🔥 TIDAK PAKAI exclude_status
+  // semua status otomatis ikut
 
-  // Filter berdasarkan tipe
+  // FILTER (samakan dengan backend)
+  params.append('filter_type', filterType.value)
+
   if (filterType.value === 'daily' && selectedDate.value) {
-    params.append('filter_date', selectedDate.value);
-  } else if (filterType.value === 'weekly' && selectedWeek.value) {
-    const [start, end] = selectedWeek.value.split('|');
-    params.append('filter_start_date', start);
-    params.append('filter_end_date', end);
-  } else if (filterType.value === 'monthly' && selectedMonth.value) {
-    params.append('filter_month', selectedMonth.value);
+    params.append('date', selectedDate.value)
   }
 
-  return `/order?${params.toString()}`;
-});
+  if (filterType.value === 'weekly' && selectedWeek.value) {
+    const [start, end] = selectedWeek.value.split('|')
+    params.append('start_date', start)
+    params.append('end_date', end)
+  }
 
-// ===== EXPORT FUNCTIONS =====
+  if (filterType.value === 'monthly' && selectedMonth.value) {
+    params.append('month', selectedMonth.value)
+  }
+
+  return `/laporan-order?${params.toString()}`
+})
+
+
+
+
+
+
+
+
 const exportToExcel = async () => {
   try {
     const params = new URLSearchParams();
-    
+
     // Ambil semua data tanpa pagination
     params.append('per_page', '9999');
-    
+
     // Filter berdasarkan tipe
     if (filterType.value === 'daily' && selectedDate.value) {
       params.append('filter_date', selectedDate.value);
@@ -188,7 +321,9 @@ const exportToExcel = async () => {
       params.append('filter_month', selectedMonth.value);
     }
 
-    const { data } = await axios.get(`/order?${params.toString()}`);
+    // const { data } = await axios.get(`/order?${params.toString()}`);
+    const { data } = await axios.get(`/laporan-order?${params.toString()}`);
+
     const orders = data.data || [];
 
     if (orders.length === 0) {
@@ -207,7 +342,7 @@ const exportToExcel = async () => {
       'Berat Aktual': order.berat_aktual,
       'Harga': order.harga_final,
       'Catatan': order.catatan || '-',
-      'Waktu Antar': order.waktu_pelanggan_antar 
+      'Waktu Antar': order.waktu_pelanggan_antar
         ? new Date(order.waktu_pelanggan_antar).toLocaleString('id-ID')
         : '-',
       'Status': order.status?.replaceAll('_', ' ') || '-',
@@ -233,7 +368,7 @@ const exportToExcel = async () => {
 
     // Download
     XLSX.writeFile(wb, filename);
-    
+
     Swal.fire('Berhasil', 'Laporan berhasil diekspor ke Excel', 'success');
   } catch (error) {
     console.error('Error exporting to Excel:', error);
@@ -241,10 +376,12 @@ const exportToExcel = async () => {
   }
 };
 
+
+
 const exportToPDF = async () => {
   try {
     const params = new URLSearchParams();
-    
+
     // Filter berdasarkan tipe
     if (filterType.value === 'daily' && selectedDate.value) {
       params.append('filter_date', selectedDate.value);
@@ -256,9 +393,12 @@ const exportToPDF = async () => {
       params.append('filter_month', selectedMonth.value);
     }
 
-    const response = await axios.get(`/order/export-pdf?${params.toString()}`, {
+    const response = await axios.get(`/laporan-order/export-pdf?${params.toString()}`, {
       responseType: 'blob'
     });
+    // const response = await axios.get(`/order/export-pdf?${params.toString()}`, {
+    //   responseType: 'blob'
+    // });
 
     // Generate filename
     let filename = 'Laporan_Order_';
@@ -280,41 +420,60 @@ const exportToPDF = async () => {
   }
 };
 
-const redirectToPayment = async (orderId: number, snapToken?: string) => {
-  try {
-    let token = snapToken;
 
-    if (!token) {
-      const { data } = await axios.post(`/payment/token/${orderId}`);
-      token = data.snap_token;
-    }
 
-    if (!token) {
-      Swal.fire("Error", "Snap token tidak tersedia", "error");
-      return;
-    }
 
-    window.snap.pay(token, {
-      onSuccess: () => {
-        Swal.fire("Berhasil", "Pembayaran berhasil. Menunggu konfirmasi sistem.", "success");
-        refresh();
-      },
-      onPending: () => {
-        Swal.fire("Pending", "Menunggu pembayaran diselesaikan", "info");
-        refresh();
-      },
-      onError: () => {
-        Swal.fire("Gagal", "Pembayaran gagal", "error");
-      },
-      onClose: () => {
-        Swal.fire("Ditutup", "Popup pembayaran ditutup", "warning");
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    Swal.fire("Error", "Gagal mengambil snap token", "error");
-  }
-};
+
+
+
+
+const handleSearch = () => {
+  refresh()
+}
+
+
+// const handleSearch = () => {
+//   let params: any = {
+//     filter_type: filterType.value,
+//   }
+
+//   if (filterType.value === 'daily') {
+//     params.date = selectedDate.value
+//   }
+
+//   if (filterType.value === 'weekly') {
+//     const [start, end] = selectedWeek.value.split('|')
+//     params.start_date = start
+//     params.end_date = end
+//   }
+
+//   if (filterType.value === 'monthly') {
+//     params.month = selectedMonth.value
+//   }
+
+//   fetchData(params)
+// }
+// const fetchData = async (params: any) => {
+//   const res = await axios.get('/laporan-order', {
+//     params
+//   })
+//   data.value = res.data
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 const updateStatus = async (row: Row<Order>) => {
   const currentStatus = row.original.status;
@@ -339,50 +498,82 @@ const updateStatus = async (row: Row<Order>) => {
   await refresh();
 };
 
+
+
+
+
 const downloadReceipt = async (noKode: string) => {
   const response = await axios.get(`/download-struk/${noKode}`, {
     responseType: 'blob'
+
   });
+
   saveAs(response.data, `struk-${noKode}.pdf`);
 };
 
+const noKode = ref("");
+
 const columns = [
   column.accessor("no", { header: "No" }),
-  column.accessor(row => row.pelanggan?.name ?? "-", { header: "Nama Pelanggan" }),
+  // column.accessor("pelanggan.user.name", { header: "Nama Pelanggan" }),
+  column.accessor(row => row.pelanggan?.name ?? "-", {
+    header: "Nama Pelanggan",
+  }),
+
   column.accessor("mitra.nama_laundry", { header: "Nama Laundry" }),
   column.accessor("jenis_layanan.nama_layanan", { header: "Jenis Layanan" }),
+
   column.accessor("kode_order", { header: "Kode Order" }),
   column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
   column.accessor("harga_final", { header: "Harga" }),
   column.accessor("catatan", { header: "Catatan" }),
+  // column.accessor("alasan_penolakan", { header: "Alasan Penolakan" }),
   column.accessor("alasan_penolakan", {
     header: "Alasan Penolakan",
     cell: ({ getValue, row }) => {
       const alasan = getValue();
+
+      // Kalau status diterima / bukan ditolak
       if (!alasan && row.original.status !== "ditolak") {
-        return h("span", { style: "color:#888; font-style:italic;" }, "Tidak ada alasan penolakan");
+        return h(
+          "span",
+          { style: "color:#888; font-style:italic;" },
+          "Tidak ada alasan penolakan"
+        );
       }
       return alasan || "-";
     },
   }),
+
+  // column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
   column.accessor("waktu_pelanggan_antar", {
     header: "Waktu Antar",
     cell: ({ getValue }) => {
-      const val = getValue();
-      return val ? new Date(val).toLocaleString("id-ID") : "-";
+      const val = getValue()
+      return val
+        ? new Date(val).toLocaleString("id-ID")
+        : "-"
     }
   }),
+
   column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
+
+
   column.accessor("status", {
     header: "Status",
     cell: ({ row }) => {
       const val = row.original.status;
       const color = statusColors[val] || "bg-secondary";
-      return h("button", {
-        class: `badge ${color} text-white border-0 cursor-pointer`,
-        onClick: () => updateStatus(row)
-      }, val.replaceAll("_", " "));
+
+      return h(
+        "button",
+        {
+          class: `badge ${color} text-white border-0 cursor-pointer`,
+          onClick: () => updateStatus(row)
+        },
+        val.replaceAll("_", " ")
+      );
     }
   }),
   column.accessor("id", {
@@ -391,82 +582,130 @@ const columns = [
       const row = cell.row.original;
       const actions: any[] = [];
 
+
+      // === Jika status masih menunggu konfirmasi mitra ===
       if (row.status === "menunggu_konfirmasi_mitra") {
+        // Terima
         actions.push(
-          h("button", {
-            class: "btn btn-sm btn-success",
-            onClick: async () => {
-              const ok = await Swal.fire({
-                icon: "question",
-                title: "Terima order ini?",
-                showCancelButton: true,
-              }).then((r) => r.isConfirmed);
-              if (!ok) return;
-              await axios.post(`/order/${row.id}/konfirmasi`, { status: "ditunggu_mitra" });
-              Swal.fire("Berhasil", "Order diterima!", "success");
-              await refresh();
+          h(
+            "button",
+            {
+              class: "btn btn-sm btn-success",
+              onClick: async () => {
+                const ok = await Swal.fire({
+                  icon: "question",
+                  title: "Terima order ini?",
+                  showCancelButton: true,
+                }).then((r) => r.isConfirmed);
+
+                if (!ok) return;
+
+                await axios.post(`/order/${row.id}/konfirmasi`, {
+                  status: "ditunggu_mitra",
+                });
+
+                Swal.fire("Berhasil", "Order diterima!", "success");
+                await refresh();
+              },
             },
-          }, "Terima")
+            "Terima"
+          )
         );
 
+        // Tolak
         actions.push(
-          h("button", {
-            class: "btn btn-sm btn-danger",
-            onClick: async () => {
-              const { value: alasan } = await Swal.fire({
-                title: "Alasan penolakan",
-                input: "text",
-                inputPlaceholder: "Tulis alasan...",
-                showCancelButton: true,
-              });
-              if (!alasan) return;
-              await axios.post(`/order/${row.id}/tolak`, {
-                status: "ditolak",
-                alasan_penolakan: alasan,
-              });
-              Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-              await refresh();
+          h(
+            "button",
+            {
+              class: "btn btn-sm btn-danger",
+              onClick: async () => {
+                const { value: alasan } = await Swal.fire({
+                  title: "Alasan penolakan",
+                  input: "text",
+                  inputPlaceholder: "Tulis alasan...",
+                  showCancelButton: true,
+                });
+
+                if (!alasan) return;
+
+                await axios.post(`/order/${row.id}/tolak`, {
+                  status: "ditolak",
+                  alasan_penolakan: alasan,
+                });
+
+                Swal.fire("Ditolak", "Order berhasil ditolak", "success");
+                await refresh();
+              },
             },
-          }, "Tolak")
+            "Tolak"
+          )
         );
       }
 
+      // === Jika status diterima → Edit ===
       if (row.status?.trim() === "diterima") {
         actions.push(
-          h("button", {
-            class: "btn btn-sm btn-icon btn-info",
-            onClick: () => {
-              selected.value = cell.getValue();
-              openForm.value = true;
+          h(
+            "button",
+            {
+              class: "btn btn-sm btn-icon btn-info",
+              onClick: () => {
+                selected.value = cell.getValue();
+                openForm.value = true;
+              },
             },
-          }, h("i", { class: "la la-pencil fs-2" }))
+            h("i", { class: "la la-pencil fs-2" })
+          )
         );
       }
 
+      // === Tombol Hapus (selalu ada) ===
       actions.push(
-        h("button", {
-          class: "btn btn-sm btn-icon btn-danger",
-          onClick: () => deleteOrder(`order/${cell.getValue()}`),
-        }, h("i", { class: "la la-trash fs-2" }))
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-icon btn-danger",
+            onClick: () => deleteOrder(`order/${cell.getValue()}`),
+          },
+          h("i", { class: "la la-trash fs-2" })
+        ),
       );
 
-      return h("div", { class: "d-flex gap-2 flex-nowrap align-items-center" }, actions);
+      // 
+      return h(
+        "div",
+        { class: "d-flex gap-2 flex-nowrap align-items-center" },
+        actions
+      );
     },
+
+
   }),
+
   column.display({
     id: "struk",
     header: "Struk",
     cell: ({ row }) => {
       const noKode = row.original.kode_order;
+
       return h("div", { class: "d-flex gap-2" }, [
-        h("button", {
-          class: "btn btn-sm btn-secondary",
-          onClick: () => downloadReceipt(noKode),
-          title: "Download PDF"
-        }, [h("i", { class: "la la-download me-1" }), "Download"])
+
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-secondary",
+            onClick: () => downloadReceipt(noKode),
+            title: "Download PDF"
+          },
+          [
+            h("i", { class: "la la-download me-1" }),
+            "Download"
+          ]
+        )
       ]);
     },
   }),
+
   column.display({
     id: "paymentAction",
     header: "Pembayaran",
@@ -474,70 +713,106 @@ const columns = [
       const transaksi = row.original.transaksi;
       const status = transaksi?.status_pembayaran;
 
+      // 🟡 MENUNGGU PEMBAYARAN
       if (status === "menunggu_pembayaran" && transaksi?.snap_token) {
-        return h("button", {
-          class: "btn btn-sm btn-warning",
-          onClick: () => window.snap.pay(transaksi.snap_token),
-        }, [h("i", { class: "bi bi-arrow-repeat me-1" }), "Lanjut Bayar"]);
+        return h(
+          "button",
+          {
+            class: "btn btn-sm btn-warning",
+            onClick: () => {
+              window.snap.pay(transaksi.snap_token);
+            },
+          },
+          [
+            h("i", { class: "bi bi-arrow-repeat me-1" }),
+            "Lanjut Bayar",
+          ]
+        );
       }
 
+      // 🟢 SUDAH DIBAYAR
       if (status === "dibayar") {
         return h("span", { class: "badge bg-success" }, "Lunas");
       }
 
-      return h("button", {
-        class: "btn btn-sm btn-success",
-        onClick: () => redirectToPayment(row.original.id),
-      }, [h("i", { class: "bi bi-credit-card me-1" }), "Bayar"]);
+      // 🔵 DEFAULT
+      return h(
+        "button",
+        {
+          class: "btn btn-sm btn-success",
+          onClick: () => redirectToPayment(row.original.id),
+        },
+        [
+          h("i", { class: "bi bi-credit-card me-1" }),
+          "Bayar",
+        ]
+      );
     },
   }),
-  column.accessor(row => row.transaksi?.status_pembayaran ?? 'belum_dibayar', {
-    header: "Status Bayar",
-    cell: ({ getValue }) => {
-      const status = getValue();
-      const map: Record<string, string> = {
-        dibayar: "badge bg-success",
-        menunggu_pembayaran: "badge bg-warning text-dark",
-        kadaluarsa: "badge bg-secondary",
-        dibatalkan: "badge bg-danger",
-        dikembalikan: "badge bg-info text-dark",
-        belum_dibayar: "badge bg-secondary",
-      };
-      return h("span", { class: map[status] }, status.replaceAll("_", " "));
-    }
-  }),
-];
 
+  column.accessor(
+    row => row.transaksi?.status_pembayaran ?? 'belum_dibayar',
+    {
+      header: "Status Bayar",
+      cell: ({ getValue }) => {
+        const status = getValue();
+
+        const map: Record<string, string> = {
+          dibayar: "badge bg-success",
+          menunggu_pembayaran: "badge bg-warning text-dark",
+          kadaluarsa: "badge bg-secondary",
+          dibatalkan: "badge bg-danger",
+          dikembalikan: "badge bg-info text-dark",
+          belum_dibayar: "badge bg-secondary",
+        };
+
+        return h(
+          "span",
+          { class: map[status] },
+          status.replaceAll("_", " ")
+        );
+      }
+    }
+  ),
+
+];
 onMounted(() => {
   if (!window.snap) {
     const script = document.createElement("script");
     script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute("data-client-key", import.meta.env.VITE_MIDTRANS_CLIENT_KEY);
+    script.setAttribute(
+      "data-client-key",
+      import.meta.env.VITE_MIDTRANS_CLIENT_KEY
+    );
     script.async = true;
     document.body.appendChild(script);
   }
 });
-
+// onMounted(refresh);
 onMounted(async () => {
   await nextTick();
   refresh();
 });
+
 </script>
 
+
 <template>
+
+
   <Form v-if="openForm" :selected="selected" @close="openForm = false" @refresh="refresh" />
-  
   <div class="card">
-    <div class="card-header">
+    <div class="card-header align-items-center">
       <h2 class="mb-0">Orderan</h2>
     </div>
+    <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
 
-    <!-- Filter Laporan -->
+
     <div class="card-body border-bottom">
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
           <label class="form-label fw-bold">Tipe Filter</label>
-          <select v-model="filterType" class="form-select" @change="refresh">
+          <select v-model="filterType" class="form-select">
             <option value="daily">Harian</option>
             <option value="weekly">Mingguan</option>
             <option value="monthly">Bulanan</option>
@@ -547,78 +822,82 @@ onMounted(async () => {
         <!-- Filter Harian -->
         <div v-if="filterType === 'daily'" class="col-md-3">
           <label class="form-label fw-bold">Pilih Tanggal</label>
-          <input 
-            v-model="selectedDate" 
-            type="date" 
-            class="form-control"
-            @change="refresh"
-          />
+          <input v-model="selectedDate" type="date" class="form-control" />
         </div>
 
         <!-- Filter Mingguan -->
         <div v-if="filterType === 'weekly'" class="col-md-3">
           <label class="form-label fw-bold">Pilih Bulan</label>
-          <input 
-            v-model="selectedMonth" 
-            type="month" 
-            class="form-control"
-          />
+          <input v-model="selectedMonth" type="month" class="form-control" />
         </div>
         <div v-if="filterType === 'weekly'" class="col-md-3">
           <label class="form-label fw-bold">Pilih Minggu</label>
           <select v-model="selectedWeek" class="form-select" @change="refresh">
-            <option 
-              v-for="week in weekOptions" 
-              :key="week.start" 
-              :value="`${week.start}|${week.end}`"
-            >
+            <option v-for="week in weekOptions" :key="week.start" :value="`${week.start}|${week.end}`">
               {{ week.label }}
             </option>
           </select>
         </div>
 
+
+
+
+
+        <!-- Tombol Cari -->
+        <div class="col-md-2">
+          <label class="form-label fw-bold invisible">Cari</label>
+          <button class="btn btn-primary w-100" @click="handleSearch">
+            <i class="la la-search fs-4"></i> Cari
+          </button>
+        </div>
+
+
+
+
+
         <!-- Filter Bulanan -->
         <div v-if="filterType === 'monthly'" class="col-md-3">
           <label class="form-label fw-bold">Pilih Bulan</label>
-          <input 
-            v-model="selectedMonth" 
-            type="month" 
-            class="form-control"
-            @change="refresh"
-          />
+          <input v-model="selectedMonth" type="month" class="form-control" @change="refresh" />
         </div>
 
         <!-- Tombol Export -->
         <div class="col-md-3">
           <div class="d-flex gap-2">
-            <button 
-              @click="exportToExcel" 
-              class="btn btn-success"
-              title="Export ke Excel"
-            >
+            <button @click="exportToExcel" class="btn btn-success" title="Export ke Excel">
               <i class="la la-file-excel fs-3"></i> Excel
             </button>
-            <button 
-              @click="exportToPDF" 
-              class="btn btn-danger"
-              title="Export ke PDF"
-            >
+            <button @click="exportToPDF" class="btn btn-danger" title="Export ke PDF">
               <i class="la la-file-pdf fs-3"></i> PDF
             </button>
           </div>
         </div>
+
+
+
+
       </div>
     </div>
 
-    <paginate ref="paginateRef" :url="url" :columns="columns" />
+
+
+    <!-- <paginate ref="paginateRef" :url="url" :columns="columns" /> -->
+     <paginate
+  ref="paginateRef"
+  :url="url"
+  :columns="columns"
+  response-key="data"
+/>
+
+
+
+    <!-- <paginate ref="paginateRef" id="table-order" :url="url" :columns="columns" /> -->
   </div>
 </template>
 
 <style scoped>
 .btn {
+  margin-top: 1rem;
   padding: 0.5rem 1.5rem;
-}
-.form-label {
-  margin-bottom: 0.5rem;
 }
 </style>

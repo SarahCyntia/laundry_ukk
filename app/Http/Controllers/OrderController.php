@@ -53,87 +53,95 @@ class OrderController extends Controller
         // Nomor urut
         $start = ($query->currentPage() - 1) * $per + 1;
         $query->getCollection()->transform(function ($o) use (&$start) {
-    return [
-        'no' => $start++,
-        'id' => $o->id,
-        'kode_order' => $o->kode_order,
+            return [
+                'no' => $start++,
+                'id' => $o->id,
+                'kode_order' => $o->kode_order,
 
-        'pelanggan' => [
-            'id' => $o->pelanggan->id ?? null,
-            'name' => $o->pelanggan->user->name ?? "-",
-        ],
+                'pelanggan' => [
+                    'id' => $o->pelanggan->id ?? null,
+                    'name' => $o->pelanggan->user->name ?? "-",
+                ],
 
-        'mitra' => [
-            'id' => $o->mitra->id ?? null,
-            'nama_laundry' => $o->mitra->nama_laundry ?? "-",
-        ],
+                'mitra' => [
+                    'id' => $o->mitra->id ?? null,
+                    'nama_laundry' => $o->mitra->nama_laundry ?? "-",
+                ],
 
-        'jenis_layanan' => [
-            'id' => $o->jenis_layanan->id ?? null,
-            'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
-        ],
+                'jenis_layanan' => [
+                    'id' => $o->jenis_layanan->id ?? null,
+                    'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
+                ],
 
-        'status' => $o->status,
-        'berat_estimasi' => $o->berat_estimasi,
-        'berat_aktual' => $o->berat_aktual,
-        'harga_final' => $o->harga_final,
-        'alasan_penolakan' => $o->alasan_penolakan,
-        'estimasi_selesai' => $o->estimasi_selesai,
-        'estimasi_jam' => $o->estimasi_jam,
-        'catatan' => $o->catatan,
-        'foto_struk' => $o->foto_struk,
+                'status' => $o->status,
+                'berat_estimasi' => $o->berat_estimasi,
+                'berat_aktual' => $o->berat_aktual,
+                'harga_final' => $o->harga_final,
+                'alasan_penolakan' => $o->alasan_penolakan,
+                'estimasi_selesai' => $o->estimasi_selesai,
+                'estimasi_jam' => $o->estimasi_jam,
+                'catatan' => $o->catatan,
+                'foto_struk' => $o->foto_struk,
 
-        // 🔥 INI YANG KURANG
-        'waktu_pelanggan_antar' => $o->waktu_pelanggan_antar
-            ? $o->waktu_pelanggan_antar->format('Y-m-d H:i')
-            : null,
+                // 🔥 INI YANG KURANG
+                'waktu_pelanggan_antar' => $o->waktu_pelanggan_antar
+                    ? $o->waktu_pelanggan_antar->format('Y-m-d H:i')
+                    : null,
 
-        'created_at' => $o->created_at->format('Y-m-d H:i'),
-        'transaksi' => $o->transaksi ? [
-    'status_pembayaran' => $o->transaksi->status_pembayaran,
-    'metode_pembayaran' => $o->transaksi->metode_pembayaran,
-    'waktu_bayar' => $o->transaksi->waktu_bayar
-        ? $o->transaksi->waktu_bayar->format('Y-m-d H:i')
-        : null,
-] : null,
+                'created_at' => $o->created_at->format('Y-m-d H:i'),
+                'transaksi' => $o->transaksi ? [
+                    'status_pembayaran' => $o->transaksi->status_pembayaran,
+                    'metode_pembayaran' => $o->transaksi->metode_pembayaran,
+                    'waktu_bayar' => $o->transaksi->waktu_bayar
+                        ? $o->transaksi->waktu_bayar->format('Y-m-d H:i')
+                        : null,
+                ] : null,
 
-    ];
-});
+            ];
 
+            if ($request->has('exclude_status')) {
+                $excludeStatus = $request->exclude_status;
+                $query->whereNotIn('status', $excludeStatus);
+            }
 
-        // $query->getCollection()->transform(function ($o) use (&$start) {
-        //     return [
-        //         'no' => $start++,
-        //         'id' => $o->id,
-        //         'kode_order' => $o->kode_order,
+            // Filter HARIAN
+            if ($request->has('filter_date')) {
+                $date = $request->filter_date;
+                $query->whereDate('created_at', $date);
+            }
 
-        //         'pelanggan' => [
-        //             'id' => $o->pelanggan->id ?? null,
-        //             'name' => $o->pelanggan->user->name ?? "-",
-        //         ],
+            // Filter MINGGUAN
+            if ($request->has('filter_start_date') && $request->has('filter_end_date')) {
+                $startDate = $request->filter_start_date;
+                $endDate = $request->filter_end_date;
+                $query->whereBetween('created_at', [
+                    $startDate . ' 00:00:00',
+                    $endDate . ' 23:59:59'
+                ]);
+            }
 
-        //         'mitra' => [
-        //             'id' => $o->mitra->id ?? null,
-        //             'nama_laundry' => $o->mitra->nama_laundry ?? "-",
-        //         ],
+            // Filter BULANAN
+            if ($request->has('filter_month')) {
+                $month = $request->filter_month; // Format: YYYY-MM
+                $query->whereYear('created_at', substr($month, 0, 4))
+                    ->whereMonth('created_at', substr($month, 5, 2));
+            }
 
-        //         'jenis_layanan' => [
-        //             'id' => $o->jenis_layanan->id ?? null,
-        //             'nama_layanan' => $o->jenis_layanan->nama_layanan ?? "-",
-        //         ],
+            // Filter berdasarkan mitra (jika diperlukan)
+            if ($request->has('mitra_id')) {
+                $query->where('mitra_id', $request->mitra_id);
+            }
 
-        //         'status' => $o->status,
-        //         'berat_estimasi' => $o->berat_estimasi,
-        //         'berat_aktual' => $o->berat_aktual,
-        //         'harga_final' => $o->harga_final,
-        //         'alasan_penolakan' => $o->alasan_penolakan,
-        //         'estimasi_selesai' => $o->estimasi_selesai,
-        //         'estimasi_jam' => $o->estimasi_jam,
-        //         'catatan' => $o->catatan,
-        //         'foto_struk' => $o->foto_struk,
-        //         'created_at' => $o->created_at->format('Y-m-d H:i'),
-        //     ];
-        // });
+            // Pagination
+            $perPage = $request->get('per_page', 15);
+            $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+            // Add nomor urut
+            $orders->getCollection()->transform(function ($order, $key) use ($orders) {
+                $order->no = $orders->firstItem() + $key;
+                return $order;
+            });
+        });
 
 
 
@@ -199,66 +207,66 @@ class OrderController extends Controller
 
 
     public function store(Request $request)
-{
-    $request->validate([
-        'mitra_id' => 'required|exists:mitra,id',
-        'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
-        'berat_estimasi' => 'required|numeric|min:1',
-        'catatan' => 'nullable|string',
-        'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
-
-    // Ambil pelanggan dari user login
-    $pelanggan = auth()->user()->pelanggan;
-
-    if (!$pelanggan) {
-        return response()->json([
-            'message' => 'Akun ini tidak memiliki data pelanggan'
-        ], 400);
-    }
-
-    // Ambil layanan
-    $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
-    $hargaPerKg = $layanan->harga;
-
-    // Hitung total harga
-    $hargaFinal = $request->berat_estimasi * $hargaPerKg;
-
-    // Simpan order
-    $order = Order::create([
-        'pelanggan_id' => $pelanggan->id,
-        'mitra_id' => $request->mitra_id,
-        'jenis_layanan_id' => $request->jenis_layanan_id,
-        // 'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . rand(100,999),
-        'kode_order' => 'ORD-' . now()->format('md') . rand(10, 99),
-// 'kode_order' => 'ORD-' . now()->format('md') . rand(1000, 9999),
-
-        'berat_estimasi' => $request->berat_estimasi,
-        'catatan' => $request->catatan,
-        'status' => 'menunggu_konfirmasi_mitra',
-        'harga_final' => $hargaFinal,
-    ]);
-
-    // Upload foto struk (opsional)
-    if ($request->hasFile('foto_struk')) {
-        $path = $request->file('foto_struk')->store('order_struk', 'public');
-        $order->update([
-            'foto_struk' => $path
+    {
+        $request->validate([
+            'mitra_id' => 'required|exists:mitra,id',
+            'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
+            'berat_estimasi' => 'required|numeric|min:1',
+            'catatan' => 'nullable|string',
+            'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        // Ambil pelanggan dari user login
+        $pelanggan = auth()->user()->pelanggan;
+
+        if (!$pelanggan) {
+            return response()->json([
+                'message' => 'Akun ini tidak memiliki data pelanggan'
+            ], 400);
+        }
+
+        // Ambil layanan
+        $layanan = JenisLayanan::findOrFail($request->jenis_layanan_id);
+        $hargaPerKg = $layanan->harga;
+
+        // Hitung total harga
+        $hargaFinal = $request->berat_estimasi * $hargaPerKg;
+
+        // Simpan order
+        $order = Order::create([
+            'pelanggan_id' => $pelanggan->id,
+            'mitra_id' => $request->mitra_id,
+            'jenis_layanan_id' => $request->jenis_layanan_id,
+            // 'kode_order' => 'ORD-' . now()->format('YmdHis') . '-' . rand(100,999),
+            'kode_order' => 'ORD-' . now()->format('md') . rand(10, 99),
+            // 'kode_order' => 'ORD-' . now()->format('md') . rand(1000, 9999),
+
+            'berat_estimasi' => $request->berat_estimasi,
+            'catatan' => $request->catatan,
+            'status' => 'menunggu_konfirmasi_mitra',
+            'harga_final' => $hargaFinal,
+        ]);
+
+        // Upload foto struk (opsional)
+        if ($request->hasFile('foto_struk')) {
+            $path = $request->file('foto_struk')->store('order_struk', 'public');
+            $order->update([
+                'foto_struk' => $path
+            ]);
+        }
+
+        // 🔥 BUAT TRANSAKSI (WAJIB)
+        $order->transaksi()->create([
+            'total_bayar' => $hargaFinal,
+            'status_pembayaran' => 'belum_dibayar'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order berhasil dibuat',
+            'data' => $order->load('transaksi')
+        ], 201);
     }
-
-    // 🔥 BUAT TRANSAKSI (WAJIB)
-    $order->transaksi()->create([
-        'total_bayar' => $hargaFinal,
-        'status_pembayaran' => 'belum_dibayar'
-    ]);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Order berhasil dibuat',
-        'data' => $order->load('transaksi')
-    ], 201);
-}
 
 
 
@@ -417,7 +425,7 @@ class OrderController extends Controller
     {
         $request->validate(['status' => 'required']);
 
-        $allowed = ['diterima','dicuci', 'dikeringkan', 'disetrika', 'siap_diambil', 'selesai'];
+        $allowed = ['diterima', 'dicuci', 'dikeringkan', 'disetrika', 'siap_diambil', 'selesai'];
 
         if (!in_array($request->status, $allowed)) {
             return response()->json(['error' => 'Status tidak valid'], 422);
@@ -529,56 +537,56 @@ class OrderController extends Controller
      * ============================================ */
 
 
-public function update(Request $request, $id)
-{
-    $order = Order::findOrFail($id);
+    public function update(Request $request, $id)
+    {
+        $order = Order::findOrFail($id);
 
-    if (in_array($order->status, ['selesai'])) {
-    return response()->json([
-        'message' => 'Order tidak bisa diedit karena sudah selesai'
-    ], 403);
-}
+        if (in_array($order->status, ['selesai'])) {
+            return response()->json([
+                'message' => 'Order tidak bisa diedit karena sudah selesai'
+            ], 403);
+        }
 
 
-// if ($order->waktu_diambil && !$request->hasFile('foto_struk')) {
+        // if ($order->waktu_diambil && !$request->hasFile('foto_struk')) {
 //     return response()->json([
 //         'message' => 'Order tidak bisa diedit karena sudah diambil'
 //     ], 403);
 // }
 
-    // if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
-    //     return response()->json([
-    //         'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
-    //     ], 403);
-    // }
+        // if ($order->waktu_pelanggan_antar || $order->waktu_diambil) {
+        //     return response()->json([
+        //         'message' => 'Order tidak bisa diedit karena sudah diantar atau diambil'
+        //     ], 403);
+        // }
 
-    $request->validate([
-        'pelanggan_id' => 'nullable|numeric',
-        'berat_estimasi' => 'nullable|numeric',
-        'berat_aktual' => 'nullable|numeric',
-        'harga_final' => 'nullable|numeric',
-        'catatan' => 'nullable|string',
-        'status' => 'nullable|string', // 🔥 FIX
-        'alasan_penolakan' => 'nullable|string',
-        'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
+        $request->validate([
+            'pelanggan_id' => 'nullable|numeric',
+            'berat_estimasi' => 'nullable|numeric',
+            'berat_aktual' => 'nullable|numeric',
+            'harga_final' => 'nullable|numeric',
+            'catatan' => 'nullable|string',
+            'status' => 'nullable|string', // 🔥 FIX
+            'alasan_penolakan' => 'nullable|string',
+            'foto_struk' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
 
-    $order->update($request->except('foto_struk'));
+        $order->update($request->except('foto_struk'));
 
-    if ($request->hasFile('foto_struk')) {
-        if ($order->foto_struk) {
-            Storage::disk('public')->delete($order->foto_struk);
+        if ($request->hasFile('foto_struk')) {
+            if ($order->foto_struk) {
+                Storage::disk('public')->delete($order->foto_struk);
+            }
+
+            $path = $request->file('foto_struk')->store('order_struk', 'public');
+            $order->foto_struk = $path;
+            $order->save();
         }
 
-        $path = $request->file('foto_struk')->store('order_struk', 'public');
-        $order->foto_struk = $path;
-        $order->save();
+        return response()->json([
+            'message' => 'Order berhasil diperbarui'
+        ]);
     }
-
-    return response()->json([
-        'message' => 'Order berhasil diperbarui'
-    ]);
-}
 
     // public function update(Request $request, $id)
     // {
@@ -726,48 +734,48 @@ public function update(Request $request, $id)
     {
         $order = Order::with('mitra')->findOrFail($id);
 
-    // Validasi harga
-    $grossAmount = (int) $order->harga_final;
-    if ($grossAmount <= 0) {
-        return response()->json([
-            'message' => 'Harga final tidak valid'
-        ], 400);
+        // Validasi harga
+        $grossAmount = (int) $order->harga_final;
+        if ($grossAmount <= 0) {
+            return response()->json([
+                'message' => 'Harga final tidak valid'
+            ], 400);
+        }
+
+        // Update status pembayaran
+        $order->status_pembayaran = 'belum dibayar';
+        $order->save();
+
+        // Konfigurasi Midtrans
+        Config::$serverKey = config('services.midtrans.server_key');
+        Config::$isProduction = false; // sandbox
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
+        $params = [
+            'transaction_details' => [
+                'order_id' => $order->kode_order . '-' . time(), // HARUS unik
+                'gross_amount' => $grossAmount,
+            ],
+            'customer_details' => [
+                'first_name' => $order->mitra->nama_laundry ?? 'User',
+                'email' => optional($order->mitra)->email ?: 'user@gmail.com',
+            ],
+        ];
+
+        try {
+            $snapToken = Snap::getSnapToken($params);
+
+            return response()->json([
+                'snap_token' => $snapToken,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Gagal membuat Snap Token',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-
-    // Update status pembayaran
-    $order->status_pembayaran = 'belum dibayar';
-    $order->save();
-
-    // Konfigurasi Midtrans
-    Config::$serverKey = config('services.midtrans.server_key');
-    Config::$isProduction = false; // sandbox
-    Config::$isSanitized = true;
-    Config::$is3ds = true;
-
-    $params = [
-        'transaction_details' => [
-            'order_id' => $order->kode_order . '-' . time(), // HARUS unik
-            'gross_amount' => $grossAmount,
-        ],
-        'customer_details' => [
-            'first_name' => $order->mitra->nama_laundry ?? 'User',
-            'email' => optional($order->mitra)->email ?: 'user@gmail.com',
-        ],
-    ];
-
-    try {
-        $snapToken = Snap::getSnapToken($params);
-
-        return response()->json([
-            'snap_token' => $snapToken,
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Gagal membuat Snap Token',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-}
 
     public function handleCallback(Request $request)
     {
@@ -797,42 +805,42 @@ public function update(Request $request, $id)
         return response()->json(['message' => 'Callback diproses']);
     }
 
-public function downloadKode($noKode)
-{
-    $data = Order::with(['pelanggan', 'mitra', 'jenis_layanan'])
-        ->where('kode_order', $noKode)
-        ->firstOrFail();
+    public function downloadKode($noKode)
+    {
+        $data = Order::with(['pelanggan', 'mitra', 'jenis_layanan'])
+            ->where('kode_order', $noKode)
+            ->firstOrFail();
 
         Pdf::setOption([
-    'dpi' => 72,
-    'defaultFont' => 'Courier',
-]);
+            'dpi' => 72,
+            'defaultFont' => 'Courier',
+        ]);
 
-    return Pdf::loadView('cetak-kode-pdf', compact('data'))
-     ->setPaper([0, 0, 164, 200], 'portrait') // ±58mm
-    
-        ->download("STRUK-{$data->kode_order}.pdf");
-}
+        return Pdf::loadView('cetak-kode-pdf', compact('data'))
+            ->setPaper([0, 0, 164, 200], 'portrait') // ±58mm
+
+            ->download("STRUK-{$data->kode_order}.pdf");
+    }
 
 
-//  public function downloadKode($noKode)
+    //  public function downloadKode($noKode)
 //     {
 //         $data = Order::where('kode_order', $noKode)->first();
 
-//         if (!$data) {
+    //         if (!$data) {
 //             abort(404, 'Data tidak ditemukan');
 //         }
 
-//         // Gunakan view yang sama
+    //         // Gunakan view yang sama
 //         $pdf = Pdf::loadView('cetak-kode-pdf', compact('data'));
 //         $pdf->setPaper([165, 566], 'portrait'); // 58mm x 200mm
 
-//         return $pdf->download("struk-{$noKode}.pdf"); // download otomatis
+    //         return $pdf->download("struk-{$noKode}.pdf"); // download otomatis
 //     }
-   
 
 
- public function cekStatus($kode_order)
+
+    public function cekStatus($kode_order)
     {
         $order = Order::where('kode_order', $kode_order)->first();
 
@@ -854,25 +862,25 @@ public function downloadKode($noKode)
         return match ($status) {
             'menunggu' => 'Menunggu Konfirmasi',
             'diproses' => 'Sedang Diproses',
-            'dicuci'   => 'Sedang Dicuci',
-            'disetrika'=> 'Sedang Disetrika',
-            'selesai'  => 'Laundry Selesai',
-            'diantar'  => 'Sedang Diantar',
-            default    => 'Status Tidak Diketahui',
+            'dicuci' => 'Sedang Dicuci',
+            'disetrika' => 'Sedang Disetrika',
+            'selesai' => 'Laundry Selesai',
+            'diantar' => 'Sedang Diantar',
+            default => 'Status Tidak Diketahui',
         };
     }
 
-//     public function cekStatus($kode)
+    //     public function cekStatus($kode)
 // {
 //     $order = Order::where('kode_order', $kode)->first();
 
-//     if (!$order) {
+    //     if (!$order) {
 //         return response()->json([
 //             'message' => 'Data tidak ditemukan'
 //         ], 404);
 //     }
 
-//     return response()->json([
+    //     return response()->json([
 //         'kode_order' => $order->kode_order,
 //         'status' => $order->status
 //     ]);
@@ -882,7 +890,7 @@ public function downloadKode($noKode)
 
 
 
- public function destroy($id)
+    public function destroy($id)
     {
         $order = Order::findOrFail($id);
         if ($order->photo) {
@@ -895,5 +903,5 @@ public function downloadKode($noKode)
             'success' => true
         ]);
     }
-    
+
 }
