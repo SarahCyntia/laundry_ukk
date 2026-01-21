@@ -37,6 +37,7 @@ class OrderController extends Controller
                 'pelanggan.user:id,name',
                 'jenis_layanan:id,nama_layanan',
                 'mitra:id,user_id,nama_laundry',
+                'transaksi:id,order_id,status_pembayaran,metode_pembayaran,waktu_bayar'
             ])
             ->when($request->status, function ($query, $status) {
                 // Jika parameter 'status' ada, filter berdasarkan status tersebut
@@ -88,6 +89,14 @@ class OrderController extends Controller
             : null,
 
         'created_at' => $o->created_at->format('Y-m-d H:i'),
+        'transaksi' => $o->transaksi ? [
+    'status_pembayaran' => $o->transaksi->status_pembayaran,
+    'metode_pembayaran' => $o->transaksi->metode_pembayaran,
+    'waktu_bayar' => $o->transaksi->waktu_bayar
+        ? $o->transaksi->waktu_bayar->format('Y-m-d H:i')
+        : null,
+] : null,
+
     ];
 });
 
@@ -608,7 +617,7 @@ public function update(Request $request, $id)
     //     return response()->json(['message' => 'Order berhasil diperbarui']);
     // }
 
-      public function payment(Request $request)
+    public function payment(Request $request)
     {
         $biaya = $request->order('biaya');
 
@@ -618,17 +627,15 @@ public function update(Request $request, $id)
             ], 400);
         }
 
-        // $order_id = 'ONGKIR-' . now()->timestamp . '-' . Str::random(4);
-        $order_id = 'ORDER-' . now()->format('Ymd') . '-' . rand(1000, 9999);
 
         $params = [
             'transaction_details' => [
-                'order_id' => $order_id,
+                'order_id' => $id = 'ORDER-' . Str::uuid(),
                 'gross_amount' => (int) $biaya,
             ],
             'item_details' => [
                 [
-                    'id' => $order_id,
+                    'id' => $id,
                     'price' => (int) $biaya,
                     'quantity' => 1,
                     'name' => 'Biaya Ongkir Transaksi',
@@ -664,18 +671,18 @@ public function update(Request $request, $id)
 
         return response()->json([
             'redirect_url' => $data->redirect_url,
-            'order_id' => $order_id,
+            'order_id' => $id,
         ]);
     }
 
     // public function createSnap(Request $request)
     // {
     //     $validated = $request->validate([
-    //         'pelanggan_id' => 'required|string',
-    //         'jenis_layanan_id' => 'required|string',
+    //         'berat_estimasi' => 'required|string',
     //         'berat_aktual' => 'required|string',
     //         'harga_final' => 'required|numeric',
     //         'biaya' => 'required|numeric|min:1000',
+    //         'jenis_layanan_id' => 'required|exists:jenis_layanan,id',
     //     ]);
 
     //     $orderId = 'ORDER-' . Str::uuid();
@@ -690,11 +697,11 @@ public function update(Request $request, $id)
     //                 'id' => 'ongkir',
     //                 'price' => (int) $validated['biaya'],
     //                 'quantity' => 1,
-    //                 'name' => 'Ongkir Kurir',
+    //                 // 'name' => 'Ongkir Kurir',
     //             ]
     //         ],
     //         'customer_details' => [
-    //             'first_name' => $validated['pelanggan_id'],
+    //             'first_name' => $validated['mitra_id'] ?? 'User',
     //             'email' => 'user@example.com',
     //         ],
     //         'callbacks' => [
@@ -724,34 +731,55 @@ public function update(Request $request, $id)
     //     ], 500);
     // }
 
+
+
     public function getSnapToken($id)
     {
-        // $transaksii = Transaksii::with(['pengguna'])->findOrFail($id);
-        $order = Order::where('id', $id)->firstOrFail();
-        $order->status_pembayaran = 'belum dibayar';
-        $order->save();
+        $order = Order::with('mitra')->findOrFail($id);
 
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = false;
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
-
-        $params = [
-            'transaction_details' => [
-                'order_id' => $order->no_kode,
-                'gross_amount' => (int) $order->biaya,
-            ],
-            'customer_details' => [
-                'first_name' => $order->pengirim,
-                // 'email' => $order->pengguna->email ?? 'user@gmail.com',
-                // 'email' => $order->pengguna_id ? ($order->pengguna->email ?? 'user@gmail.com') : 'user@gmail.com',
-                'email' => optional($order->pengirim)->email ?: 'user@gmail.com',
-            ]
-        ];
-
-        $snapToken = Snap::getSnapToken($params);
-        return response()->json(['snap_token' => $snapToken]);
+    // Validasi harga
+    $grossAmount = (int) $order->harga_final;
+    if ($grossAmount <= 0) {
+        return response()->json([
+            'message' => 'Harga final tidak valid'
+        ], 400);
     }
+
+    // Update status pembayaran
+    $order->status_pembayaran = 'belum dibayar';
+    $order->save();
+
+    // Konfigurasi Midtrans
+    Config::$serverKey = config('services.midtrans.server_key');
+    Config::$isProduction = false; // sandbox
+    Config::$isSanitized = true;
+    Config::$is3ds = true;
+
+    $params = [
+        'transaction_details' => [
+            'order_id' => $order->kode_order . '-' . time(), // HARUS unik
+            'gross_amount' => $grossAmount,
+        ],
+        'customer_details' => [
+            'first_name' => $order->mitra->nama_laundry ?? 'User',
+            'email' => optional($order->mitra)->email ?: 'user@gmail.com',
+        ],
+    ];
+
+    try {
+        $snapToken = Snap::getSnapToken($params);
+
+        return response()->json([
+            'snap_token' => $snapToken,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Gagal membuat Snap Token',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
     public function handleCallback(Request $request)
     {
         $notif = $request->all();
@@ -764,14 +792,14 @@ public function update(Request $request, $id)
             $data = json_decode($notif['custom_field1'], true);
 
             // Simpan transaksi ke DB
-            $trans = new Order();
+            $trans = new order();
             $trans->fill($data);
             $trans->status = 'dibayar';
             $trans->save();
 
             // Simpan riwayat pembayaran
-            $pay = new Order();
-            $pay->Order_id = $trans->id;
+            $pay = new order();
+            $pay->order_id = $trans->id;
             $pay->external_id = $notif['order_id'];
             $pay->status = 'success';
             $pay->save();

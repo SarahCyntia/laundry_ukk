@@ -65,7 +65,7 @@ body {
 <div class="center bold">
 ========================<br>
 STRUK LAUNDRY<br>
-{{ $data->mitra->nama ?? 'Laundry Bersih Jaya' }}<br>
+{{ $data->mitra->nama_laundry ?? ''}}<br>
 ========================
 </div>
 
@@ -88,13 +88,13 @@ STRUK LAUNDRY<br>
 <div class="item">
     <span class="label">Pelanggan</span>
     <span class="separator">:</span>
-    <span class="value">{{ $data->pelanggan->nama }}</span>
+    <span class="value">{{ $data->pelanggan->user->name }}</span>
 </div>
 
 <div class="item">
     <span class="label">No HP</span>
     <span class="separator">:</span>
-    <span class="value">{{ $data->pelanggan->no_hp ?? '-' }}</span>
+    <span class="value">{{ $data->pelanggan->user->phone ?? '-' }}</span>
 </div>
 
 <br>
@@ -102,7 +102,7 @@ STRUK LAUNDRY<br>
 <div class="item">
     <span class="label">Layanan</span>
     <span class="separator">:</span>
-    <span class="value">{{ $data->jenisLayanan->nama ?? '-' }}</span>
+    <span class="value">{{ $data->jenis_layanan->nama_layanan ?? '-' }}</span>
 </div>
 
 <div class="item">
@@ -136,7 +136,7 @@ STRUK LAUNDRY<br>
 <br>
 
 <div class="center">
-Terima kasih 🙏
+Terima kasih 
 </div>
 
 </body>

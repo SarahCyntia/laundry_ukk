@@ -250,13 +250,7 @@ Route::get('/cek-status/{kode_order}', [OrderController::class, 'cekStatus']);
 
 ;
 
-    // webhook midtrans (public)
-    Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
-
-    Route::get('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
-Route::post('/midtrans/notification', [PaymentController::class, 'handleNotification']);
-Route::post('/manual-update-status', [Paymentcontroller::class, 'manualUpdateStatus']);
 
 
 
@@ -364,8 +358,6 @@ Route::delete('/order/{id}', [OrderController::class, 'destroy']);
     Route::put('/order/{id}/status', [OrderController::class, 'updateStatus']);
 
 
-    Route::post('/payment/{order}', [PaymentController::class, 'pay']);
-    Route::post('/midtrans/callback', [PaymentController::class, 'callback']);
 
 
 
@@ -406,7 +398,46 @@ Route::post('/reset-password', function (Request $request) {
         : response()->json(['message' => 'Token tidak valid'], 422);
 });
 
-Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
 
 
 Route::post('/data-order', [DataOrderController::class, 'index']);
+
+
+
+
+
+    Route::post('/api/payments', [OrderController::class, 'payment']);
+    // Route::get('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+
+    Route::middleware('can:payment')->group(function () {
+        Route::get('payment', [OrderController::class, 'get'])->withoutMiddleware('can:payment');
+        // Route::post('payment', [OrderController::class, 'index']);
+        Route::post('payment/store', [OrderController::class, 'store']);
+        // Route::get('/payment/token/{id}', [OrderController::class, 'getSnapToken']);
+        Route::apiResource('payment', OrderController::class)
+        ->except(['index', 'store']);
+        // Route::get('/payment/{id}', [OrderController::class, 'show'])->name('payment.show');
+        
+        // Route::post('/gudang/masuk', [OrderController::class, 'masuk']);
+        // Route::post('/gudang/keluar', [OrderController::class, 'keluar']);
+        
+    });
+
+
+    Route::post('payment/create-snap', [OrderController::class, 'createSnap']);
+    Route::post('/manual-update-status', [PaymentController::class, 'manualUpdateStatus']);
+    Route::post('/midtrans/notification', [PaymentController::class, 'handleNotification']);
+    // Route::post('/payment/snap', [PaymentController::class, 'createCharge']);
+    // Route::post('/input/snap', [PaymentController::class, 'snap']);
+    Route::get('/payment/token', [PaymentController::class, 'getToken'])->middleware('auth:sanctum');
+
+Route::post('/payment/token/{id}', [PaymentController::class, 'getSnapToken']);
+Route::post('/midtrans/callback', [PaymentController::class, 'midtransCallback']);
+Route::post('/payment/sync/{orderId}', [PaymentController::class, 'syncMidtransStatus']);
+
+
+// Route::post('/manual-update-status', [OrderController::class, 'manualUpdateStatus']);
+    Route::get('/payment/{id}', [PaymentController::class, 'show'])->name('payment.show');
+
+
+    Route::post('/payment/method/{id}', [PaymentController::class, 'setPaymentMethod']);

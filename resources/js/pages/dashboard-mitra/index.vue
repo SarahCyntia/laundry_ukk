@@ -132,9 +132,20 @@
             <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
             <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
             <!-- <div class="order-time">{{ order.time }} </div> -->
-             <div class="order-time">
-  {{ order.tanggal }} {{ order.jam }}
+            <div class="order-time">
+              {{ order.datetime }} • {{ order.time_ago }}
+            </div>
+
+            <!-- <div class="order-time">
+  {{ order.datetime }}
 </div>
+<div class="order-time text-muted">
+  {{ order.time_ago }}
+</div> -->
+
+            <!-- <div class="order-time">
+  {{ order.tanggal }} {{ order.jam }}
+</div> -->
 
           </div>
 

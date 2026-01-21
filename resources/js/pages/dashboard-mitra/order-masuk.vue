@@ -105,132 +105,172 @@ const statusIcons = {
 
 
 
-const redirectToPayment = async (id: number) => {
+
+const bayar = async (rowData) => {
+  if (rowData.isPaying) return;
+
+  rowData.isPaying = true;
+  const draft = {
+  order_id: rowData.id,
+  berat_estimasi: rowData.berat_barang,
+  harga_final: rowData.total_harga,
+  biaya: rowData.biaya,
+  jenis_layanan_id: rowData.selectedService?.id,
+};
+
+
+// const draft = {
+//   id: rowData.id,
+
+//   // Berat & harga
+//   berat_estimasi: rowData.berat_estimasi,
+//   berat_aktual: rowData.berat_aktual,
+//   harga_final: rowData.harga_final,
+//   biaya: rowData.biaya,
+
+//   // Layanan
+//   jenis_layanan_id: rowData.selectedService?.id ?? rowData.selectedService,
+
+//   // Catatan tambahan (opsional)
+//   catatan: rowData.catatan ?? null,
+// };
+
+
+  sessionStorage.setItem("draftTransaksi", JSON.stringify(draft));
+
   try {
-    const { data } = await axios.get(`/payment/token/${id}`);
+    const res = await axios.post(`/api/payment/token/${row.id}`);
+    // const res = await axios.post("/payment/create", draft);
+    const { snap_token } = res.data;
+
+    if (!snap_token) throw new Error("Token pembayaran tidak ditemukan.");
+
+    window.snap.pay(snap_token, {
+      onSuccess: function (result) {
+        console.log("✅ Pembayaran berhasil:", result);
+        rowData.status = "paid";
+      },
+      onPending: function (result) {
+        console.log("⏳ Menunggu pembayaran:", result);
+        rowData.status = "pending";
+      },
+      onError: function (result) {
+        console.error("❌ Pembayaran gagal:", result);
+      },
+      onClose: function () {
+        console.log("❎ Popup ditutup");
+      },
+    });
+  } catch (err) {
+    console.error("❌ Terjadi kesalahan:", err);
+  } finally {
+    rowData.isPaying = false;
+  }
+};
+const getPembayaranBadgeClass = (status: string | undefined) => {
+const map = {
+  dibayar: "badge bg-success",
+  menunggu_pembayaran: "badge bg-warning text-dark",
+  kadaluarsa: "badge bg-secondary",
+  dibatalkan: "badge bg-danger",
+  dikembalikan: "badge bg-info text-dark",
+  belum_dibayar: "badge bg-secondary",
+};
+
+    return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
+};
+
+// const redirectToPayment = async (id: number) => {
+//     try {
+//         const { data } = await axios.post(`/payment/token/${id}`);
+//         const snapToken = data.snap_token;
+
+//         if (!snapToken) {
+//             Swal.fire({ icon: 'error', title: 'Token Tidak Tersedia' });
+//             return;
+//         }
+
+//         if (typeof window.snap === 'undefined') {
+//             Swal.fire({ icon: 'error', title: 'Snap Belum Siap' });
+//             return;
+//         }
+
+//         window.snap.pay(snapToken, {
+//             onSuccess: async (result: any) => {
+//                 await axios.post('/manual-update-status', {
+//                     order_id: id,
+//                     transaction_status: result.transaction_status,
+//                     payment_type: result.payment_type
+//                 });
+//                 // Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil' }).then(() => {
+//                 //   refresh();
+//                 //   });
+//                 Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil' }).then(
+//                     refresh()
+//                 );
+//             },
+//             onPending: async (result: any) => {
+//                 await axios.post('/manual-update-status', {
+//                     order_id: result.order_id,
+//                     transaction_status: result.transaction_status,
+//                     payment_type: result.payment_type
+//                 });
+//                 Swal.fire({ icon: 'info', title: 'Menunggu Pembayaran' });
+//             },
+//             onError: () => {
+//                 Swal.fire({ icon: 'error', title: 'Pembayaran Gagal' });
+//             },
+//             onClose: () => {
+//                 Swal.fire({ icon: 'warning', title: 'Dibatalkan' });
+//             }
+//         });
+//     } catch (error) {
+//         console.error("❌ Gagal ambil token:", error);
+//         Swal.fire({ icon: 'error', title: 'Error mengambil token' });
+//     }
+// };
+const redirectToPayment = async (orderId: number) => {
+  try {
+    const { data } = await axios.post(`/payment/token/${orderId}`);
     const snapToken = data.snap_token;
 
     if (!snapToken) {
-      Swal.fire({ icon: 'error', title: 'Token Tidak Tersedia' });
-      return;
-    }
-
-    if (typeof window.snap === 'undefined') {
-      Swal.fire({ icon: 'error', title: 'Snap Belum Siap' });
+      Swal.fire("Error", "Snap token tidak tersedia", "error");
       return;
     }
 
     window.snap.pay(snapToken, {
-      ...paymentCallbacks, // Callback ditentukan di bawah
-      onSuccess: async (result: any) => {
-        await axios.post('/manual-update-status', {
-          order_id: result.order_id,
-          transaction_status: result.transaction_status,
-          payment_type: result.payment_type
-        });
-        Swal.fire({ icon: 'success', title: 'Pembayaran Berhasil' }).then(
-          refresh()
+      onSuccess: () => {
+        Swal.fire(
+          "Pembayaran diproses",
+          "Status akan diperbarui otomatis",
+          "info"
         );
+        refresh();
       },
+
+      onPending: () => {
+        Swal.fire(
+          "Menunggu pembayaran",
+          "Silakan selesaikan pembayaran",
+          "info"
+        );
+        refresh();
+      },
+
+      onError: () => {
+        Swal.fire("Gagal", "Pembayaran gagal", "error");
+      },
+
+      onClose: () => {
+        Swal.fire("Dibatalkan", "Popup ditutup", "warning");
+      }
     });
   } catch (error) {
-    console.error("❌ Gagal ambil token:", error);
-    Swal.fire({ icon: 'error', title: 'Error mengambil token' });
+    console.error(error);
+    Swal.fire("Error", "Gagal mengambil snap token", "error");
   }
 };
-
-// Callback Midtrans Snap untuk berbagai status pembayaran
-const paymentCallbacks = {
-  onSuccess: async (result: any) => {
-    console.log("✅ Pembayaran berhasil:", result);
-    await axios.post('/manual-update-status', {
-      order_id: result.order_id,
-      transaction_status: result.transaction_status,
-      payment_type: result.payment_type
-    });
-    await Swal.fire({
-      icon: 'success',
-      title: 'Pembayaran Berhasil',
-      text: 'Terima kasih, pembayaran Anda telah berhasil.',
-    });
-  },
-  onPending: async (result: any) => {
-    await axios.post('/manual-update-status', {
-      order_id: result.order_id,
-      transaction_status: result.transaction_status,
-      payment_type: result.payment_type
-    });
-    await Swal.fire({
-      icon: 'info',
-      title: 'Menunggu Pembayaran',
-      text: 'Pembayaran sedang menunggu penyelesaian.',
-    });
-  },
-  onError: (result: any) => {
-    console.error("❌ Terjadi kesalahan saat pembayaran:", result);
-    Swal.fire({
-      icon: 'error',
-      title: 'Pembayaran Gagal',
-      text: 'Terjadi kesalahan saat memproses pembayaran.',
-    });
-  },
-  onClose: () => {
-    console.warn("❗ Pembayaran dibatalkan oleh pengguna.");
-    Swal.fire({
-      icon: 'warning',
-      title: 'Pembayaran Dibatalkan',
-      text: 'Anda telah membatalkan proses pembayaran.',
-    });
-  }
-};
-
-// Fungsi untuk menentukan class badge berdasarkan status pembayaran
-const getPembayaranBadgeClass = (status: string | undefined) => {
-  const statusMap: Record<string, string> = {
-    settlement: "badge bg-success fw-bold",
-    pending: "badge bg-warning text-dark fw-bold",
-    expire: "badge bg-secondary fw-bold",
-    cancel: "badge bg-dark fw-bold",
-    deny: "badge bg-danger fw-bold",
-    failure: "badge bg-danger fw-bold",
-    refund: "badge bg-info text-dark fw-bold",
-    "belum di bayar": "badge bg-danger fw-bold",
-  };
-
-  return statusMap[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
-};
-const snapLoaded = ref(false);
-onMounted(() => {
-  if (!window.snap) {
-    const script = document.createElement("script");
-    script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute("data-client-key", "SB-Mid-client-JuHAlpsbUGhh4cvF"); // Ganti dengan client key produksi di deployment
-    script.async = true;
-    script.onload = () => {
-      snapLoaded.value = true;
-    };
-    document.body.appendChild(script);
-  } else {
-    snapLoaded.value = true;
-  }
-  //  stopAutoRefresh();
-});
-
-const pollingInterval = ref<number | null>(null);
-
-const startAutoRefresh = () => {
-  // Jalankan pertama kali
-  refresh();
-
-  // Set interval polling setiap 5 detik (5000ms)
-  pollingInterval.value = setInterval(() => {
-    refresh(); // Memanggil fungsi refresh tabel
-  }, 5000);
-};
-
-
-
-
 
 
 
@@ -392,220 +432,13 @@ const columns = [
       );
     }
   }),
-  //     column.accessor("id", {
-  //   header: "Aksi",
-  //   cell: (cell) => {
-  //   const row = cell.row.original;
-  //   const actions = [];
-
-  //   // === Jika status masih menunggu konfirmasi ===
-  //   if (row.status === "menunggu_konfirmasi_mitra") {
-  //     actions.push(
-  //       h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-success",
-  //           onClick: async () => {
-  //             const ok = await Swal.fire({
-  //               icon: "question",
-  //               title: "Terima order ini?",
-  //               showCancelButton: true
-  //             }).then(r => r.isConfirmed);
-
-  //             if (!ok) return;
-
-  //             await axios.post(`/order/${row.id}/konfirmasi`, {
-  //               status: "ditunggu_mitra"
-  //             });
-
-  //             Swal.fire("Berhasil", "Order diterima!", "success");
-  //             await refresh();
-  //           },
-  //         },
-  //         "Terima"
-  //       )
-  //     );
-
-  //     // Tombol Tolak
-  //     actions.push(
-  //       h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-danger",
-  //           onClick: async () => {
-  //             const { value: alasan } = await Swal.fire({
-  //               title: "Alasan penolakan",
-  //               input: "text",
-  //               inputPlaceholder: "Tulis alasan...",
-  //               showCancelButton: true,
-  //             });
-
-  //             if (!alasan) return;
-
-  //             await axios.post(`/order/${row.id}/tolak`, {
-  //               status: "ditolak",
-  //               alasan_penolakan: alasan
-  //             });
-
-  //             Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-  //             await refresh();
-  //           },
-  //         },
-  //         "Tolak"
-  //       )
-  //     );
-  //   }
-
-  //   // === Jika status ditolak -> hanya bisa hapus ===
-  //   // if (row.status !== "ditolak") {
-  //     if (row.status && row.status.trim() === "diterima") {
-  //     // Tombol Edit
-  //     actions.push(
-  //       h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-icon btn-info",
-  //           onClick: () => {
-  //             selected.value = cell.getValue();
-  //             openForm.value = true;
-  //           },
-  //         },
-  //         h("i", { class: "la la-pencil fs-2" })
-  //       )
-  //     );
-  //   }
-
-  //   // === Tombol hapus tetap ada untuk semua kecuali selesai (opsional) ===
-  //   actions.push(
-  //     h(
-  //       "button",
-  //       {
-  //         class: "btn btn-sm btn-icon btn-danger",
-  //         onClick: () => deleteOrder(`order/${cell.getValue()}`),
-  //       },
-  //       h("i", { class: "la la-trash fs-2" })
-  //     )
-  //   );
-
-  //   return h("div", { class: "d-flex gap-2" }, actions);
-  // },
-
-
-
-  //   // cell: (cell) => {
-  //   //   const row = cell.row.original;
-  //   //   const actions = [];
-
-  //   //   // === Tombol TERIMA kalau status menunggu konfirmasi ===
-  //   //   if (row.status === "menunggu_konfirmasi_mitra") {
-  //   //     actions.push(
-  //   //       h(
-  //   //         "button",
-  //   //         {
-  //   //           class: "btn btn-sm btn-success",
-  //   //           onClick: async () => {
-  //   //             const ok = await Swal.fire({
-  //   //               icon: "question",
-  //   //               title: "Terima order ini?",
-  //   //               showCancelButton: true
-  //   //             }).then(r => r.isConfirmed);
-
-  //   //             if (!ok) return;
-
-  //   //             await axios.post(`/order/${row.id}/konfirmasi`, {
-  //   //               status: "diterima"
-  //   //             });
-
-  //   //             Swal.fire("Berhasil", "Order diterima!", "success");
-  //   //             await refresh();
-  //   //           },
-  //   //         },
-  //   //         "Terima"
-  //   //       )
-  //   //     );
-
-  //   //     // === Tombol TOLAK ===
-  //   //     actions.push(
-  //   //       h(
-  //   //         "button",
-  //   //         {
-  //   //           class: "btn btn-sm btn-danger",
-  //   //           onClick: async () => {
-  //   //             const { value: alasan } = await Swal.fire({
-  //   //               title: "Alasan penolakan",
-  //   //               input: "text",
-  //   //               inputPlaceholder: "Tulis alasan...",
-  //   //               showCancelButton: true,
-  //   //             });
-
-  //   //             if (!alasan) return;
-
-  //   //             await axios.post(`/order/${row.id}/tolak`, {
-  //   //               status: "ditolak",
-  //   //               alasan_penolakan: alasan
-  //   //             });
-
-  //   //             Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-  //   //             await refresh();
-  //   //           },
-  //   //         },
-  //   //         "Tolak"
-  //   //       )
-  //   //     );
-  //   //   }
-
-  //   //   // === Tombol Edit ===
-  //   //   actions.push(
-  //   //     h(
-  //   //       "button",
-  //   //       {
-  //   //         class: "btn btn-sm btn-icon btn-info",
-  //   //         onClick: () => {
-  //   //           selected.value = cell.getValue();
-  //   //           openForm.value = true;
-  //   //         },
-  //   //       },
-  //   //       h("i", { class: "la la-pencil fs-2" })
-  //   //     )
-  //   //   );
-
-  //   //   // === Tombol Hapus ===
-  //   //   actions.push(
-  //   //     h(
-  //   //       "button",
-  //   //       {
-  //   //         class: "btn btn-sm btn-icon btn-danger",
-  //   //         onClick: () => deleteOrder(`order/${cell.getValue()}`),
-  //   //       },
-  //   //       h("i", { class: "la la-trash fs-2" })
-  //   //     )
-  //   //   );
-
-  //   //   return h("div", { class: "d-flex gap-2" }, actions);
-  //   // },
-  // }),
   column.accessor("id", {
     header: "Aksi",
     cell: (cell) => {
       const row = cell.row.original;
       const actions: any[] = [];
 
-      const statusPembayaran = row.status_pembayaran?.toLowerCase();
-
-      // === Tombol Bayar (jika belum settlement) ===
-      if (statusPembayaran !== "settlement") {
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-success me-1",
-              onClick: () => redirectToPayment(row.id),
-            },
-            [h("i", { class: "bi bi-credit-card me-1" }), "Bayar"]
-          )
-        );
-      }
-
+    
       // === Jika status masih menunggu konfirmasi mitra ===
       if (row.status === "menunggu_konfirmasi_mitra") {
         // Terima
@@ -727,16 +560,62 @@ column.display({
       )
     ]);
   },
-})
+}),
 
+column.display({
+  id: "paymentAction",
+  header: "Pembayaran",
+cell: ({ row }) => {
+  const status = row.original.transaksi?.status_pembayaran;
 
+  if (status === "dibayar") {
+    return h("span", { class: "badge bg-success" }, "Lunas");
+  }
+
+  return h(
+    "button",
+    {
+      class: "btn btn-sm btn-success",
+      onClick: () => redirectToPayment(row.original.id),
+    },
+    [h("i", { class: "bi bi-credit-card me-1" }), "Bayar"]
+  );
+},
+}),
+column.accessor(
+  row => row.transaksi?.status_pembayaran ?? 'belum_dibayar',
+  {
+    header: "Status Bayar",
+    cell: ({ getValue }) => {
+      const status = getValue();
+
+      const map: Record<string, string> = {
+        dibayar: "badge bg-success",
+        menunggu_pembayaran: "badge bg-warning text-dark",
+        kadaluarsa: "badge bg-secondary",
+        dibatalkan: "badge bg-danger",
+        dikembalikan: "badge bg-info text-dark",
+        belum_dibayar: "badge bg-secondary",
+      };
+
+      return h(
+        "span",
+        { class: map[status] },
+        status.replaceAll("_", " ")
+      );
+    }
+  }
+),
 
 ];
 onMounted(() => {
   if (!window.snap) {
     const script = document.createElement("script");
     script.src = "https://app.sandbox.midtrans.com/snap/snap.js";
-    script.setAttribute("data-client-key", "SB-Mid-client-XXXXX"); // ganti sesuai client key kamu
+    script.setAttribute(
+      "data-client-key",
+      import.meta.env.VITE_MIDTRANS_CLIENT_KEY
+    );
     script.async = true;
     document.body.appendChild(script);
   }

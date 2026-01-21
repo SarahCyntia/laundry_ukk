@@ -25,20 +25,22 @@ return new class extends Migration
     // Pembayaran
     $table->enum('status_pembayaran', [
         'belum_dibayar',
-        'pending',
-        'settlement',
-        'expire',
-        'cancel',
-        'deny',
-        'failure',
-        'refund'
+        // 'menunggu_pembayaran',
+        'dibayar',
+        'kadaluarsa',
+        'dibatalkan',
+        'dikembalikan'
     ])->default('belum_dibayar');
 $table->enum('metode_pembayaran', [
-    'cash',
-    'transfer',
+    'bank_transfer',
     'qris',
-    'ewallet'
+    'gopay',
+    'shopeepay',
+    'ovo',
+    'credit_card',
+    'cstore'
 ])->nullable();
+
 
     // $table->string('metode_pembayaran')->nullable(); // cash, transfer, midtrans
     $table->string('payment_reference')->nullable(); // id dari payment gateway

@@ -69,6 +69,8 @@ for ($i = 6; $i >= 0; $i--) {
          */
         $orderStat = [
             'menunggu_konfirmasi_mitra' => (clone $baseQuery)->where('status','menunggu_konfirmasi_mitra')->count(),
+            'diterima' => (clone $baseQuery)->where('status','diterima')->count(),
+            'ditolak' => (clone $baseQuery)->where('status','ditolak')->count(),
             'diproses' => (clone $baseQuery)->where('status','diproses')->count(),
             'siap_diambil' => (clone $baseQuery)->where('status','siap_diambil')->count(),
             'selesai' => (clone $baseQuery)->where('status','selesai')->count(),
@@ -94,8 +96,12 @@ for ($i = 6; $i >= 0; $i--) {
         'id' => $item->id,
         'kode_order' => $item->kode_order, // ✅ INI YANG HILANG
         'pelanggan_id' => $item->pelanggan_id,
-        'tanggal' => Carbon::parse($item->created_at)->format('d/m/Y'),
-        'jam' => Carbon::parse($item->created_at)->format('H:i'),
+        'datetime' => Carbon::parse($item->created_at)
+            ->translatedFormat('D, d M Y H:i'), // Sel, 14 Jan 2026 10:30
+        'time_ago' => Carbon::parse($item->created_at)
+            ->diffForHumans(), // 2 jam lalu
+        // 'tanggal' => Carbon::parse($item->created_at)->format('d/m/Y'),
+        // 'jam' => Carbon::parse($item->created_at)->format('H:i'),
         // 'time' => Carbon::parse($item->waktu)->format('H:i'),
         'status' => $item->status,
     ]);
