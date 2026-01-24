@@ -691,7 +691,7 @@ onMounted(async () => {
 
       <!-- Statistics -->
       <div class="stats-section">
-        <h3>Statistik Saya</h3>
+        <h3>Orderan Saya</h3>
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon">📦</div>

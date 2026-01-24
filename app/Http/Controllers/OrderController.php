@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\JenisLayanan;
 use App\Models\Mitra;
 use App\Models\Order;
+use App\Notifications\LaundrySelesaiNotification;
+use App\Notifications\LaundryStatusNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Dotenv\Util\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Midtrans\Snap;
 use Midtrans\Config;
@@ -344,7 +347,7 @@ class OrderController extends Controller
     {
         $order = Order::findOrFail($id);
 
-        $order->status = "ditunggu_mitra";
+        $order->status = "diterima";
         $order->waktu_pelanggan_antar = now()->addHours(2); // pelanggan harus antar dalam 2 jam
         $order->estimasi_selesai = now()->addHours($order->jenis_layanan->estimasi_jam);
 
@@ -434,6 +437,8 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         $order->status = $request->status;
         $order->save();
+
+
 
         return response()->json(['message' => 'Status diperbarui']);
     }
@@ -581,7 +586,20 @@ class OrderController extends Controller
             $path = $request->file('foto_struk')->store('order_struk', 'public');
             $order->foto_struk = $path;
             $order->save();
+
         }
+
+        Log::info('Foto struk updated for Order ID: ' . $order->status);
+        $order->pelanggan->notify(
+    new LaundryStatusNotification($order, $order->status)
+);
+    //sebelumnya
+        // if ($order->status === 'selesai') {
+        //     Log::info('Notifying pelanggan for Order ID: ' . $order->id);
+        //     $order->pelanggan->notify(
+        //         new LaundrySelesaiNotification($order)
+        //     );
+        // }
 
         return response()->json([
             'message' => 'Order berhasil diperbarui'

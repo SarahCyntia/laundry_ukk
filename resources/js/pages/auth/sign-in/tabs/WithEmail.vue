@@ -124,81 +124,81 @@ export default defineComponent({
     async submit() {
       console.log("Submit");
       blockBtn(this.submitButton);
-        await axios.post("/auth/login", {
-          ...this.data, type: 'email'
-        }).then(res =>{
-          this.store.setAuth(res.data.user, res.data.token);
-          console.log("Res : ", res.data)
-          console.log()
-          const roleName =
-            typeof res.data.user.role === "string"
-              ? res.data.user.role
-              : res.data.user.role[0];
-  
-          console.log("Role:", roleName);
-          console.log("Role Type:", typeof roleName);
-  
-          if (roleName == "pelanggan") {
-            // ✅ Popup untuk pelanggan
-            Swal.fire({
-              title: "Selamat Datang 👋",
-              text: `Selamat datang di SLaundry, ${res.data.user.name || ""}!`,
-              icon: "success",
-              confirmButtonText: "OK",
-              allowOutsideClick: false,
-            });
-  
+      await axios.post("/auth/login", {
+        ...this.data, type: 'email'
+      }).then(res => {
+        this.store.setAuth(res.data.user, res.data.token);
+        console.log("Res : ", res.data)
+        console.log()
+        const roleName =
+          typeof res.data.user.role === "string"
+            ? res.data.user.role
+            : res.data.user.role[0];
+
+        console.log("Role:", roleName);
+        console.log("Role Type:", typeof roleName);
+
+        if (roleName == "pelanggan") {
+          // ✅ Popup untuk pelanggan
+          Swal.fire({
+            title: "Selamat Datang 👋",
+            text: `Selamat datang di SLaundry`,
+            icon: "success",
+            confirmButtonText: "OK",
+            allowOutsideClick: false,
+          }).then(() => {
             this.router.push("/beranda");
-          } else if (roleName == "admin") {
-            // ✅ Popup untuk admin
-            Swal.fire({
-              title: "Halo Admin 👋",
-              text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
-              icon: "info", // bisa diganti 'success' sesuai selera
-              confirmButtonText: "OK",
-              allowOutsideClick: false,
-            });
-  
+          });
+        } else if (roleName == "admin") {
+          // ✅ Popup untuk admin
+          Swal.fire({
+            title: "Halo Admin 👋",
+            text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
+            icon: "info", // bisa diganti 'success' sesuai selera
+            confirmButtonText: "OK",
+            allowOutsideClick: false,
+          }).then(() => {
             this.router.push("/dashboard");
-          }
-          else if (roleName == "mitra") {
-            // ✅ Popup untuk admin
-            Swal.fire({
-              title: "Halo Admin 👋",
-              text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
-              icon: "info", // bisa diganti 'success' sesuai selera
-              confirmButtonText: "OK",
-              allowOutsideClick: false,
-            });
-  
+          });
+        }
+        else if (roleName == "mitra") {
+          // ✅ Popup untuk admin
+          Swal.fire({
+            title: "Halo Admin 👋",
+            text: `Selamat datang kembali, ${res.data.user.name || ""}!`,
+            icon: "info", // bisa diganti 'success' sesuai selera
+            confirmButtonText: "OK",
+            allowOutsideClick: false,
+          }).then(() => {
             this.router.push("/dashboard-mitra");
-          }else {
-            // ✅ Role lain langsung ke dashboard tanpa popup
-            this.router.push("/dashboard");
-          }
-        })
+          });
+        } else {
+          // ✅ Role lain langsung ke dashboard tanpa popup
+          this.router.push("/dashboard");
+        }
+      })
 
-        // simpan user + token
+      // simpan user + token
 
-        // normalisasi role
+      // normalisasi role
 
-        // if (roleName == "pelangan") {
-        //     console.log("Pop")
-        //   // ✅ tampilkan popup dan tunggu OK
-        //   await Swal.fire({
-        //     title: "Selamat Datang 👋",
-        //     text: `Selamat datang di SLaundry, ${res.data.user.name || ""}!`,
-        //     icon: "success",
-        //     confirmButtonText: "OK",
-        //     allowOutsideClick: false,
-        //     didOpen: () => console.log("SweetAlert sudah terbuka"),
-        //   });
+      // if (roleName == "pelangan") {
+      //     console.log("Pop")
+      //   // ✅ tampilkan popup dan tunggu OK
+      //   await Swal.fire({
+      //     title: "Selamat Datang 👋",
+      //     text: `Selamat datang di SLaundry, ${res.data.user.name || ""}!`,
+      //     icon: "success",
+      //     confirmButtonText: "OK",
+      //     allowOutsideClick: false,
+      //     didOpen: () => console.log("SweetAlert sudah terbuka"),
+      //   });
 
-        //   // pindah setelah popup ditutup
-        //   this.router.push("/beranda");
-        // } else {
-        //   this.router.push("/dashboard");
-        // }
+      //   // pindah setelah popup ditutup
+      //   this.router.push("/beranda");
+      // } else {
+      //   this.router.push("/dashboard");
+      // }
     },
 
     togglePassword(ev: any) {

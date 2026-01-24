@@ -210,6 +210,12 @@ const MainMenuConfig: Array<MenuItem> = [
                 name: "laporan-laundry",
                 keenthemesIcon: "bi bi-truck",
             },
+            {
+                heading: "Laporan Keuangan",
+                route: "/mitra/laporan-keuangan",
+                name: "laporan-keuangan",
+                keenthemesIcon: "bi bi-truck",
+            },
              
         ],
         

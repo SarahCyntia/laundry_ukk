@@ -304,121 +304,92 @@ const url = computed(() => {
 
 
 const exportToExcel = async () => {
-  try {
-    const params = new URLSearchParams();
+  const response = await axios.get(
+    `/laporan-order/export-excel?${url.value.split('?')[1]}`,
+    { responseType: 'blob' }
+  )
 
-    // Ambil semua data tanpa pagination
-    params.append('per_page', '9999');
+  saveAs(response.data, 'laporan-order.xlsx')
+}
 
-    // Filter berdasarkan tipe
-    if (filterType.value === 'daily' && selectedDate.value) {
-      params.append('filter_date', selectedDate.value);
-    } else if (filterType.value === 'weekly' && selectedWeek.value) {
-      const [start, end] = selectedWeek.value.split('|');
-      params.append('filter_start_date', start);
-      params.append('filter_end_date', end);
-    } else if (filterType.value === 'monthly' && selectedMonth.value) {
-      params.append('filter_month', selectedMonth.value);
-    }
 
-    // const { data } = await axios.get(`/order?${params.toString()}`);
-    const { data } = await axios.get(`/laporan-order?${params.toString()}`);
-
-    const orders = data.data || [];
-
-    if (orders.length === 0) {
-      Swal.fire('Info', 'Tidak ada data untuk diekspor', 'info');
-      return;
-    }
-
-    // Format data untuk Excel
-    const excelData = orders.map((order, index) => ({
-      'No': index + 1,
-      'Nama Pelanggan': order.pelanggan?.name || '-',
-      'Nama Laundry': order.mitra?.nama_laundry || '-',
-      'Jenis Layanan': order.jenis_layanan?.nama_layanan || '-',
-      'Kode Order': order.kode_order,
-      'Berat Estimasi': order.berat_estimasi,
-      'Berat Aktual': order.berat_aktual,
-      'Harga': order.harga_final,
-      'Catatan': order.catatan || '-',
-      'Waktu Antar': order.waktu_pelanggan_antar
-        ? new Date(order.waktu_pelanggan_antar).toLocaleString('id-ID')
-        : '-',
-      'Status': order.status?.replaceAll('_', ' ') || '-',
-      'Status Pembayaran': order.transaksi?.status_pembayaran?.replaceAll('_', ' ') || 'belum_dibayar'
-    }));
-
-    // Buat workbook
-    const ws = XLSX.utils.json_to_sheet(excelData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Laporan Order');
-
-    // Generate filename
-    let filename = 'Laporan_Order_';
-    if (filterType.value === 'daily') {
-      filename += `Harian_${selectedDate.value}`;
-    } else if (filterType.value === 'weekly') {
-      const [start, end] = selectedWeek.value.split('|');
-      filename += `Mingguan_${start}_${end}`;
-    } else {
-      filename += `Bulanan_${selectedMonth.value}`;
-    }
-    filename += '.xlsx';
-
-    // Download
-    XLSX.writeFile(wb, filename);
-
-    Swal.fire('Berhasil', 'Laporan berhasil diekspor ke Excel', 'success');
-  } catch (error) {
-    console.error('Error exporting to Excel:', error);
-    Swal.fire('Error', 'Gagal mengekspor ke Excel', 'error');
-  }
-};
-
+watch(selectedMonth, () => {
+  selectedWeek.value = ''
+})
+watch(selectedMonth, () => {
+  selectedWeek.value = ''
+})
 
 
 const exportToPDF = async () => {
-  try {
-    const params = new URLSearchParams();
-
-    // Filter berdasarkan tipe
-    if (filterType.value === 'daily' && selectedDate.value) {
-      params.append('filter_date', selectedDate.value);
-    } else if (filterType.value === 'weekly' && selectedWeek.value) {
-      const [start, end] = selectedWeek.value.split('|');
-      params.append('filter_start_date', start);
-      params.append('filter_end_date', end);
-    } else if (filterType.value === 'monthly' && selectedMonth.value) {
-      params.append('filter_month', selectedMonth.value);
-    }
-
-    const response = await axios.get(`/laporan-order/export-pdf?${params.toString()}`, {
-      responseType: 'blob'
-    });
-    // const response = await axios.get(`/order/export-pdf?${params.toString()}`, {
-    //   responseType: 'blob'
-    // });
-
-    // Generate filename
-    let filename = 'Laporan_Order_';
-    if (filterType.value === 'daily') {
-      filename += `Harian_${selectedDate.value}`;
-    } else if (filterType.value === 'weekly') {
-      const [start, end] = selectedWeek.value.split('|');
-      filename += `Mingguan_${start}_${end}`;
-    } else {
-      filename += `Bulanan_${selectedMonth.value}`;
-    }
-    filename += '.pdf';
-
-    saveAs(response.data, filename);
-    Swal.fire('Berhasil', 'Laporan berhasil diekspor ke PDF', 'success');
-  } catch (error) {
-    console.error('Error exporting to PDF:', error);
-    Swal.fire('Error', 'Gagal mengekspor ke PDF', 'error');
+  const params: any = {
+    filter_type: filterType.value,
   }
-};
+
+  if (filterType.value === 'daily') {
+    params.date = selectedDate.value
+  }
+
+  if (filterType.value === 'weekly') {
+    const [start, end] = selectedWeek.value.split('|')
+    params.start_date = start
+    params.end_date   = end
+  }
+
+  if (filterType.value === 'monthly') {
+    params.month = selectedMonth.value
+  }
+
+  const response = await axios.get('/laporan-order/export-pdf', {
+    params,
+    responseType: 'blob'
+  })
+
+  saveAs(response.data, 'laporan-order.pdf')
+}
+
+
+
+
+// const exportToPDF = async () => {
+//   try {
+//     const params = new URLSearchParams();
+
+//     // Filter berdasarkan tipe
+//     if (filterType.value === 'daily' && selectedDate.value) {
+//       params.append('filter_date', selectedDate.value);
+//     } else if (filterType.value === 'weekly' && selectedWeek.value) {
+//       const [start, end] = selectedWeek.value.split('|');
+//       params.append('filter_start_date', start);
+//       params.append('filter_end_date', end);
+//     } else if (filterType.value === 'monthly' && selectedMonth.value) {
+//       params.append('filter_month', selectedMonth.value);
+//     }
+
+//     const response = await axios.get(`/laporan-order/export-pdf?${params.toString()}`, {
+//       responseType: 'blob'
+//     });
+
+
+//     // Generate filename
+//     let filename = 'Laporan_Order_';
+//     if (filterType.value === 'daily') {
+//       filename += `Harian_${selectedDate.value}`;
+//     } else if (filterType.value === 'weekly') {
+//       const [start, end] = selectedWeek.value.split('|');
+//       filename += `Mingguan_${start}_${end}`;
+//     } else {
+//       filename += `Bulanan_${selectedMonth.value}`;
+//     }
+//     filename += '.pdf';
+
+//     saveAs(response.data, filename);
+//     Swal.fire('Berhasil', 'Laporan berhasil diekspor ke PDF', 'success');
+//   } catch (error) {
+//     console.error('Error exporting to PDF:', error);
+//     Swal.fire('Error', 'Gagal mengekspor ke PDF', 'error');
+//   }
+// };
 
 
 
@@ -900,4 +871,76 @@ onMounted(async () => {
   margin-top: 1rem;
   padding: 0.5rem 1.5rem;
 }
+
+.laporan-card {
+  font-size: 14px;
+}
+
+/* HEADER ATAS */
+.laporan-header {
+  background: #f1f4f5;
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  font-weight: 600;
+  border-bottom: 1px solid #ddd;
+}
+
+/* TABLE */
+.laporan-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.laporan-table th {
+  background: #34495e;
+  color: white;
+  text-align: center;
+  font-weight: 600;
+}
+
+.laporan-table td,
+.laporan-table th {
+  padding: 8px;
+  border: 1px solid #ccc;
+  vertical-align: middle;
+}
+
+/* BADGE STATUS */
+.badge {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* RINGKASAN */
+.ringkasan-box {
+  background: #eef7fa;
+  margin: 16px;
+  border: 1px solid #cfe3ea;
+}
+
+.ringkasan-box h5 {
+  background: #d9edf3;
+  padding: 10px;
+  margin: 0;
+  font-weight: 700;
+}
+
+.ringkasan-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1px solid #cfe3ea;
+}
+
+/* FOOTER */
+.laporan-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  padding: 10px;
+}
+
 </style>

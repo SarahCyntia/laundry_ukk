@@ -691,29 +691,7 @@ const columns = [
     
   }),
 
-column.display({
-  id: "struk",
-  header: "Struk",
-  cell: ({ row }) => {
-    const noKode = row.original.kode_order;
 
-    return h("div", { class: "d-flex gap-2" }, [
-    
-      h(
-        "button",
-        {
-          class: "btn btn-sm btn-secondary",
-          onClick: () => downloadReceipt(noKode),
-          title: "Download PDF"
-        },
-        [
-          h("i", { class: "la la-download me-1" }),
-          "Download"
-        ]
-      )
-    ]);
-  },
-}),
 
 column.display({
   id: "paymentAction",
@@ -783,6 +761,30 @@ column.accessor(
     }
   }
 ),
+
+column.display({
+  id: "struk",
+  header: "Struk",
+  cell: ({ row }) => {
+    const noKode = row.original.kode_order;
+
+    return h("div", { class: "d-flex gap-2" }, [
+    
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-secondary",
+          onClick: () => downloadReceipt(noKode),
+          title: "Download PDF"
+        },
+        [
+          h("i", { class: "la la-download me-1" }),
+          "Download"
+        ]
+      )
+    ]);
+  },
+}),
 
 ];
 onMounted(() => {

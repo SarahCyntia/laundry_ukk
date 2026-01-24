@@ -14,7 +14,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class Pelanggan extends Model
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
     protected $fillable = [
         'user_id',
         'alamat',

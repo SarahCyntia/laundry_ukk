@@ -19,6 +19,15 @@
         </button>
       </div>
 
+      <!-- NOTIFIKASI -->
+      <button v-if="isLoggedIn" class="notif-btn" @click="openNotif">
+        🔔
+        <span v-if="notifications.length" class="notif-badge">
+          {{ notifications.length }}
+        </span>
+      </button>
+
+
 
       <div class="icon">🏠</div>
       <h1>Selamat Datang di Beranda</h1>
@@ -59,7 +68,7 @@
           <input type="text" v-model="keyword" placeholder="Cari Kecamatan..." class="search-input"
             @focus="showDropdown = true" @input="showDropdown = true" @blur="hideDropdown" />
 
-        
+
           <ul v-if="showDropdown && filteredKecamatan.length" class="dropdown mt-17 ">
             <li v-for="k in filteredKecamatan" :key="k.id" @mousedown.prevent="pilihKecamatan(k)">
               {{ k.nama }}
@@ -72,79 +81,22 @@
         </div>
 
 
-        <!-- <div class="search-box">
-          <select v-model="kecamatan" class="search-input" @change="cariMitra">
-            <option value="">Pilih Kecamatan</option>
-            <option v-for="k in listKecamatan" :key="k.id" :value="k.id">
-              {{ k.nama }}
-            </option>
-          </select>
 
-
-          <button @click="cariMitra" class="btn-search">
-            Cari
-          </button>
-        </div> -->
-
-        <!-- <div class="search-box">
-          <input v-model="searchQuery" type="text" placeholder="Cari laundry berdasarkan kecamata..."
-            class="search-input" />
-          <button class="btn-search" @click="filterLaundry">🔍 Cari</button>
-        </div> -->
 
         <!-- Loading State -->
         <div v-if="loading" class="loading-state">
           <p>Memuat data laundry...</p>
         </div>
 
-        <!-- Laundry Cards Grid -->
-        <!-- ADA MITRA -->
-        <!-- <div v-if="filteredMitraList.length > 0" class="laundry-grid">
-          <div v-for="m in filteredMitraList" :key="m.id" class="laundry-card">
-
-            <div class="laundry-image">
-              <div class="placeholder-img">🧺</div>
-              <span class="laundry-badge" v-if="m.status_toko === 'buka'">✓ Buka</span>
-              <span class="laundry-badge closed" v-else>✗ Tutup</span>
-            </div>
-            <div class="laundry-info">
-              <h3>{{ m.nama_laundry }}</h3>
-              <p class="location">
-                📍 {{ m.alamat_laundry }}, Kecamatan {{ m.kecamatan?.nama }}
-              </p>
-
-              <div v-if="m.jenis_layanan && m.jenis_layanan.length" class="layanan-list">
-                <h4>Layanan Tersedia:</h4>
-                <ul>
-                  <li v-for="l in m.jenis_layanan" :key="l.id">
-                    <strong>{{ l.nama_layanan }}</strong><br />
-                    <span class="desc">{{ l.deskripsi }}</span><br />
-                    <span class="price">
-                      Rp {{ Number(l.harga).toLocaleString('id-ID') }} / {{ l.satuan }}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              <div v-else class="no-service">
-                <p>Belum ada layanan tersedia</p>
-              </div>
-
-              <button class="btn-order" @click="goToLaundry(m.id)" :disabled="m.status_toko !== 'buka'">
-                {{ m.status_toko === 'buka' ? 'Pilih Laundry' : 'Sedang Tutup' }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-else-if="!loading && kecamatan" class="no-service">
-          <p>Belum ada mitra laundry di kecamatan ini</p>
-        </div> -->
 
         <div v-else-if="filteredMitraList.length > 0" class="laundry-grid">
           <div v-for="m in filteredMitraList" :key="m.id" class="laundry-card">
             <div class="laundry-image">
-              <div class="placeholder-img">🧺</div>
+              <!-- <div class="placeholder-img">🧺</div> -->
+              <div class="placeholder-img">
+                <img v-if="m?.foto_toko" :src="getFotoToko(m.foto_toko)" alt="Foto Toko" class="foto-toko" />
+                <span v-else>🧺</span>
+              </div>
               <span class="laundry-badge" v-if="m.status_toko === 'buka'">✓ Buka</span>
               <span class="laundry-badge closed" v-else>✗ Tutup</span>
             </div>
@@ -323,6 +275,7 @@ const keyword = ref("")
 const kecamatan = ref<number | null>(null)
 const showDropdown = ref(false)
 
+
 const filteredKecamatan = computed(() => {
   if (!keyword.value) return listKecamatan.value
   return listKecamatan.value.filter(k =>
@@ -343,26 +296,13 @@ function hideDropdown() {
 }
 
 
-// const keyword = ref("");
-// const kecamatan = ref<number | null>(null);
-// const showDropdown = ref(false);
 
-// const filteredKecamatan = computed(() => {
-//   return listKecamatan.value.filter(k =>
-//     k.nama.toLowerCase().includes(keyword.value.toLowerCase())
-//   );
-// });
 
-// function pilihKecamatan(k: any) {
-//   keyword.value = k.nama;   // tampil di input
-//   kecamatan.value = k.id;   // ID untuk backend
-//   showDropdown.value = false;
-//   cariMitra();              // fetch mitra
-// }
 
-// function hideDropdown() {
-//   setTimeout(() => (showDropdown.value = false), 150);
-// }
+const getFotoToko = (foto_toko) => {
+  return `http://localhost:8000/storage/${foto_toko}`
+}
+
 
 
 // const kecamatan = ref("");
@@ -383,21 +323,7 @@ async function getKecamatan() {
   }
 }
 
-// const kecamatan = ref<number | "">("");
-// const mitraList = ref([]);
-//sebelumnya
-// async function cariMitra() {
-//   if (!kecamatan.value) return;
 
-//   try {
-//     const res = await axios.get(
-//       `/mitra-by-kecamatan/${kecamatan.value}`
-//     );
-//     mitraList.value = res.data.data ?? res.data;
-//   } catch (err) {
-//     console.error(err);
-//   }
-// }
 async function cariMitra() {
   if (!kecamatan.value) {
     Swal.fire("Pilih kecamatan dulu")
@@ -409,7 +335,7 @@ async function cariMitra() {
   )
 
   mitraList.value = res.data.data
-}
+};
 
 watch(kecamatan, async (id) => {
   if (!id) return;
@@ -418,29 +344,60 @@ watch(kecamatan, async (id) => {
   mitraList.value = res.data.data ?? res.data;
 });
 
-// async function cariMitra() {
-//   if (!kecamatan.value) {
-//     Swal.fire("Oops", "Pilih kecamatan dulu", "warning");
-//     return;
+
+
+function openNotif() {
+  if (!notifications.value.length) {
+    Swal.fire('Tidak ada notifikasi baru')
+    return
+  }
+
+  const list = notifications.value
+    .map((n) => {
+      const status = n.data.status
+
+      let iconEmoji = 'ℹ️'
+      if (status === 'selesai') iconEmoji = '✅'
+      if (status === 'diterima') iconEmoji = '📥'
+      if (status === 'ditolak') iconEmoji = '❌'
+
+      return `
+        <div style="text-align:left;margin-bottom:10px">
+          <b>${iconEmoji} ${n.data.title}</b><br>
+          ${n.data.message}<br>
+          <small>Kode Order: ${n.data.kode_order}</small>
+        </div>
+      `
+    })
+    .join('')
+
+  Swal.fire({
+    title: 'Notifikasi',
+    html: list,
+    icon: 'info',
+    width: 500
+  })
+}
+
+
+
+// function openNotif() {
+//   if (!notifications.value.length) {
+//     Swal.fire('Tidak ada notifikasi baru')
+//     return
 //   }
 
-//   loading.value = true;
-//   try {
-//     const res = await axios.get(
-//       `/mitra-by-kecamatan/${kecamatan.value}`
-//     );
-//     mitraList.value = res.data.data;
-//   } catch (e) {
-//     mitraList.value = [];
-//     Swal.fire(
-//       "Tidak ditemukan",
-//       "Belum ada mitra laundry di kecamatan ini",
-//       "info"
-//     );
-//   } finally {
-//     loading.value = false;
-//   }
+//   const list = notifications.value
+//     .map((n: any) => `• ${n.data.message}`)
+//     .join('<br>')
+
+//   Swal.fire({
+//     title: 'Notifikasi',
+//     html: list,
+//     icon: 'info'
+//   })
 // }
+
 
 
 
@@ -533,51 +490,9 @@ function goToProfile() {
 
 
 
-//tidak dibutuhkan
-// const alamat = ref('')
-// const kecamatan_id = ref<number | null>(null)
-// const kecamatans = ref([])
-// onMounted(async () => {
-//   const res = await axios.get('kecamatan')
-//   kecamatans.value = res.data
-// })
-
-// watch(alamat, async (val) => {
-//   if (val.length < 10) return
-
-//   const res = await axios.post('/deteksi-kecamatan', {
-//     alamat: val
-//   })
-
-//   if (res.data?.id) {
-//     kecamatan_id.value = res.data.id
-//   }
-// })
 
 
 
-
-
-
-// function getStatusIcon(status: string) {
-//   const statusLower = status.toLowerCase();
-
-//   if (statusLower.includes('menunggu') || statusLower.includes('pending')) {
-//     return '⏳';
-//   } else if (statusLower.includes('diterima') || statusLower.includes('diterima')) {
-//     return '✅';
-//   } else if (statusLower.includes('diproses') || statusLower.includes('dikerjakan')) {
-//     return '🔄';
-//   } else if (statusLower.includes('selesai') || statusLower.includes('done')) {
-//     return '✅';
-//   } else if (statusLower.includes('batal') || statusLower.includes('cancel')) {
-//     return '❌';
-//   } else if (statusLower.includes('siap') || statusLower.includes('diambil')) {
-//     return '📦';
-//   } else {
-//     return '📋';
-//   }
-// }
 function getStatusIcon(status: string) {
   const statusLower = status.toLowerCase();
 
@@ -681,6 +596,59 @@ onMounted(() => {
   getKecamatan();
 });
 
+
+
+
+const notifications = ref([])
+
+async function fetchNotifications() {
+  if (!isLoggedIn.value) return
+  // await axios.get('/sanctum/csrf-cookie')
+
+  const res = await axios.get('/notifications')
+  notifications.value = res.data
+
+  notifications.value.forEach((n: any) => {
+    // 🔥 HANYA STATUS SELESAI
+    if (n.data.title === 'Laundry Selesai') {
+      Swal.fire({
+        icon: 'success',
+        title: 'Laundry Selesai',
+        text: n.data.message,
+        confirmButtonText: 'OK'
+      })
+
+      // ✅ Tandai sudah dibaca biar tidak muncul lagi
+      markAsRead(n.id)
+    }
+  })
+}
+async function markAsRead(id: string) {
+  await axios.post(`/notifications/${id}/mark-as-read`)
+}
+// async function markAsRead(id: string) {
+//   await axios.post(`/notifications/${id}/read`)
+// }
+
+
+onMounted(() => {
+  fetchNotifications()
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Lifecycle
 onMounted(async () => {
   loading.value = true;
@@ -702,6 +670,79 @@ onMounted(async () => {
 </script>
 
 <style>
+.placeholder-img {
+  width: 230px;
+  height: 100px;
+  border-radius: 6px;
+  /* ⬅️ bukan 50% */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+
+.foto-toko {
+  width: 100%;
+  height: 100%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.notif-btn {
+  position: fixed;
+  top: 20px;
+  right: 140px;
+  /* geser dari tombol login */
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #dc3545;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+
+
+
+
+
+
+
 .searchable-select {
   position: relative;
 }
@@ -1251,6 +1292,21 @@ html {
   min-height: 100vh;
   background: #f7f7f7;
 }
+
+
+
+
+
+.notif-btn{
+  position: fixed;
+  top: 20px;
+  right: 150px;
+  
+}
+
+
+
+
 
 /* Login Button */
 .btn-login-top {

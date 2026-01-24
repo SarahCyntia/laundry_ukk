@@ -16,9 +16,13 @@
     <div v-else-if="mitra" class="detail-content">
       <!-- Header Section -->
       <div class="header-section">
-        <div class="header-image">
-          <div class="placeholder-img">🧺</div>
-        </div>
+        <!-- <div class="header-image"> -->
+          <div class="placeholder-img">
+                <img v-if="mitra?.foto_toko" :src="getFotoToko(mitra.foto_toko)" alt="Foto Toko" class="foto-toko" />
+                <span v-else>🧺</span>
+              </div>
+          <!-- <div class="placeholder-img">🧺</div> -->
+        <!-- </div> -->
         <div class="header-info">
           <h1>{{ mitra.nama_laundry }}</h1>
           <p class="address">📍 {{ mitra.alamat_laundry }}, {{ mitra.kecamatan?.nama }}</p>
@@ -182,7 +186,7 @@
           </div>
         </div>
 
-        <div class="additional-info">
+        <!-- <div class="additional-info">
           <h3>Informasi Tambahan</h3>
           <div class="info-list">
             <div class="info-item">
@@ -202,7 +206,7 @@
               <span>Minimal 1 kg untuk semua layanan</span>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
     </div>
 
@@ -290,6 +294,10 @@ const pelangganId = computed(() => authStore.user?.pelanggan?.id ?? authStore.us
 // });
 
 
+const getFotoToko = (foto_toko) => {
+  return `http://localhost:8000/storage/${foto_toko}`
+}
+
 
 
 // Methods
@@ -355,9 +363,9 @@ function buildConfirmationHTML(layanan) {
     </div>
   `;
 }
-function buildSuccessHTML(kodeOrder) {
+function buildSuccessHTML(kode_order) {
   return `
-    <p><strong>Kode Order: ${kodeOrder}</strong></p>
+    <p><strong>Kode Order: ${kode_order}</strong></p>
     <p style="margin-top: 12px;">Status: 
       <span style="color: #f59e0b; font-weight: 600;">
         Menunggu Konfirmasi Mitra
@@ -372,7 +380,7 @@ function buildSuccessHTML(kodeOrder) {
       <li>Jika diterima, antar cucian ke: <strong>${mitra.value.nama_laundry}</strong></li>
       <li>Alamat: ${mitra.value.alamat_laundry}</li>
       <li>Kecamatan: ${mitra.value.kecamatan?.nama || "-"}</li>
-      <li>Sebutkan kode order: <strong>${kodeOrder}</strong></li>
+      <li>Sebutkan kode order: <strong>${kode_order}</strong></li>
       <li>Cucian akan ditimbang</li>
       <li>Pembayaran setelah total akhir keluar</li>
     </ol>
@@ -740,9 +748,30 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
+
+
 .placeholder-img {
-  font-size: 64px;
+  width: 180px;
+  height: 110px;
+  border-radius: 6px;
+  /* ⬅️ bukan 50% */
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
 }
+
+
+.foto-toko {
+  width: 100%;
+  height: 100%;
+}
+
+
+
+
+
 
 .header-info {
   flex: 1;

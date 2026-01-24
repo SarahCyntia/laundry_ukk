@@ -98,6 +98,36 @@ const order = ref({
 //   { immediate: true }
 // );
 
+// watch(
+//   () => ({
+//     berat_estimasi: order.value.berat_estimasi,
+//     berat_aktual: order.value.berat_aktual,
+//     harga: order.value.harga_per_kg,
+//     satuan: order.value.satuan,
+//   }),
+//   () => {
+//     let qty = 0;
+//     if (isKiloan) {
+//   qty = Number(order.value.berat_aktual || order.value.berat_estimasi || 0);
+// } else {
+//   qty = 1;
+// }
+
+//     if (order.value.satuan === "kg") {
+//       qty = Number(order.value.berat_aktual || order.value.berat_estimasi || 0);
+//     } else {
+//       qty = 1; // layanan satuan (setrika satuan, dll)
+//     }
+
+//     if (qty > 0 && order.value.harga_per_kg > 0) {
+//       order.value.harga_final = qty * order.value.harga_per_kg;
+//     } else {
+//       order.value.harga_final = "";
+//     }
+//   },
+//   { deep: true, immediate: true }
+// );
+
 watch(
   () => ({
     berat_estimasi: order.value.berat_estimasi,
@@ -106,13 +136,11 @@ watch(
     satuan: order.value.satuan,
   }),
   () => {
-    let qty = 0;
+    const isKiloan = ["kg", "kiloan"].includes(order.value.satuan);
 
-    if (order.value.satuan === "kg") {
-      qty = Number(order.value.berat_aktual || order.value.berat_estimasi || 0);
-    } else {
-      qty = 1; // layanan satuan (setrika satuan, dll)
-    }
+    const qty = isKiloan
+      ? Number(order.value.berat_aktual || order.value.berat_estimasi || 0)
+      : 1;
 
     if (qty > 0 && order.value.harga_per_kg > 0) {
       order.value.harga_final = qty * order.value.harga_per_kg;
@@ -122,22 +150,6 @@ watch(
   },
   { deep: true, immediate: true }
 );
-
-
-// watch(
-//     () => order.value.berat_aktual,
-//     (val) => {
-//         console.log("Berat aktual:", val);
-//         console.log("Harga per kg:", order.value.harga_per_kg);
-
-//         if (val && order.value.harga_per_kg) {
-//             order.value.harga_final =
-//                 Number(val) * Number(order.value.harga_per_kg);
-//         } else {
-//             order.value.harga_final = "";
-//         }
-//     }
-// );
 
 
 
@@ -201,6 +213,7 @@ function getEdit() {
                 berat_aktual: d.berat_aktual ?? "",
                 harga_final: d.harga_final ?? "",
                 harga_per_kg: 0,
+                 satuan: layanan?.satuan ?? "kg", 
                 jenis_layanan_id: layanan?.id || null,
                 catatan: d.catatan ?? "",
                 status: d.status ?? "",

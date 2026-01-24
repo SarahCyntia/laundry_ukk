@@ -244,6 +244,7 @@ watch(openForm, (val) => {
       <paginate ref="paginateRef" id="table-mitra" url="/mitra" :columns="columns" />
 
     </div>
+    
 
   </div>
 </template>

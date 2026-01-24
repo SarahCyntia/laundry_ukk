@@ -19,10 +19,12 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JenisItemController;
 use App\Http\Controllers\PelangganController;
 use App\Http\Controllers\AntarJemputController;
+use App\Http\Controllers\FinanceReportController;
 use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\PenjemputanController;
 use App\Http\Controllers\JenisLayananController;
 use App\Http\Controllers\KecamatanController;
+use App\Http\Controllers\LaporanKeuanganController;
 use App\Http\Controllers\LayananPrioritasController;
 use App\Http\Controllers\LayananTambahanController;
 use App\Http\Controllers\Mitra\TransaksiMitraController;
@@ -446,7 +448,7 @@ Route::post('/payment/method/{id}', [PaymentController::class, 'setPaymentMethod
 
 
 
-Route::get('/order/export-pdf', [OrderController::class, 'exportPDF']);
+
 // Route::get('/laporan-order', [OrderController::class, 'index']);
 
 // Route::post('/laporan-order', [OrderController::class, 'laporanOrder']);
@@ -454,4 +456,43 @@ Route::get('/order/export-pdf', [OrderController::class, 'exportPDF']);
 Route::get('/laporan-order', [LaporanOrderController::class, 'index']);
 Route::post('/laporan-order', [LaporanOrderController::class, 'index']);
 
-Route::get('/laporan-order/export-pdf', [LaporanOrderController::class, 'exportPdf']);
+// Route::get('/laporan-order/export-pdf', [LaporanOrderController::class, 'exportPdf']);
+// routes/web.php
+Route::get('/laporan-order/export-pdf', [LaporanOrderController::class, 'exportPdf'])
+    ->middleware('auth');
+
+Route::get('/laporan-order/export-excel', [LaporanOrderController::class, 'exportExcel']);
+
+
+
+// Route::middleware('auth:sanctum')->get('/notifications', function (Request $request) {
+//     return $request->user()->unreadNotifications;
+// });
+
+// Route::post('/notifications/{id}/read', function ($id) {
+//     auth()->user()->notifications()
+//         ->where('id', $id)
+//         ->update(['read_at' => now()]);
+
+//     return response()->json(['success' => true]);
+// });
+Route::middleware('auth')->get('/notifications', function () {
+    return auth()->user()->pelanggan->notifications;
+});
+
+Route::middleware('auth')->group(function () {
+    // Laporan keuangan mitra
+    Route::prefix('finance')->group(function () {
+        Route::get('/report', [FinanceReportController::class, 'getReport']);
+        Route::get('/comparison', [FinanceReportController::class, 'getComparison']);
+        Route::get('/chart-data', [FinanceReportController::class, 'getChartData']);
+        Route::get('/top-customers', [FinanceReportController::class, 'getTopCustomers']);
+    });
+});
+
+
+
+// Route::post('/laporan-keuangan', [LaporanKeuanganController::class, 'index']);
+Route::post('/laporan-keuangan', [LaporanKeuanganController::class, 'index']);
+Route::post('/laporan-keuangan/pdf', [LaporanKeuanganController::class, 'exportPdf']);
+Route::post('/laporan-keuangan/excel', [LaporanKeuanganController::class, 'exportExcel']);

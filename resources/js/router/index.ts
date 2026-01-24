@@ -274,6 +274,12 @@ const routes: Array<RouteRecordRaw> = [
         component: () =>
           import("@/pages/mitra/laporan-laundry.vue"),
       },
+      {
+        path: "/mitra/laporan-keuangan",
+        name: "laporan-keuangan",
+        component: () =>
+          import("@/pages/mitra/laporan-keuangan.vue"),
+      },
 
 
 

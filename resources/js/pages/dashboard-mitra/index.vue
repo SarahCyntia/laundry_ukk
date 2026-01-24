@@ -125,81 +125,55 @@
         <!-- <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button> -->
       </div>
 
-      <div class="orders-list">
-        <div v-for="order in pesananTerbaru" :key="order.id" class="order-item">
-          <div class="order-info">
-            <div class="order-id">Order {{ order.id }}</div>
-            <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
-            <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
-            <!-- <div class="order-time">{{ order.time }} </div> -->
-            <div class="order-time">
-              {{ order.datetime }} • {{ order.time_ago }}
-            </div>
+     <div class="orders-list">
+  <!-- JIKA ADA DATA -->
+  <div v-if="pesananTerbaru && pesananTerbaru.length">
+    <div
+      v-for="order in pesananTerbaru"
+      :key="order.id"
+      class="order-item"
+    >
+      <div class="order-info">
+        <div class="order-id">Order {{ order.id }}</div>
+        <div class="order-kode">Kode Order : {{ order.kode_order }}</div>
+        <div class="order-customer">Pelanggan {{ order.pelanggan_id }}</div>
 
-            <!-- <div class="order-time">
-  {{ order.datetime }}
-</div>
-<div class="order-time text-muted">
-  {{ order.time_ago }}
-</div> -->
-
-            <!-- <div class="order-time">
-  {{ order.tanggal }} {{ order.jam }}
-</div> -->
-
-          </div>
-
-          <div class="order-status" :class="order.status">
-            {{ getStatusLabel(order.status) }}
-          </div>
-
-          <!-- DETAIL MUNCUL DI BAWAH -->
-          <div v-if="openedOrderId === order.id" class="order-detail">
-            <p><b>Status:</b> {{ getStatusLabel(order.status) }}</p>
-            <p><b>Waktu:</b> {{ order.time }}</p>
-
-            <button class="btn-detail" @click.stop="navigateTo(`/order/${order.id}`)">
-              Lihat Detail
-            </button>
-          </div>
+        <div class="order-time">
+          {{ order.datetime }} • {{ order.time_ago }}
         </div>
       </div>
+
+      <div class="order-status" :class="order.status">
+        {{ getStatusLabel(order.status) }}
+      </div>
+
+      <div v-if="openedOrderId === order.id" class="order-detail">
+        <p><b>Status:</b> {{ getStatusLabel(order.status) }}</p>
+        <p><b>Waktu:</b> {{ order.time }}</p>
+
+        <button
+          class="btn-detail"
+          @click.stop="navigateTo(`/order/${order.id}`)"
+        >
+          Lihat Detail
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JIKA TIDAK ADA DATA -->
+  <div v-else class="empty-order">
+    <p>📭 Tidak ada data order</p>
+  </div>
+</div>
+
     </div>
 
 
-    <!-- Quick Actions Panel -->
-    <!-- <div class="quick-actions-panel">
-      <h3>⚡ Aksi Cepat</h3>
-      <div class="actions-grid">
-        <button class="action-btn" @click="navigateTo('/orders')">
-          <span class="action-icon">📥</span>
-          <span class="action-text">Kelola Order</span>
-        </button>
-        <button class="action-btn" @click="navigateTo('/products')">
-          <span class="action-icon">🏷️</span>
-          <span class="action-text">Atur Harga</span>
-        </button>
-        <button class="action-btn" @click="navigateTo('/schedule')">
-          <span class="action-icon">📅</span>
-          <span class="action-text">Jadwal Pickup</span>
-        </button>
-        <button class="action-btn" @click="navigateTo('/reports')">
-          <span class="action-icon">📊</span>
-          <span class="action-text">Laporan</span>
-        </button>
-      </div>
-    </div> -->
+    
 
-    <!-- Performance Tips -->
-    <!-- <div class="tips-section">
-      <div class="tip-card">
-        <span class="tip-icon">💡</span>
-        <div class="tip-content">
-          <h4>Tips Hari Ini</h4>
-          <p>{{ dailyTip }}</p>
-        </div>
-      </div>
-    </div> -->
+
+
 
     <!-- Notification Badge -->
     <div v-if="notif" class="notification-badge">

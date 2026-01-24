@@ -128,7 +128,9 @@ STRUK LAUNDRY<br>
 <div class="item">
     <span class="label">Status Bayar</span>
     <span class="separator">:</span>
-    <span class="value">{{ strtoupper($data->status_pembayaran) }}</span>
+    {{-- <span class="value">{{ strtoupper($data->status_pembayaran) }}</span> --}}
+    {{ strtoupper($data->transaksi->status_pembayaran ?? 'BELUM BAYAR') }}
+
 </div>
 
 <div class="hr"></div>
