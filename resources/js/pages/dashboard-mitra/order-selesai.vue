@@ -126,6 +126,23 @@ const url = computed(() => {
 });
 
 
+const ambilOrder = async (row: Row<Order>) => {
+  const confirmed = await Swal.fire({
+    icon: "question",
+    title: "Tandai order sudah diambil?",
+    text: "Waktu pengambilan akan dicatat otomatis",
+    showCancelButton: true,
+    confirmButtonText: "Ya, sudah diambil"
+  }).then(r => r.isConfirmed);
+
+  if (!confirmed) return;
+
+  await axios.put(`/order/${row.original.id}/ambil`);
+
+  Swal.fire("Berhasil", "Waktu pengambilan dicatat", "success");
+  refresh();
+};
+
 
 
 
@@ -170,30 +187,37 @@ const columns = [
 
 
   column.accessor("kode_order", { header: "Kode Order" }),
-  column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
   column.accessor("harga_final", { header: "Harga" }),
-  column.accessor("catatan", { header: "Catatan" }),
-  column.accessor("foto_struk", {
-    header: "Foto Struk",
-    cell: ({ getValue }) => {
-      const foto = getValue();
 
-      if (!foto) {
-        return h("span", { style: "color:#888;" }, "Tidak ada foto");
-      }
+column.accessor("waktu_diambil", {
+  header: "Waktu Diambil",
+  cell: ({ row }) => {
+    const waktu = row.original.waktu_diambil;
 
-      const url = `http://localhost:8000/storage/${foto}`;
-
-
-      console.log("URL FINAL:", url);
-
-      return h("img", {
-        src: url,
-        style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
-      });
+    // Kalau BELUM diambil → tombol
+    if (!waktu) {
+      return h(
+        "button",
+        {
+          class: "btn btn-sm btn-primary",
+          onClick: () => ambilOrder(row),
+        },
+        "Sudah Diambil"
+      );
     }
-  }),
+
+    // Kalau SUDAH diambil → tampilkan tanggal
+    return h(
+      "span",
+      { class: "badge bg-secondary" },
+      new Date(waktu).toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    );
+  }
+}),
 
 
   column.accessor("status", {
@@ -272,7 +296,7 @@ onMounted(async () => {
   <Form v-if="openForm" :selected="selected" @close="openForm = false" @refresh="refresh" />
   <div class="card">
     <div class="card-header align-items-center">
-      <h2 class="mb-0">Orderan</h2>
+      <h2 class="mb-0">Orderan Selesai</h2>
     </div>
     <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
 

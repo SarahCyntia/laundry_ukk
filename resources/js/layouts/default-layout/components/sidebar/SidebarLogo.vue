@@ -48,14 +48,16 @@ onMounted(() => {
     <!--begin::Logo-->
     <div class="app-sidebar-logo px-6" id="kt_app_sidebar_logo">
         <!--begin::Logo image-->
-        <router-link to="/">
+        <!-- <router-link to="/baru.ico" 
+        ></router-link> -->
+        <!-- <router-link to="/">
             <img v-if="layout === 'dark-sidebar' ||
                 (themeMode === 'dark' && layout === 'light-sidebar')
                 " alt="Logo" :src="setting?.logo" class="h-50px app-sidebar-logo-default" />
             <img v-if="themeMode === 'light' && layout === 'light-sidebar'" alt="Logo" :src="setting?.logo"
                 class="h-50px app-sidebar-logo-default" />
             <img alt="Logo" :src="setting?.logo" class="h-50px app-sidebar-logo-minimize" />
-        </router-link>
+        </router-link> -->
         <!--end::Logo image-->
         <!--begin::Sidebar toggle-->
         <div v-if="sidebarToggleDisplay" ref="toggleRef" id="kt_app_sidebar_toggle"

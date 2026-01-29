@@ -703,6 +703,70 @@ public function setPaymentMethod(Request $request, $id)
 }
 
 
+
+
+public function konfirmasiTunai(Order $order)
+{
+    $order->transaksi()->updateOrCreate(
+        ['order_id' => $order->id],
+        [
+            'metode_pembayaran' => 'tunai',
+            'status_pembayaran' => 'dibayar',
+            'waktu_bayar' => now(),
+        ]
+    );
+
+    return response()->json(['message' => 'Pembayaran tunai dikonfirmasi']);
+}
+
+public function pilihTransfer(Order $order)
+{
+    // anggap TRANSFER = MIDTRANS
+    $transaksi = $order->transaksi()->first();
+
+    if ($transaksi && $transaksi->snap_token && $transaksi->status_pembayaran !== 'dibayar') {
+        return response()->json([
+            'snap_token' => $transaksi->snap_token
+        ]);
+    }
+
+    Config::$serverKey = config('services.midtrans.server_key');
+    Config::$isProduction = false;
+    Config::$isSanitized = true;
+    Config::$is3ds = true;
+
+    $params = [
+        'transaction_details' => [
+            'order_id' => $order->kode_order,
+            'gross_amount' => (int) $order->harga_final,
+        ],
+        'customer_details' => [
+            'first_name' => $order->mitra->nama_laundry ?? 'User',
+            'email' => $order->mitra->email ?? 'user@email.com',
+        ],
+    ];
+
+    $snapToken = Snap::getSnapToken($params);
+
+    $order->transaksi()->updateOrCreate(
+        ['order_id' => $order->id],
+        [
+            'snap_token' => $snapToken,
+            'payment_reference' => $order->kode_order,
+            'total_bayar' => $order->harga_final,
+            'status_pembayaran' => 'menunggu_pembayaran',
+            // 'metode_pembayaran' => 'midtrans',
+             'metode_pembayaran' => null,
+        ]
+    );
+
+    return response()->json([
+        'snap_token' => $snapToken
+    ]);
+}
+
+
+
     // public function manualUpdateStatus(Request $request)
     // {
     //     // $order = Order::find($request->order_id);

@@ -461,6 +461,11 @@ const updateStatus = async (row: Row<Order>) => {
 
   if (!confirmed) return;
 
+
+
+
+
+
   await axios.put(`/order/${row.original.id}/status`, {
     status: nextStatus
   });
@@ -500,22 +505,22 @@ const columns = [
   column.accessor("harga_final", { header: "Harga" }),
   column.accessor("catatan", { header: "Catatan" }),
   // column.accessor("alasan_penolakan", { header: "Alasan Penolakan" }),
-  column.accessor("alasan_penolakan", {
-    header: "Alasan Penolakan",
-    cell: ({ getValue, row }) => {
-      const alasan = getValue();
+  // column.accessor("alasan_penolakan", {
+  //   header: "Alasan Penolakan",
+  //   cell: ({ getValue, row }) => {
+  //     const alasan = getValue();
 
-      // Kalau status diterima / bukan ditolak
-      if (!alasan && row.original.status !== "ditolak") {
-        return h(
-          "span",
-          { style: "color:#888; font-style:italic;" },
-          "Tidak ada alasan penolakan"
-        );
-      }
-      return alasan || "-";
-    },
-  }),
+  //     // Kalau status diterima / bukan ditolak
+  //     if (!alasan && row.original.status !== "ditolak") {
+  //       return h(
+  //         "span",
+  //         { style: "color:#888; font-style:italic;" },
+  //         "Tidak ada alasan penolakan"
+  //       );
+  //     }
+  //     return alasan || "-";
+  //   },
+  // }),
 
   // column.accessor("waktu_pelanggan_antar", { header: "Waktu Antar" }),
   column.accessor("waktu_pelanggan_antar", {
@@ -547,179 +552,32 @@ const columns = [
       );
     }
   }),
-  column.accessor("id", {
-    header: "Aksi",
-    cell: (cell) => {
-      const row = cell.row.original;
-      const actions: any[] = [];
+ 
 
+  // column.display({
+  //   id: "struk",
+  //   header: "Struk",
+  //   cell: ({ row }) => {
+  //     const noKode = row.original.kode_order;
 
-      // === Jika status masih menunggu konfirmasi mitra ===
-      if (row.status === "menunggu_konfirmasi_mitra") {
-        // Terima
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-success",
-              onClick: async () => {
-                const ok = await Swal.fire({
-                  icon: "question",
-                  title: "Terima order ini?",
-                  showCancelButton: true,
-                }).then((r) => r.isConfirmed);
+  //     return h("div", { class: "d-flex gap-2" }, [
 
-                if (!ok) return;
+  //       h(
+  //         "button",
+  //         {
+  //           class: "btn btn-sm btn-secondary",
+  //           onClick: () => downloadReceipt(noKode),
+  //           title: "Download PDF"
+  //         },
+  //         [
+  //           h("i", { class: "la la-download me-1" }),
+  //           "Download"
+  //         ]
+  //       )
+  //     ]);
+  //   },
+  // }),
 
-                await axios.post(`/order/${row.id}/konfirmasi`, {
-                  status: "ditunggu_mitra",
-                });
-
-                Swal.fire("Berhasil", "Order diterima!", "success");
-                await refresh();
-              },
-            },
-            "Terima"
-          )
-        );
-
-        // Tolak
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-danger",
-              onClick: async () => {
-                const { value: alasan } = await Swal.fire({
-                  title: "Alasan penolakan",
-                  input: "text",
-                  inputPlaceholder: "Tulis alasan...",
-                  showCancelButton: true,
-                });
-
-                if (!alasan) return;
-
-                await axios.post(`/order/${row.id}/tolak`, {
-                  status: "ditolak",
-                  alasan_penolakan: alasan,
-                });
-
-                Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-                await refresh();
-              },
-            },
-            "Tolak"
-          )
-        );
-      }
-
-      // === Jika status diterima → Edit ===
-      if (row.status?.trim() === "diterima") {
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-icon btn-info",
-              onClick: () => {
-                selected.value = cell.getValue();
-                openForm.value = true;
-              },
-            },
-            h("i", { class: "la la-pencil fs-2" })
-          )
-        );
-      }
-
-      // === Tombol Hapus (selalu ada) ===
-      actions.push(
-        h(
-          "button",
-          {
-            class: "btn btn-sm btn-icon btn-danger",
-            onClick: () => deleteOrder(`order/${cell.getValue()}`),
-          },
-          h("i", { class: "la la-trash fs-2" })
-        ),
-      );
-
-      // 
-      return h(
-        "div",
-        { class: "d-flex gap-2 flex-nowrap align-items-center" },
-        actions
-      );
-    },
-
-
-  }),
-
-  column.display({
-    id: "struk",
-    header: "Struk",
-    cell: ({ row }) => {
-      const noKode = row.original.kode_order;
-
-      return h("div", { class: "d-flex gap-2" }, [
-
-        h(
-          "button",
-          {
-            class: "btn btn-sm btn-secondary",
-            onClick: () => downloadReceipt(noKode),
-            title: "Download PDF"
-          },
-          [
-            h("i", { class: "la la-download me-1" }),
-            "Download"
-          ]
-        )
-      ]);
-    },
-  }),
-
-  column.display({
-    id: "paymentAction",
-    header: "Pembayaran",
-    cell: ({ row }) => {
-      const transaksi = row.original.transaksi;
-      const status = transaksi?.status_pembayaran;
-
-      // 🟡 MENUNGGU PEMBAYARAN
-      if (status === "menunggu_pembayaran" && transaksi?.snap_token) {
-        return h(
-          "button",
-          {
-            class: "btn btn-sm btn-warning",
-            onClick: () => {
-              window.snap.pay(transaksi.snap_token);
-            },
-          },
-          [
-            h("i", { class: "bi bi-arrow-repeat me-1" }),
-            "Lanjut Bayar",
-          ]
-        );
-      }
-
-      // 🟢 SUDAH DIBAYAR
-      if (status === "dibayar") {
-        return h("span", { class: "badge bg-success" }, "Lunas");
-      }
-
-      // 🔵 DEFAULT
-      return h(
-        "button",
-        {
-          class: "btn btn-sm btn-success",
-          onClick: () => redirectToPayment(row.original.id),
-        },
-        [
-          h("i", { class: "bi bi-credit-card me-1" }),
-          "Bayar",
-        ]
-      );
-    },
-  }),
 
   column.accessor(
     row => row.transaksi?.status_pembayaran ?? 'belum_dibayar',
@@ -745,6 +603,35 @@ const columns = [
       }
     }
   ),
+
+   column.accessor("id", {
+    header: "Aksi",
+    cell: (cell) => {
+      const row = cell.row.original;
+      const actions: any[] = [];
+
+      // === Tombol Hapus (selalu ada) ===
+      actions.push(
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-icon btn-danger",
+            onClick: () => deleteOrder(`order/${cell.getValue()}`),
+          },
+          h("i", { class: "la la-trash fs-2" })
+        ),
+      );
+
+      // 
+      return h(
+        "div",
+        { class: "d-flex gap-2 flex-nowrap align-items-center" },
+        actions
+      );
+    },
+
+
+  }),
 
 ];
 onMounted(() => {
@@ -774,7 +661,7 @@ onMounted(async () => {
   <Form v-if="openForm" :selected="selected" @close="openForm = false" @refresh="refresh" />
   <div class="card">
     <div class="card-header align-items-center">
-      <h2 class="mb-0">Orderan</h2>
+      <h2 class="mb-0">Laporan Laundry</h2>
     </div>
     <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
 

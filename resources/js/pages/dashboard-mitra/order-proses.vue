@@ -170,30 +170,28 @@ const columns = [
 
 
   column.accessor("kode_order", { header: "Kode Order" }),
-  column.accessor("berat_estimasi", { header: "Berat Estimasi" }),
   column.accessor("berat_aktual", { header: "Berat Aktual" }),
   column.accessor("harga_final", { header: "Harga" }),
-  column.accessor("catatan", { header: "Catatan" }),
-  column.accessor("foto_struk", {
-    header: "Foto Struk",
-    cell: ({ getValue }) => {
-      const foto = getValue();
+  // column.accessor("foto_struk", {
+  //   header: "Foto Struk",
+  //   cell: ({ getValue }) => {
+  //     const foto = getValue();
 
-      if (!foto) {
-        return h("span", { style: "color:#888;" }, "Tidak ada foto");
-      }
+  //     if (!foto) {
+  //       return h("span", { style: "color:#888;" }, "Tidak ada foto");
+  //     }
 
-      const url = `http://localhost:8000/storage/${foto}`;
+  //     const url = `http://localhost:8000/storage/${foto}`;
 
 
-      console.log("URL FINAL:", url);
+  //     console.log("URL FINAL:", url);
 
-      return h("img", {
-        src: url,
-        style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
-      });
-    }
-  }),
+  //     return h("img", {
+  //       src: url,
+  //       style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px;",
+  //     });
+  //   }
+  // }),
 
 
   column.accessor("status", {
@@ -272,7 +270,7 @@ onMounted(async () => {
   <Form v-if="openForm" :selected="selected" @close="openForm = false" @refresh="refresh" />
   <div class="card">
     <div class="card-header align-items-center">
-      <h2 class="mb-0">Orderan</h2>
+      <h2 class="mb-0">Orderan Proses</h2>
     </div>
     <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
 

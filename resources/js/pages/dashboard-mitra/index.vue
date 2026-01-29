@@ -65,7 +65,8 @@
         <div class="stat-content">
           <h3>Selesai Hari Ini</h3>
           <p class="stat-number">{{ order.selesai }}</p>
-          <span class="stat-label">Transaksi selesai</span>
+          <!-- <span class="stat-label">Transaksi selesai</span> -->
+           <span>{{ selesaiHariIni }} transaksi</span>
         </div>
       </div>
     </div>
@@ -103,29 +104,35 @@
         </div>
       </div>
 
-      <div class="revenue-card">
-        <h3>💰 Pendapatan Hari Ini</h3>
-        <p class="revenue-amount">Rp {{ formatCurrency(todayRevenue) }}</p>
-        <div class="revenue-detail">
-          <span class="detail-item">
-            <span class="detail-icon">📦</span>
-            <span>{{ order.selesai }} transaksi</span>
-          </span>
-          <span class="detail-item">
-            <span class="detail-icon">📊</span>
-            <span>Rata-rata: Rp {{ formatCurrency(averageOrder) }}</span>
-          </span>
-        </div>
-      </div>
+     <div class="revenue-card">
+  <h3>💰 Pendapatan Hari Ini</h3>
+
+  <p class="revenue-amount">
+    Rp {{ formatCurrency(todayRevenue) }}
+  </p>
+
+  <div class="revenue-detail">
+    <span class="detail-item">
+      <span class="detail-icon">📦</span>
+      <span>{{ selesaiHariIni }} transaksi</span>
+    </span>
+
+    <span class="detail-item">
+      <span class="detail-icon">📊</span>
+      <span>Rata-rata: Rp {{ formatCurrency(averageOrder) }}</span>
+    </span>
+  </div>
+</div>
+
     </div>
 
-    <div class="recent-orders-section">
+    <div class="recent-order-section">
       <div class="section-header">
         <h3>📋 Data Order</h3>
-        <!-- <button class="btn-view-all" @click="viewAllOrders">Lihat Semua</button> -->
+        <!-- <button class="btn-view-all" @click="viewAllorder">Lihat Semua</button> -->
       </div>
 
-     <div class="orders-list">
+     <div class="order-list">
   <!-- JIKA ADA DATA -->
   <div v-if="pesananTerbaru && pesananTerbaru.length">
     <div
@@ -189,11 +196,225 @@ import axios from "@/libs/axios";
 import { toast } from "vue3-toastify";
 import Swal from "sweetalert2";
 
+/* =========================
+   STATE
+========================= */
+const notif = ref(false);
+const jumlahOrderBaru = ref(0);
+
+const weeklyStats = ref<any[]>([]);
+const pesananTerbaru = ref<any[]>([]);
+
+const todayRevenue = ref(0);
+const averageOrder = ref(0);
+const selesaiHariIni = ref(0);
+
+const order = ref({
+  menunggu_konfirmasi_mitra: 0,
+  ditolak: 0,
+  diterima: 0,
+  diproses: 0,
+  siap_diambil: 0,
+});
+
+const notifications = ref([])
+
+
+/* =========================
+   API CALLS
+========================= */
+const loadSummaryHariIni = async () => {
+  try {
+    const res = await axios.get("/laporan/summary-hari-ini");
+    console.log("SUMMARY HARI INI:", res.data);
+
+    const data = res.data.data;
+
+    todayRevenue.value = data.today_revenue ?? 0;
+    averageOrder.value = data.average_order ?? 0;
+    selesaiHariIni.value = data.today_orders ?? 0;
+  } catch {
+    toast.error("Gagal memuat laporan hari ini");
+  }
+};
+
+
+const loadDashboard = async () => {
+  try {
+    const res = await axios.get("/dashboard-data");
+    
+
+    order.value = {
+      menunggu_konfirmasi_mitra: res.data.order?.menunggu_konfirmasi_mitra ?? 0,
+      diterima: res.data.order?.diterima ?? 0,
+      ditolak: res.data.order?.ditolak ?? 0,
+      diproses: res.data.order?.diproses ?? 0,
+      siap_diambil: res.data.order?.siap_diambil ?? 0,
+    };
+
+    weeklyStats.value = res.data.weekly ?? [];
+    pesananTerbaru.value = res.data.pesananTerbaru ?? [];
+  } catch {
+    toast.error("Gagal memuat dashboard");
+  }
+};
+
+
+
+
+
+
+
+
+
+let hasAlerted = false
+// let hasAlerted = false
+
+function openNotif() {
+  if (!notifications.value.length) {
+    Swal.fire('Tidak ada notifikasi baru')
+    return
+  }
+
+  const list = notifications.value
+    .map((n) => `
+      <div style="text-align:left;margin-bottom:10px">
+        <b>${n.data.title}</b><br>
+        ${n.data.message}<br>
+        <small>${n.data.kode_order}</small>
+      </div>
+    `)
+    .join('')
+
+  Swal.fire({
+    title: 'Notifikasi',
+    html: list,
+    icon: 'info'
+  })
+}
+
+const checkNotif = async () => {
+  try {
+    const res = await axios.get('/notif-order')
+
+    const userId = res.data.logged_user.id
+    const orders = res.data.test_orders ?? []
+
+    const newOrders = orders.filter(
+      (o) =>
+        o.mitra_id === userId &&
+        o.status === 'menunggu_konfirmasi_mitra'
+    )
+
+    notifications.value = newOrders.map((o) => ({
+      data: {
+        title: 'Order Baru Masuk',
+        message: 'Ada order baru menunggu konfirmasi',
+        status: 'diterima',
+        kode_order: `ORD-${o.id}`
+      }
+    }))
+
+    if (newOrders.length > 0 && !hasAlerted) {
+      hasAlerted = true
+
+      Swal.fire({
+        title: '📢 Order Baru!',
+        text: `Ada ${newOrders.length} order baru menunggu konfirmasi`,
+        icon: 'info',
+        confirmButtonText: 'Lihat'
+      }).then((r) => {
+        if (r.isConfirmed) openNotif()
+      })
+    }
+
+    // reset kalau sudah tidak ada order menunggu
+    if (newOrders.length === 0) {
+      hasAlerted = false
+    }
+  } catch (e) {
+    console.error('Gagal cek notifikasi', e)
+  }
+}
+
+
+
+
+// const checkNotif = async () => {
+//   try {
+//     const res = await axios.get("/notif-order");
+
+//     if (res.data.new_order) {
+//       toast.info(`📢 Ada ${res.data.count} order baru masuk!`);
+//     }
+//   } catch (e) {
+//     console.error("Gagal cek notifikasi", e);
+//   }
+// };
+
+/* =========================
+   COMPUTED
+========================= */
+const totalOrderAktif = computed(() =>
+  order.value.menunggu_konfirmasi_mitra +
+  order.value.diterima +
+  order.value.ditolak +
+  order.value.diproses +
+  order.value.siap_diambil
+);
+
+const statusMessage = computed(() => {
+  if (order.value.menunggu_konfirmasi_mitra > 0) return "Ada order menunggu konfirmasi";
+  if (order.value.siap_diambil > 0) return "Ada order siap diambil";
+  if (order.value.diproses > 0) return "Semua berjalan lancar";
+  if (order.value.ditolak > 0) return "Order ada yang ditolak";
+  if (order.value.diterima > 0) return "Ada order yang diterima";
+  return "Tidak ada order aktif";
+});
+
+/* =========================
+   HELPERS
+========================= */
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat("id-ID").format(value);
+
+const getBarHeight = (count: number) => {
+  const max = Math.max(...weeklyStats.value.map(d => d.count ?? 0));
+  if (!max) return 0;
+  return Math.max((count / max) * 100, 10);
+};
+
+const getStatusLabel = (status: string) => ({
+  menunggu_konfirmasi_mitra: "Menunggu Konfirmasi",
+  ditolak: "Ditolak",
+  diterima: "Diterima",
+  diproses: "Sedang Diproses",
+  siap_diambil: "Siap Diambil",
+  selesai: "Selesai",
+}[status] ?? status);
+
+/* =========================
+   LIFECYCLE
+========================= */
+onMounted(() => {
+  loadDashboard();
+   checkNotif();
+  loadSummaryHariIni();
+  setInterval(checkNotif, 20000);
+});
+</script>
+
+
+<!-- <script setup lang="ts">
+import { ref, onMounted, computed } from "vue";
+import axios from "@/libs/axios";
+import { toast } from "vue3-toastify";
+import Swal from "sweetalert2";
+
 const notif = ref(false);
 const jumlahOrderBaru = ref(0);
 const weeklyStats = ref([]);
 const pesananTerbaru = ref([]);
-const todayRevenue = ref(0);
 
 const checkNotif = async () => {
   try {
@@ -219,6 +440,22 @@ const openedOrderId = ref<number | null>(null);
 //   openedOrderId.value = openedOrderId.value === id ? null : id;
 // };
 
+const todayRevenue = ref(0)
+const averageOrder = ref(0)
+// const order = ref({ selesai: 0 })
+
+onMounted(async () => {
+  // const res = await axios.get('/laporan/summary-hari-ini')
+  const res = await axios.get('/laporan/summary-hari-ini')
+selesaiHariIni.value = res.data.data.today_orders
+
+
+  const data = res.data.data
+  todayRevenue.value = data.today_revenue
+  averageOrder.value = data.average_order
+  // order.value.selesai = data.today_order
+})
+
 
 const order = ref({
   menunggu_konfirmasi_mitra: 0,
@@ -226,8 +463,9 @@ const order = ref({
   diterima: 0,
   diproses: 0,
   siap_diambil: 0,
-  selesai: 0,
+  // selesai: 0,
 });
+// const selesaiHariIni = ref(0);
 
 
 const getBarHeight = (count: number) => {
@@ -243,17 +481,6 @@ const getBarHeight = (count: number) => {
 
 
 
-// const getBarHeight = (count: number) => {
-//   if (!weeklyStats.value.length) return 0;
-
-//   const maxCount = Math.max(...weeklyStats.value.map(s => s.count));
-
-//   if (maxCount === 0) return 0;
-
-//   return (count / maxCount) * 100;
-// };
-
-
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('id-ID').format(value);
 };
@@ -263,7 +490,7 @@ const navigateTo = (path: string) => {
   // Implementasi navigasi sesuai router Vue Anda
 };
 
-const viewAllOrders = () => {
+const viewAllOrder = () => {
   navigateTo('/order-masuk');
 };
 
@@ -287,6 +514,7 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
+const selesaiHariIni = ref(0);
 
 const loadDashboard = async () => {
   try {
@@ -298,7 +526,7 @@ const loadDashboard = async () => {
       ditolak: res.data.order?.ditolak ?? 0,
       diproses: res.data.order?.diproses ?? 0,
       siap_diambil: res.data.order?.siap_diambil ?? 0,
-      selesai: res.data.order?.selesai ?? 0,
+      // selesai: res.data.order?.selesai ?? 0,
     };
 
     weeklyStats.value = res.data.weekly ?? [];
@@ -320,10 +548,6 @@ const totalOrderAktif = computed(() => {
     order.value.siap_diambil;
 });
 
-const averageOrder = computed(() => {
-  if (order.value.selesai === 0) return 0;
-  return Math.round(todayRevenue.value / order.value.selesai);
-});
 
 const statusMessage = computed(() => {
   if (order.value.menunggu_konfirmasi_mitra > 0) {
@@ -346,7 +570,7 @@ onMounted(() => {
   setInterval(checkNotif, 20000);
 });
 
-</script>
+</script> -->
 
 <style scoped>
 .chart-container {
@@ -797,8 +1021,8 @@ onMounted(() => {
   font-size: 18px;
 }
 
-/* Recent Orders */
-.recent-orders-section {
+/* Recent order */
+.recent-order-section {
   background: white;
   padding: 24px;
   border-radius: 16px;
@@ -837,7 +1061,7 @@ onMounted(() => {
   color: white;
 }
 
-.orders-list {
+.order-list {
   display: flex;
   flex-direction: column;
   gap: 12px;

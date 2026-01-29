@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JenisLayanan;
 use App\Models\Mitra;
 use App\Models\Order;
-use App\Notifications\LaundrySelesaiNotification;
+// use App\Notifications\LaundrySelesaiNotification;
 use App\Notifications\LaundryStatusNotification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -89,6 +89,9 @@ class OrderController extends Controller
                 // 🔥 INI YANG KURANG
                 'waktu_pelanggan_antar' => $o->waktu_pelanggan_antar
                     ? $o->waktu_pelanggan_antar->format('Y-m-d H:i')
+                    : null,
+                'waktu_diambil' => $o->waktu_diambil
+                    ? $o->waktu_diambil->format('Y-m-d H:i')
                     : null,
 
                 'created_at' => $o->created_at->format('Y-m-d H:i'),
@@ -592,14 +595,13 @@ class OrderController extends Controller
         Log::info('Foto struk updated for Order ID: ' . $order->status);
         $order->pelanggan->notify(
     new LaundryStatusNotification($order, $order->status)
+    
 );
-    //sebelumnya
-        // if ($order->status === 'selesai') {
-        //     Log::info('Notifying pelanggan for Order ID: ' . $order->id);
-        //     $order->pelanggan->notify(
-        //         new LaundrySelesaiNotification($order)
-        //     );
-        // }
+if ($order->isDirty('waktu_diambil') && $order->waktu_diambil) {
+    $order->user->notify(
+        new LaundryStatusNotification($order, 'siap_diambil')
+    );
+}
 
         return response()->json([
             'message' => 'Order berhasil diperbarui'
@@ -921,5 +923,21 @@ class OrderController extends Controller
             'success' => true
         ]);
     }
+
+
+
+
+    public function ambil(Order $order)
+{
+    $order->update([
+        'waktu_diambil' => Carbon::now(),
+        'status' => 'selesai',
+    ]);
+
+    return response()->json([
+        'message' => 'Order sudah diambil'
+    ]);
+}
+
 
 }

@@ -150,7 +150,7 @@
             <th width="8%">Berat</th>
             <th width="10%">Harga</th>
             <th width="12%">Status</th>
-            <th width="13%">Bayar</th>
+            <th width="13%">Pembayaran</th>
         </tr>
     </thead>
     <tbody>

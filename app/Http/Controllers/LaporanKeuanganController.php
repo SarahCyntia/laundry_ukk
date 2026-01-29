@@ -22,7 +22,7 @@ public function index(Request $request)
             'pelanggan.user:id,name',
             'jenis_layanan:id,nama_layanan',
             'mitra:id,nama_laundry',
-            'transaksi'
+            'transaksi:id,order_id,metode_pembayaran,total_bayar,waktu_bayar,status_pembayaran'
         ]);
 
     // 2️⃣ Filter status order
@@ -126,7 +126,7 @@ public function index(Request $request)
             'created_at' => $order->created_at,
             'waktu_bayar' => $order->transaksi->waktu_bayar ?? null,
             'no_order' => $order->kode_order,
-            'status' => $order->status,
+            // 'status' => $order->status,
             'total_harga' => $order->transaksi->total_bayar ?? 0,
 
             'pelanggan' => [
@@ -135,6 +135,9 @@ public function index(Request $request)
 
             'mitra' => [
                 'nama_laundry' => $order->mitra->nama_laundry ?? '-'
+            ],
+            'transaksi' => [
+                'metode_pembayaran' => $order->transaksi->metode_pembayaran ?? '-'
             ],
         ];
     });
@@ -287,6 +290,42 @@ private function makePeriodTitle(Request $request)
 
         default => 'Semua Waktu',
     };
+}
+
+
+
+
+
+
+public function summaryHariIni()
+{
+    $mitra = auth()->user()->mitra;
+
+    $start = now()->startOfDay();
+    $end   = now()->endOfDay();
+
+    $orders = Order::where('mitra_id', $mitra->id)
+        ->whereHas('transaksi', function ($q) use ($start, $end) {
+            $q->where('status_pembayaran', 'dibayar')
+              ->whereBetween('waktu_bayar', [$start, $end]);
+        })
+        ->with('transaksi')
+        ->get();
+
+    $totalRevenue = $orders->sum(fn ($o) => $o->transaksi->total_bayar ?? 0);
+    $totalOrder   = $orders->count();
+    $averageOrder = $totalOrder > 0
+        ? round($totalRevenue / $totalOrder)
+        : 0;
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'today_revenue' => $totalRevenue,
+            'today_orders'  => $totalOrder,
+            'average_order' => $averageOrder,
+        ]
+    ]);
 }
 
 

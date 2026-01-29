@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import axios from "axios";
+import axios from "@/libs/axios";
 import Swal from "sweetalert2";
 
 // State
@@ -15,7 +15,7 @@ const fetchorder = async () => {
   loading.value = true;
   try {
     const response = await axios.post("/laporan-keuangan"); // sesuaikan endpoint
-    order.value = response.data.data || response.data;
+    order.value = response.data.data;
   } catch (error) {
     console.error(error);
     Swal.fire("Error", "Gagal memuat data order", "error");
@@ -80,8 +80,8 @@ const totalOrder = computed(() => filteredorder.value.length);
 
 const orderBerdasarkanStatus = computed(() => {
   const stats = {
-    selesai: 0,
-    proses: 0,
+    // selesai: 0,
+    // proses: 0,
     menunggu: 0,
     dibatalkan: 0,
   };
@@ -220,23 +220,23 @@ onMounted(() => {
           </div>
         </div>
         
-        <div class="col-md-3">
+        <!-- <div class="col-md-3">
           <div class="card bg-info text-white">
             <div class="card-body">
               <h6 class="text-white mb-2">Order Selesai</h6>
               <h3 class="text-white mb-0">{{ orderBerdasarkanStatus.selesai }}</h3>
             </div>
           </div>
-        </div>
+        </div> -->
         
-        <div class="col-md-3">
+        <!-- <div class="col-md-3">
           <div class="card bg-warning text-white">
             <div class="card-body">
               <h6 class="text-white mb-2">Order Proses</h6>
               <h3 class="text-white mb-0">{{ orderBerdasarkanStatus.proses }}</h3>
             </div>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <!-- Tombol Aksi -->
@@ -262,7 +262,7 @@ onMounted(() => {
               <th>No Order</th>
               <th>Pelanggan</th>
               <th>Mitra</th>
-              <th>Status</th>
+              <th>Metode Pembayaran</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -280,17 +280,38 @@ onMounted(() => {
               <td>{{ order.pelanggan?.name || '-' }}</td>
               <td>{{ order.mitra?.nama_laundry || '-' }}</td>
               <td>
+  <span
+    v-if="order.transaksi?.metode_pembayaran"
+    :class="{
+      'badge bg-success': order.metode_pembayaran === 'tunai',
+      'badge bg-info': order.metode_pembayaran === 'qris',
+      'badge bg-primary': order.metode_pembayaran === 'gopay',
+      'badge bg-warning': order.metode_pembayaran === 'bank_transfer'
+    }"
+  >
+    {{ order.transaksi?.metode_pembayaran.toUpperCase() }}
+  </span>
+
+  <span
+    v-else
+    class="badge bg-secondary"
+  >
+    BELUM DIPILIH
+  </span>
+</td>
+
+              <!-- <td>
                 <span 
                   :class="{
-                    'badge bg-success': order.status === 'selesai',
-                    'badge bg-warning': order.status === 'proses',
+                    // 'badge bg-success': order.status === 'selesai',
+                    // 'badge bg-warning': order.status === 'proses',
                     'badge bg-secondary': order.status === 'menunggu',
                     'badge bg-danger': order.status === 'dibatalkan'
                   }"
                 >
                   {{ order.status?.toUpperCase() }}
                 </span>
-              </td>
+              </td> -->
               <td class="text-end fw-bold">{{ formatCurrency(order.total_harga) }}</td>
             </tr>
           </tbody>

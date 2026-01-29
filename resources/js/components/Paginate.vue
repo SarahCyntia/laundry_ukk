@@ -8,10 +8,10 @@
                 <select2 class="w-75px form-select-solid" v-model="per" placeholder="Per" :options="[5, 10, 25, 50, 100]">
                 </select2>
             </div>
-            <form @submit.prevent="refetch" class="w-100 w-sm-auto">
+            <!-- <form @submit.prevent="refetch" class="w-100 w-sm-auto">
                 <input type="search" class="form-control form-control-solid" placeholder="Cari ..." v-model="search"
                     v-debounce="onSearch" />
-            </form>
+            </form> -->
         </div>
         <div class="table-responsive" style="margin-top: -8rem">
             <table class="table table-rounded table-hover table-striped border gy-7 gs-7" style="margin: 8rem 0;">

@@ -172,104 +172,83 @@ const columns = [
     }
   }),
   
-  column.accessor("catatan", { header: "Catatan" }),
-  
-  column.accessor("foto_struk", {
-    header: "Foto Struk",
-    cell: ({ getValue }) => {
-      const foto = getValue();
 
-      if (!foto) {
-        return h("span", { style: "color:#888;" }, "Tidak ada foto");
-      }
 
-      const url = `http://localhost:8000/storage/${foto}`;
-
-      return h("img", {
-        src: url,
-        style: "width: 80px; height: 80px; object-fit: cover; border-radius: 8px; cursor: pointer;",
-        onClick: () => {
-          window.open(url, '_blank');
-        }
-      });
-    }
-  }),
-
-  column.accessor("status", {
-    header: "Status",
-    cell: ({ row }) => {
-      const val = row.original.status;
-      const color = statusColors[val] || "bg-secondary";
+  // column.accessor("status", {
+  //   header: "Status",
+  //   cell: ({ row }) => {
+  //     const val = row.original.status;
+  //     const color = statusColors[val] || "bg-secondary";
       
-      const isMitra = currentUser.value?.role === 'mitra';
+  //     const isMitra = currentUser.value?.role === 'mitra';
 
-      return h(
-        "span",
-        {
-          class: `badge ${color} text-white`,
-          style: "font-size: 0.85rem; padding: 0.5rem 0.75rem;"
-        },
-        statusLabels[val] || val.replaceAll("_", " ")
-      );
-    }
-  }),
+  //     return h(
+  //       "span",
+  //       {
+  //         class: `badge ${color} text-white`,
+  //         style: "font-size: 0.85rem; padding: 0.5rem 0.75rem;"
+  //       },
+  //       statusLabels[val] || val.replaceAll("_", " ")
+  //     );
+  //   }
+  // }),
 
-  column.accessor("id", {
-    header: "Aksi",
-    cell: (cell) => {
-      const row = cell.row.original;
-      const actions: any[] = [];
+  // column.accessor("id", {
+  //   header: "Aksi",
+  //   cell: (cell) => {
+  //     const row = cell.row.original;
+  //     const actions: any[] = [];
 
-      // Detail button
-      actions.push(
-        h(
-          "button",
-          {
-            class: "btn btn-sm btn-icon btn-info",
-            onClick: () => {
-              Swal.fire({
-                title: 'Detail Order',
-                html: `
-                  <div class="text-start">
-                    <p><strong>Kode Order:</strong> ${row.kode_order}</p>
-                    <p><strong>Laundry:</strong> ${row.mitra?.nama_laundry}</p>
-                    <p><strong>Pelanggan:</strong> ${row.pelanggan?.nama}</p>
-                    <p><strong>Status:</strong> ${statusLabels[row.status]}</p>
-                    <p><strong>Total:</strong> ${new Intl.NumberFormat('id-ID', {
-                      style: 'currency',
-                      currency: 'IDR'
-                    }).format(row.harga_final)}</p>
-                  </div>
-                `,
-                confirmButtonText: 'Tutup'
-              });
-            },
-          },
-          h("i", { class: "la la-eye fs-2" })
-        )
-      );
+  //     // Detail button
+  //     actions.push(
+  //       h(
+  //         "button",
+  //         {
+  //           class: "btn btn-sm btn-icon btn-info",
+  //           onClick: () => {
+  //             Swal.fire({
+  //               title: 'Detail Order',
+  //               html: `
+  //                 <div class="text-start">
+  //                   <p><strong>Kode Order:</strong> ${row.kode_order}</p>
+  //                   <p><strong>Laundry:</strong> ${row.mitra?.nama_laundry}</p>
+  //                   <p><strong>Pelanggan:</strong> ${row.pelanggan?.nama}</p>
+  //                   <p><strong>Status:</strong> ${statusLabels[row.status]}</p>
+  //                   <p><strong>Total:</strong> ${new Intl.NumberFormat('id-ID', {
+  //                     style: 'currency',
+  //                     currency: 'IDR'
+  //                   }).format(row.harga_final)}</p>
+  //                 </div>
+  //               `,
+  //               confirmButtonText: 'Tutup'
+  //             });
+  //           },
+  //         },
+  //         h("i", { class: "la la-eye fs-2" })
+  //       )
+  //     );
 
-      // Delete button (hanya admin)
-      if (currentUser.value?.role === 'admin') {
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-icon btn-danger",
-              onClick: () => deleteOrder(`order/${cell.getValue()}`),
-            },
-            h("i", { class: "la la-trash fs-2" })
-          )
-        );
-      }
+  //     // Delete button (hanya admin)
+  //     if (currentUser.value?.role === 'admin') {
+  //       actions.push(
+  //         h(
+  //           "button",
+  //           {
+  //             class: "btn btn-sm btn-icon btn-danger",
+  //             onClick: () => deleteOrder(`order/${cell.getValue()}`),
+  //           },
+  //           h("i", { class: "la la-trash fs-2" })
+  //         )
+  //       );
+  //     }
 
-      return h(
-        "div",
-        { class: "d-flex gap-2 flex-nowrap align-items-center" },
-        actions
-      );
-    },
-  }),
+  //     return h(
+  //       "div",
+  //       { class: "d-flex gap-2 flex-nowrap align-items-center" },
+  //       actions
+  //     );
+  //   },
+  // }),
 ];
 
 watch(paginateRef, (val) => {
@@ -289,7 +268,7 @@ watch(paginateRef, (val) => {
         <h2 class="mb-0">
           {{ currentUser?.role === 'admin' ? 'Semua Order' : 
              currentUser?.role === 'mitra' ? 'Order Laundry Saya' : 
-             'Riwayat Order Saya' }}
+             'Data Order ' }}
         </h2>
         
         <span v-if="currentUser?.role === 'mitra'" class="badge bg-primary fs-5">

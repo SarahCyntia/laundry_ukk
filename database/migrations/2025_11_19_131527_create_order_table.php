@@ -33,8 +33,8 @@ $table->unsignedBigInteger('jenis_layanan_id')->nullable();
         $table->enum('status', [
             'menunggu_konfirmasi_mitra', // setelah customer pesan
             'ditunggu_mitra',
-            'diterima',                  // mitra menerima
             'ditolak',                   // mitra menolak
+            'diterima',                  // mitra menerima
             'diproses',                  // setelah customer antar & berat aktual dicatat
             'dicuci',
             'dikeringkan',

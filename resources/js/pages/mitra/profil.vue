@@ -4,6 +4,7 @@
       <div class="spinner-border"></div>
     </div>
 
+    
     <div v-else class="profile-wrapper">
       <div class="profile-header">
         <img :src="mitra.foto_toko ? '/storage/' + mitra.foto_toko : '/img/default.png'" class="profile-photo" />

@@ -20,7 +20,7 @@ const order = ref<Order | null>(null); // Data pelanggan yang terkait dengan use
 
 
 
-const filterType = ref<'daily' | 'weekly' | 'monthly'>('monthly');
+  const filterType = ref<'daily' | 'weekly' | 'monthly'>('monthly');
 const selectedDate = ref<string>(new Date().toISOString().split('T')[0]); // YYYY-MM-DD
 const selectedMonth = ref<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
 const selectedWeek = ref<string>('');
@@ -28,18 +28,18 @@ const selectedWeek = ref<string>('');
 const weekOptions = computed(() => {
   if (!selectedMonth.value) return [];
   const [year, month] = selectedMonth.value.split('-').map(Number);
-  const weeks: Array<{ label: string, start: string, end: string }> = [];
-
+  const weeks: Array<{label: string, start: string, end: string}> = [];
+  
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
-
+  
   let currentWeek = 1;
   let weekStart = new Date(firstDay);
-
+  
   while (weekStart <= lastDay) {
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-
+    
     if (weekEnd > lastDay) {
       weeks.push({
         label: `Minggu ${currentWeek} (${weekStart.getDate()} - ${lastDay.getDate()})`,
@@ -53,12 +53,12 @@ const weekOptions = computed(() => {
         end: weekEnd.toISOString().split('T')[0]
       });
     }
-
+    
     weekStart = new Date(weekEnd);
     weekStart.setDate(weekEnd.getDate() + 1);
     currentWeek++;
   }
-
+  
   return weeks;
 });
 
@@ -166,19 +166,17 @@ const bayar = async (rowData) => {
 
   rowData.isPaying = true;
   const draft = {
-    order_id: rowData.id,
-    berat_estimasi: rowData.berat_barang,
-    harga_final: rowData.total_harga,
-    biaya: rowData.biaya,
-    jenis_layanan_id: rowData.selectedService?.id,
-  };
+  order_id: rowData.id,
+  berat_estimasi: rowData.berat_barang,
+  harga_final: rowData.total_harga,
+  biaya: rowData.biaya,
+  jenis_layanan_id: rowData.selectedService?.id,
+};
 
   sessionStorage.setItem("draftTransaksi", JSON.stringify(draft));
 
   try {
-    // const res = await axios.post(`/api/payment/token/${row.id}`);
-    const res = await axios.post(`/api/payment/token/${rowData.id}`);
-
+    const res = await axios.post(`/api/payment/token/${row.id}`);
     // const res = await axios.post("/payment/create", draft);
     const { snap_token } = res.data;
 
@@ -207,16 +205,16 @@ const bayar = async (rowData) => {
   }
 };
 const getPembayaranBadgeClass = (status: string | undefined) => {
-  const map = {
-    dibayar: "badge bg-success",
-    menunggu_pembayaran: "badge bg-warning text-dark",
-    kadaluarsa: "badge bg-secondary",
-    dibatalkan: "badge bg-danger",
-    dikembalikan: "badge bg-info text-dark",
-    belum_dibayar: "badge bg-secondary",
-  };
+const map = {
+  dibayar: "badge bg-success",
+  menunggu_pembayaran: "badge bg-warning text-dark",
+  kadaluarsa: "badge bg-secondary",
+  dibatalkan: "badge bg-danger",
+  dikembalikan: "badge bg-info text-dark",
+  belum_dibayar: "badge bg-secondary",
+};
 
-  return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
+    return map[status?.toLowerCase() ?? ""] || "badge bg-secondary fw-bold";
 };
 
 const redirectToPayment = async (orderId: number, snapToken?: string) => {
@@ -283,7 +281,7 @@ const url = computed(() => {
     'dicuci',
     'dikeringkan',
     'disetrika',
-    'siap_diambil',
+    'siap_ambil',
     'selesai'
   ].forEach(status => {
     params.append('exclude_status[]', status);
@@ -297,7 +295,7 @@ const url = computed(() => {
 
 
 
-  if (filterType.value === 'daily' && selectedDate.value) {
+   if (filterType.value === 'daily' && selectedDate.value) {
     params.append('filter_date', selectedDate.value);
   } else if (filterType.value === 'weekly' && selectedWeek.value) {
     const [start, end] = selectedWeek.value.split('|');
@@ -329,10 +327,10 @@ const url = computed(() => {
 const exportToExcel = async () => {
   try {
     const params = new URLSearchParams();
-
+    
     // Ambil semua data tanpa pagination
     params.append('per_page', '9999');
-
+    
     // Filter berdasarkan tipe
     if (filterType.value === 'daily' && selectedDate.value) {
       params.append('filter_date', selectedDate.value);
@@ -363,7 +361,7 @@ const exportToExcel = async () => {
       'Berat Aktual': order.berat_aktual,
       'Harga': order.harga_final,
       'Catatan': order.catatan || '-',
-      'Waktu Antar': order.waktu_pelanggan_antar
+      'Waktu Antar': order.waktu_pelanggan_antar 
         ? new Date(order.waktu_pelanggan_antar).toLocaleString('id-ID')
         : '-',
       'Status': order.status?.replaceAll('_', ' ') || '-',
@@ -389,7 +387,7 @@ const exportToExcel = async () => {
 
     // Download
     XLSX.writeFile(wb, filename);
-
+    
     Swal.fire('Berhasil', 'Laporan berhasil diekspor ke Excel', 'success');
   } catch (error) {
     console.error('Error exporting to Excel:', error);
@@ -402,7 +400,7 @@ const exportToExcel = async () => {
 const exportToPDF = async () => {
   try {
     const params = new URLSearchParams();
-
+    
     // Filter berdasarkan tipe
     if (filterType.value === 'daily' && selectedDate.value) {
       params.append('filter_date', selectedDate.value);
@@ -574,7 +572,7 @@ const columns = [
     }
   }),
 
-
+  column.accessor("waktu_diambil", { header: "Waktu Diambil" }),
 
 
   column.accessor("status", {
@@ -593,170 +591,57 @@ const columns = [
       );
     }
   }),
+  
+  
 
+// column.display({
+//   id: "paymentAction",
+//   header: "Pembayaran",
+// cell: ({ row }) => {
+//   const transaksi = row.original.transaksi;
+//   const status = transaksi?.status_pembayaran;
 
+//   // 🟡 MENUNGGU PEMBAYARAN
+//   if (status === "menunggu_pembayaran" && transaksi?.snap_token) {
+//     return h(
+//       "button",
+//       {
+//         class: "btn btn-sm btn-warning",
+//         onClick: () => {
+//           window.snap.pay(transaksi.snap_token);
+//         },
+//       },
+//       [
+//         h("i", { class: "bi bi-arrow-repeat me-1" }),
+//         "Lanjut Bayar",
+//       ]
+//     );
+//   }
+  
+//   // 🟢 SUDAH DIBAYAR
+//   if (status === "dibayar") {
+//     return h("span", { class: "badge bg-success" }, "Lunas");
+//   }
 
-  // column.display({
-  //   id: "paymentAction",
-  //   header: "Pembayaran",
-  // cell: ({ row }) => {
-  //   const transaksi = row.original.transaksi;
-  //   const status = transaksi?.status_pembayaran;
-
-  //   // 🟡 MENUNGGU PEMBAYARAN
-  //   if (status === "menunggu_pembayaran" && transaksi?.snap_token) {
-  //     return h(
-  //       "button",
-  //       {
-  //         class: "btn btn-sm btn-warning",
-  //         onClick: () => {
-  //           window.snap.pay(transaksi.snap_token);
-  //         },
-  //       },
-  //       [
-  //         h("i", { class: "bi bi-arrow-repeat me-1" }),
-  //         "Lanjut Bayar",
-  //       ]
-  //     );
-  //   }
-
-  //   // 🟢 SUDAH DIBAYAR
-  //   if (status === "dibayar") {
-  //     return h("span", { class: "badge bg-success" }, "Lunas");
-  //   }
-
-  //   // 🔵 DEFAULT
-  //   return h(
-  //     "button",
-  //     {
-  //       class: "btn btn-sm btn-success",
-  //       onClick: () => redirectToPayment(row.original.id),
-  //     },
-  //     [
-  //       h("i", { class: "bi bi-credit-card me-1" }),
-  //       "Bayar",
-  //     ]
-  //   );
-  // },
-  // }),
-
-  // column.display({
-  //   id: "paymentAction",
-  //   header: "Pembayaran",
-  //   cell: ({ row }) => {
-  //     const transaksi = row.original.transaksi;
-  //     const status = transaksi?.status_pembayaran;
-  //     const metode = transaksi?.metode_pembayaran;
-
-  //     // 🟢 SUDAH DIBAYAR
-  //     if (status === "dibayar") {
-  //       return h("span", { class: "badge bg-success" }, "Lunas");
-  //     }
-
-  //     // 🟡 MENUNGGU PEMBAYARAN (TRANSFER)
-  //     if (
-  //       status === "menunggu_pembayaran" &&
-  //       metode === "midtrans" &&
-  //       transaksi?.snap_token
-  //     ) {
-  //       return h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-warning",
-  //           onClick: async () => {
-  //             const { data } = await axios.post(`/order/${row.original.id}/pilih-transfer`);
-  //             refresh();
-
-  //             if (data.snap_token) {
-  //               window.snap.pay(data.snap_token);
-  //             }
-  //           },
-
-  //         },
-  //         [
-  //           h("i", { class: "bi bi-arrow-repeat me-1" }),
-  //           "Lanjut Bayar",
-  //         ]
-  //       );
-  //     }
-
-  //     // 🔵 BELUM PILIH METODE → TAMPILKAN TUNAI & TRANSFER
-  //     return h("div", { class: "d-flex gap-2" }, [
-
-  //       // TUNAI (hanya muncul kalau belum pilih transfer)
-  //       metode !== "midtrans" &&
-  //       h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-success",
-  //           onClick: async () => {
-  //             const ok = await Swal.fire({
-  //               title: "Konfirmasi Tunai",
-  //               text: "Apakah uang tunai sudah diterima?",
-  //               icon: "question",
-  //               showCancelButton: true,
-  //               confirmButtonText: "Ya",
-  //             }).then(r => r.isConfirmed);
-
-  //             if (ok) {
-  //               await axios.post(`/order/${row.original.id}/konfirmasi-tunai`);
-  //               refresh();
-  //             }
-  //           },
-  //         },
-  //         [
-  //           h("i", { class: "bi bi-cash me-1" }),
-  //           "Tunai",
-  //         ]
-  //       ),
-
-  //       // TRANSFER (hanya muncul kalau belum pilih tunai)
-  //       metode !== "tunai" &&
-  //       h(
-  //         "button",
-  //         {
-  //           class: "btn btn-sm btn-info",
-  //           onClick: async () => {
-  //             await axios.post(`/order/${row.original.id}/pilih-transfer`);
-  //             refresh();
-  //             redirectToPayment(row.original.id);
-  //           },
-  //         },
-  //         [
-  //           h("i", { class: "bi bi-credit-card me-1" }),
-  //           "Transfer",
-  //         ]
-  //       ),
-  //     ]);
-  //   },
-  // }),
-
-
-
-
-
-
-
+//   // 🔵 DEFAULT
+//   return h(
+//     "button",
+//     {
+//       class: "btn btn-sm btn-success",
+//       onClick: () => redirectToPayment(row.original.id),
+//     },
+//     [
+//       h("i", { class: "bi bi-credit-card me-1" }),
+//       "Bayar",
+//     ]
+//   );
+// },
+// }),
 
 column.display({
   id: "paymentAction",
   header: "Pembayaran",
   cell: ({ row }) => {
-    const statusOrder = row.original.status;
-
-    // ❌ BELUM DITERIMA ATAU DITOLAK → JANGAN TAMPILKAN APA-APA
-    if (statusOrder !== "diterima") {
-      return h(
-        "span",
-        { style: "color:#999; font-style:italic;" },
-        "Menunggu konfirmasi"
-      );
-    }
-
-    // =============================
-    // ✅ MULAI LOGIKA PEMBAYARAN
-    // =============================
-
     const transaksi = row.original.transaksi;
     const status = transaksi?.status_pembayaran;
     const metode = transaksi?.metode_pembayaran;
@@ -776,16 +661,7 @@ column.display({
         "button",
         {
           class: "btn btn-sm btn-warning",
-          onClick: async () => {
-            const { data } = await axios.post(
-              `/order/${row.original.id}/pilih-transfer`
-            );
-            refresh();
-
-            if (data.snap_token) {
-              window.snap.pay(data.snap_token);
-            }
-          },
+          onClick: () => window.snap.pay(transaksi.snap_token),
         },
         [
           h("i", { class: "bi bi-arrow-repeat me-1" }),
@@ -794,57 +670,53 @@ column.display({
       );
     }
 
-    // 🔵 PILIH METODE (TUNAI / TRANSFER)
+    // 🔵 BELUM PILIH METODE → TAMPILKAN TUNAI & TRANSFER
     return h("div", { class: "d-flex gap-2" }, [
 
-      // TUNAI
+      // TUNAI (hanya muncul kalau belum pilih transfer)
       metode !== "midtrans" &&
-      h(
-        "button",
-        {
-          class: "btn btn-sm btn-success",
-          onClick: async () => {
-            const ok = await Swal.fire({
-              title: "Konfirmasi Tunai",
-              text: "Apakah uang tunai sudah diterima?",
-              icon: "question",
-              showCancelButton: true,
-              confirmButtonText: "Ya",
-            }).then(r => r.isConfirmed);
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-success",
+            onClick: async () => {
+              const ok = await Swal.fire({
+                title: "Konfirmasi Tunai",
+                text: "Apakah uang tunai sudah diterima?",
+                icon: "question",
+                showCancelButton: true,
+                confirmButtonText: "Ya",
+              }).then(r => r.isConfirmed);
 
-            if (ok) {
-              await axios.post(
-                `/order/${row.original.id}/konfirmasi-tunai`
-              );
-              refresh();
-            }
+              if (ok) {
+                await axios.post(`/order/${row.original.id}/konfirmasi-tunai`);
+                refresh();
+              }
+            },
           },
-        },
-        [
-          h("i", { class: "bi bi-cash me-1" }),
-          "Tunai",
-        ]
-      ),
+          [
+            h("i", { class: "bi bi-cash me-1" }),
+            "Tunai",
+          ]
+        ),
 
-      // TRANSFER
+      // TRANSFER (hanya muncul kalau belum pilih tunai)
       metode !== "tunai" &&
-      h(
-        "button",
-        {
-          class: "btn btn-sm btn-info",
-          onClick: async () => {
-            await axios.post(
-              `/order/${row.original.id}/pilih-transfer`
-            );
-            refresh();
-            redirectToPayment(row.original.id);
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-info",
+            onClick: async () => {
+              await axios.post(`/order/${row.original.id}/pilih-transfer`);
+              refresh();
+              redirectToPayment(row.original.id);
+            },
           },
-        },
-        [
-          h("i", { class: "bi bi-credit-card me-1" }),
-          "Transfer",
-        ]
-      ),
+          [
+            h("i", { class: "bi bi-credit-card me-1" }),
+            "Transfer",
+          ]
+        ),
     ]);
   },
 }),
@@ -852,156 +724,161 @@ column.display({
 
 
 
-  column.accessor(
-    row => row.transaksi?.metode_pembayaran ?? '-',
-    {
-      header: "Metode Pembayaran",
-      cell: ({ getValue }) => {
-        const metode = getValue();
 
-        // Memberikan warna badge yang berbeda antara Cash dan Midtrans/TF
-        const badgeClass = metode.toLowerCase() === 'tunai'
-          ? "badge bg-light-primary text-primary"
-          : "badge bg-light-info text-info";
 
-        return h(
-          "span",
-          { class: `fw-bold text-uppercase ${badgeClass}` },
-          metode.replaceAll("_", " ")
-        );
-      }
+
+
+
+
+
+column.display({
+  id: "struk",
+  header: "Struk",
+  cell: ({ row }) => {
+    const noKode = row.original.kode_order;
+
+    return h("div", { class: "d-flex gap-2" }, [
+    
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-secondary",
+          onClick: () => downloadReceipt(noKode),
+          title: "Download PDF"
+        },
+        [
+          h("i", { class: "la la-download me-1" }),
+          "Download"
+        ]
+      )
+    ]);
+  },
+}),
+column.accessor(
+  row => row.transaksi?.metode_pembayaran ?? '-', 
+  {
+    header: "Metode Pembayaran",
+    cell: ({ getValue }) => {
+      const metode = getValue();
+      
+      // Memberikan warna badge yang berbeda antara Cash dan Midtrans/TF
+      const badgeClass = metode.toLowerCase() === 'tunai' 
+        ? "badge bg-light-primary text-primary" 
+        : "badge bg-light-info text-info";
+
+      return h(
+        "span",
+        { class: `fw-bold text-uppercase ${badgeClass}` },
+        metode.replaceAll("_", " ")
+      );
     }
-  ),
-  column.accessor("id", {
-    header: "Aksi",
-    cell: (cell) => {
-      const row = cell.row.original;
-      const actions: any[] = [];
+  }
+),
+column.accessor("id", {
+  header: "Aksi",
+  cell: (cell) => {
+    const row = cell.row.original;
+    const actions: any[] = [];
 
-
-      // === Jika status masih menunggu konfirmasi mitra ===
-      if (row.status === "menunggu_konfirmasi_mitra") {
-        // Terima
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-success",
-              onClick: async () => {
-                const ok = await Swal.fire({
-                  icon: "question",
-                  title: "Terima order ini?",
-                  showCancelButton: true,
-                }).then((r) => r.isConfirmed);
-
-                if (!ok) return;
-
-                await axios.post(`/order/${row.id}/konfirmasi`, {
-                  status: "ditunggu_mitra",
-                });
-
-                Swal.fire("Berhasil", "Order diterima!", "success");
-                await refresh();
-              },
-            },
-            "Terima"
-          )
-        );
-
-        // Tolak
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-danger",
-              onClick: async () => {
-                const { value: alasan } = await Swal.fire({
-                  title: "Alasan penolakan",
-                  input: "text",
-                  inputPlaceholder: "Tulis alasan...",
-                  showCancelButton: true,
-                });
-
-                if (!alasan) return;
-
-                await axios.post(`/order/${row.id}/tolak`, {
-                  status: "ditolak",
-                  alasan_penolakan: alasan,
-                });
-
-                Swal.fire("Ditolak", "Order berhasil ditolak", "success");
-                await refresh();
-              },
-            },
-            "Tolak"
-          )
-        );
-      }
-
-      // === Jika status diterima → Edit ===
-      if (row.status?.trim() === "diterima") {
-        actions.push(
-          h(
-            "button",
-            {
-              class: "btn btn-sm btn-icon btn-info",
-              onClick: () => {
-                selected.value = cell.getValue();
-                openForm.value = true;
-              },
-            },
-            h("i", { class: "la la-pencil fs-2" })
-          )
-        );
-      }
-
-      // === Tombol Hapus (selalu ada) ===
+  
+    // === Jika status masih menunggu konfirmasi mitra ===
+    if (row.status === "menunggu_konfirmasi_mitra") {
+      // Terima
       actions.push(
         h(
           "button",
           {
-            class: "btn btn-sm btn-icon btn-danger",
-            onClick: () => deleteOrder(`order/${cell.getValue()}`),
+            class: "btn btn-sm btn-success",
+            onClick: async () => {
+              const ok = await Swal.fire({
+                icon: "question",
+                title: "Terima order ini?",
+                showCancelButton: true,
+              }).then((r) => r.isConfirmed);
+
+              if (!ok) return;
+
+              await axios.post(`/order/${row.id}/konfirmasi`, {
+                status: "ditunggu_mitra",
+              });
+
+              Swal.fire("Berhasil", "Order diterima!", "success");
+              await refresh();
+            },
           },
-          h("i", { class: "la la-trash fs-2" })
-        ),
+          "Terima"
+        )
       );
 
-      // 
-      return h(
-        "div",
-        { class: "d-flex gap-2 flex-nowrap align-items-center" },
-        actions
-      );
-    },
-
-
-  }),
-
-
-    column.display({
-    id: "struk",
-    header: "Struk",
-    cell: ({ row }) => {
-      const noKode = row.original.kode_order;
-
-      return h("div", { class: "d-flex gap-2" }, [
-
+      // Tolak
+      actions.push(
         h(
           "button",
           {
-            class: "btn btn-sm btn-secondary",
-            onClick: () => downloadReceipt(noKode),
-            title: "Download PDF"
+            class: "btn btn-sm btn-danger",
+            onClick: async () => {
+              const { value: alasan } = await Swal.fire({
+                title: "Alasan penolakan",
+                input: "text",
+                inputPlaceholder: "Tulis alasan...",
+                showCancelButton: true,
+              });
+
+              if (!alasan) return;
+
+              await axios.post(`/order/${row.id}/tolak`, {
+                status: "ditolak",
+                alasan_penolakan: alasan,
+              });
+
+              Swal.fire("Ditolak", "Order berhasil ditolak", "success");
+              await refresh();
+            },
           },
-          [
-            h("i", { class: "la la-download me-1" }),
-            "Download"
-          ]
+          "Tolak"
         )
-      ]);
-    },
-  }),
+      );
+    }
+
+    // === Jika status diterima → Edit ===
+    if (row.status?.trim() === "diterima") {
+      actions.push(
+        h(
+          "button",
+          {
+            class: "btn btn-sm btn-icon btn-info",
+            onClick: () => {
+              selected.value = cell.getValue();
+              openForm.value = true;
+            },
+          },
+          h("i", { class: "la la-pencil fs-2" })
+        )
+      );
+    }
+
+    // === Tombol Hapus (selalu ada) ===
+    actions.push(
+      h(
+        "button",
+        {
+          class: "btn btn-sm btn-icon btn-danger",
+          onClick: () => deleteOrder(`order/${cell.getValue()}`),
+        },
+        h("i", { class: "la la-trash fs-2" })
+      ),
+    );
+
+    // 
+    return h(
+      "div",
+      { class: "d-flex gap-2 flex-nowrap align-items-center" },
+      actions
+    );
+  },
+
+  
+}),
 
 ];
 onMounted(() => {
@@ -1036,7 +913,7 @@ onMounted(async () => {
     <!-- <paginate ref="paginateRef" :url="`/order-masuk`" :columns="columns" /> -->
 
 
-    <!-- <div class="card-body border-bottom">
+        <!-- <div class="card-body border-bottom">
       <div class="row g-3 align-items-end">
         <div class="col-md-3">
           <label class="form-label fw-bold">Tipe Filter</label>

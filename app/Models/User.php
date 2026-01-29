@@ -22,6 +22,7 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
+    // protected $primaryKey = 'uuid';
     protected $fillable = [
         'name',
         'email',
@@ -35,6 +36,16 @@ class User extends Authenticatable implements JWTSubject
      *
      * @var array<int, string>
      */
+    // public $incrementing = false;
+    // protected $keyType = 'string';
+
+    // public function getRouteKeyName()
+    // {
+    //     return 'id'; // UUID
+    // }
+
+
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -58,6 +69,26 @@ class User extends Authenticatable implements JWTSubject
 
     $this->notify(new ResetPassword($token, $url));
 }
+
+// protected static function boot()
+// {
+//     parent::boot();
+
+//     static::saved(function ($user) {
+//         $user->refresh();
+//         Log::info("Saved");
+//         event(new UserRoleUpdated($user));
+//     });
+
+//     static::deleted(function ($user) {
+//         if ($user->photo) {
+//             $old_photo = str_replace('/storage/', '', $user->photo);
+//             Storage::disk('public')->delete($old_photo);
+//         }
+//     });
+// }
+
+
      protected static function booted()
     {
         static::saved(function ($user) {

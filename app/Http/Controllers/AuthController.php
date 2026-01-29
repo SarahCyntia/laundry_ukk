@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password as RulesPassword;
 
 class AuthController extends Controller
 {
@@ -182,16 +183,20 @@ public function register(Request $request)
 
 public function registerMitra(Request $request)
 {
+    Log::info('Register Mitra request: ', $request->all());
     $validated = $request->validate([
         'name' => 'required|string|max:255',
+        // 'email' => 'required|email|unique:users',
         'email' => 'required|email|unique:users,email',
         'phone' => 'required|string',
-        'password' => 'required|min:6',
+        'password' => ['required', 'confirmed', RulesPassword::default()],
         'nama_laundry' => 'required|string',
         'alamat_laundry' => 'required|string',
         'foto_ktp' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         'kecamatan_id' => 'required|exists:kecamatan,id',
     ]);
+
+    Log::info("Validated");
 
     // Simpan user
     $user = User::create([
@@ -201,13 +206,18 @@ public function registerMitra(Request $request)
         'password' => Hash::make($validated['password']),
     ]);
 
+    Log::info("User created", ['id' => $user->id]);
     // role mitra
     $user->assignRole('mitra');
+
+    Log::info("Role 'mitra' assigned to user: ", ['user_id' => $user->id]);
 
     // upload foto KTP
     $path = $request->hasFile('foto_ktp')
         ? $request->file('foto_ktp')->store('ktp', 'public')
         : null;
+
+    Log::info("KTP uploaded for user: ", ['user_id' => $user->id, 'ktp_path' => $path]);
 
     // Simpan mitra (status menunggu)
     $mitra = Mitra::create([
@@ -219,6 +229,8 @@ public function registerMitra(Request $request)
         'status_toko' => 'buka',
          'kecamatan_id' => $validated['kecamatan_id'],
     ]);
+
+    Log::info("Mitra created: ", ['mitra_id' => $mitra->id]);
 
     return response()->json([
         'message' => 'Pendaftaran berhasil! Akun menunggu verifikasi admin.',
@@ -337,7 +349,8 @@ public function verifikasiDitolak($id)
 //buat besok
 public function verifikasi($id, Request $request)
 {
-    $pendaftar = MitraPendaftaran::findOrFail($id);
+    // $pendaftar = MitraPendaftaran::findOrFail($id);
+    $pendaftar = Mitra::findOrFail($id);
 
     if ($request->status == 'diterima') {
 

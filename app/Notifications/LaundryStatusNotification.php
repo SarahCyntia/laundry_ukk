@@ -27,7 +27,7 @@ class LaundryStatusNotification extends Notification
     public function toArray($notifiable)
     {
         $map = [
-            'selesai' => [
+            'siap_diambil' => [
                 'title'   => 'Laundry Selesai',
                 'message' => 'Laundry Anda sudah selesai, silakan ambil cucian Anda.',
             ],
@@ -52,6 +52,8 @@ class LaundryStatusNotification extends Notification
             'status'     => $this->status,
             'order_id'   => $this->order->id,
             'kode_order' => $this->order->kode_order,
+            'waktu_diambil' => $this->order->waktu_diambil,
+            
         ];
     }
 }

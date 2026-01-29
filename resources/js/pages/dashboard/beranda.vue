@@ -22,16 +22,23 @@
       <!-- NOTIFIKASI -->
       <button v-if="isLoggedIn" class="notif-btn" @click="openNotif">
         🔔
-        <span v-if="notifications.length" class="notif-badge">
+        <span v-if="unreadCount" class="notif-badge">
+  {{ unreadCount }}
+</span>
+        <!-- <span v-if="notifications.length" class="notif-badge">
           {{ notifications.length }}
-        </span>
+        </span> -->
       </button>
 
 
 
       <div class="icon">🏠</div>
-      <h1>Selamat Datang di Beranda</h1>
-      <p class="subtitle">Platform Laundry Terpercaya di Indonesia</p>
+      <h1>Selamat Datang di Slaundry</h1>
+      <p class="subtitle">
+  Platform laundry berbasis kemitraan yang menghubungkan pelanggan dengan mitra laundry terpercaya
+</p>
+
+      <!-- <p class="subtitle">Platform Laundry Terpercaya di Indonesia</p> -->
 
       <div class="hero-buttons">
         <button class="btn-primary"><a class="nav-link" href="#cari">Cari Laundry</a></button>
@@ -137,7 +144,7 @@
     </div>
 
     <!-- Keunggulan Layanan -->
-    <div class="features-section">
+    <!-- <div class="features-section">
       <div class="content-wrapper">
         <h2 class="text-center">Kenapa Pilih Kami?</h2>
         <div class="features-grid">
@@ -148,8 +155,7 @@
           </div>
         </div>
       </div>
-      <!-- Cek Status Laundry -->
-    </div>
+    </div> -->
 
 
 
@@ -157,14 +163,14 @@
 
     <div class="cek-status-section">
       <div class="content-wrapper">
-        <h2 class="text-center mt-20">Cek Status Laundry</h2>
+        <h2 class="mt-29" id="status">Cek Status Laundry</h2>
         <p class="section-desc text-kecil" id="kecil">
           Masukkan kode order untuk mengetahui status laundry Anda
         </p>
 
 
 
-        <p>Masukkan Kode Order</p>
+        <!-- <p id="order">Masukkan Kode Order</p> -->
         <div class="search-kode" id="kode">
           <input v-model="kode_order" type="text" placeholder="Contoh: ORD-123456" class="search-input"
             @keyup.enter="cekStatus" />
@@ -200,34 +206,23 @@
           <h4>Layanan</h4>
           <ul class="footer-links">
             <li><a href="#cari">Cari Laundry</a></li>
-            <li><a href="#kode">Cek Status</a></li>
+            <li><a href="#status">Cek Status</a></li>
             <li><a href="#" @click.prevent="confirmMitra">Daftar Mitra</a></li>
-            <li><a href="#">Cara Kerja</a></li>
           </ul>
         </div>
 
-        <!-- Dukungan -->
-        <div class="footer-column">
-          <h4>Dukungan</h4>
-          <ul class="footer-links">
-            <li><a href="#">Pusat Bantuan</a></li>
-            <li><a href="#">FAQ</a></li>
-            <li><a href="#">Kebijakan Privasi</a></li>
-            <li><a href="#">Syarat & Ketentuan</a></li>
-          </ul>
-        </div>
-
+    
         <!-- Hubungi Kami -->
         <div class="footer-column">
           <h4>Hubungi Kami</h4>
           <ul class="contact-info">
             <li>
               <span class="contact-icon">📧</span>
-              <span>info@laundryku.com</span>
+              <span>info@slaundry.com</span>
             </li>
             <li>
               <span class="contact-icon">📞</span>
-              <span>+62 812-3456-7890</span>
+              <span>+62 812-3136-5656</span>
             </li>
             <li>
               <span class="contact-icon">📍</span>
@@ -238,9 +233,9 @@
       </div>
 
       <!-- Footer Bottom -->
-      <div class="footer-bottom">
-        <p>&copy; 2026 LaundryKu. All rights reserved.</p>
-        <p class="footer-credits">Made with ❤️ in Indonesia</p>
+      <div>
+        <p class="footer-terakhir mt-10" >&copy; 2026 Slaundry. Seluruh hak dilindungi undang-undang.</p>
+        <!-- <p class="footer-credits">Made with ❤️ in Indonesia</p> -->
       </div>
     </footer>
 
@@ -346,18 +341,36 @@ watch(kecamatan, async (id) => {
 
 
 
+const unreadCount = computed(() =>
+  notifications.value.filter(n => !n.read_at).length
+)
+
+
 function openNotif() {
-  if (!notifications.value.length) {
-    Swal.fire('Tidak ada notifikasi baru')
+  // 🔥 FILTER: buang notif "siap_diambil" kalau order sudah diambil
+  const filtered = notifications.value.filter((n: any) => {
+    // kalau ada waktu_diambil → jangan tampilkan notif siap_diambil
+    if (
+      n.data.status === 'siap_diambil' &&
+      n.data.waktu_diambil
+    ) {
+      return false
+    }
+
+    return true
+  })
+
+  if (!filtered.length) {
+    Swal.fire('Tidak ada notifikasi')
     return
   }
 
-  const list = notifications.value
-    .map((n) => {
+  const list = filtered
+    .map((n: any) => {
       const status = n.data.status
 
       let iconEmoji = 'ℹ️'
-      if (status === 'selesai') iconEmoji = '✅'
+      if (status === 'siap_diambil') iconEmoji = '✅'
       if (status === 'diterima') iconEmoji = '📥'
       if (status === 'ditolak') iconEmoji = '❌'
 
@@ -388,17 +401,31 @@ function openNotif() {
 //   }
 
 //   const list = notifications.value
-//     .map((n: any) => `• ${n.data.message}`)
-//     .join('<br>')
+//     .map((n) => {
+//       const status = n.data.status
+
+//       let iconEmoji = 'ℹ️'
+//       if (status === 'selesai') iconEmoji = '✅'
+//       if (status === 'diterima') iconEmoji = '📥'
+//       if (status === 'ditolak') iconEmoji = '❌'
+
+//       return `
+//         <div style="text-align:left;margin-bottom:10px">
+//           <b>${iconEmoji} ${n.data.title}</b><br>
+//           ${n.data.message}<br>
+//           <small>Kode Order: ${n.data.kode_order}</small>
+//         </div>
+//       `
+//     })
+//     .join('')
 
 //   Swal.fire({
 //     title: 'Notifikasi',
 //     html: list,
-//     icon: 'info'
+//     icon: 'info',
+//     width: 500
 //   })
 // }
-
-
 
 
 
@@ -532,13 +559,7 @@ function getStatusClass(status: string) {
 
 
 
-// function goToLaundry(id: number) {
-//   // Arahkan ke LaundryDetail.vue dengan mengirim ID mitra
-//   router.push({
-//     name: 'DetailLaundry',
-//     params: { id: id.toString() }
-//   });
-// }
+
 
 function filterLaundry() {
   // Filter sudah otomatis via computed property
@@ -600,32 +621,63 @@ onMounted(() => {
 
 
 const notifications = ref([])
-
 async function fetchNotifications() {
   if (!isLoggedIn.value) return
-  // await axios.get('/sanctum/csrf-cookie')
 
   const res = await axios.get('/notifications')
   notifications.value = res.data
 
   notifications.value.forEach((n: any) => {
-    // 🔥 HANYA STATUS SELESAI
-    if (n.data.title === 'Laundry Selesai') {
+    // 🔔 POPUP HANYA JIKA:
+    // - siap_diambil
+    // - belum dibaca
+    // - belum diambil
+    if (
+      n.data.status === 'siap_diambil' &&
+      !n.read_at &&
+      !n.data.waktu_diambil
+    ) {
       Swal.fire({
         icon: 'success',
-        title: 'Laundry Selesai',
+        title: n.data.title,
         text: n.data.message,
         confirmButtonText: 'OK'
+      }).then(() => {
+        markAsRead(n.id)
       })
-
-      // ✅ Tandai sudah dibaca biar tidak muncul lagi
-      markAsRead(n.id)
     }
   })
 }
+
 async function markAsRead(id: string) {
-  await axios.post(`/notifications/${id}/mark-as-read`)
+  await axios.post(`/notifications/${id}/read`)
 }
+
+// async function fetchNotifications() {
+//   if (!isLoggedIn.value) return
+//   // await axios.get('/sanctum/csrf-cookie')
+
+//   const res = await axios.get('/notifications')
+//   notifications.value = res.data
+
+//   notifications.value.forEach((n: any) => {
+//     // 🔥 HANYA STATUS SELESAI
+//     if (n.data.title === 'Laundry Selesai') {
+//       Swal.fire({
+//         icon: 'success',
+//         title: 'Laundry Selesai',
+//         text: n.data.message,
+//         confirmButtonText: 'OK'
+//       })
+
+//       // ✅ Tandai sudah dibaca biar tidak muncul lagi
+//       markAsRead(n.id)
+//     }
+//   })
+// }
+// async function markAsRead(id: string) {
+//   await axios.post(`/notifications/${id}/mark-as-read`)
+// }
 // async function markAsRead(id: string) {
 //   await axios.post(`/notifications/${id}/read`)
 // }
@@ -671,7 +723,7 @@ onMounted(async () => {
 
 <style>
 .placeholder-img {
-  width: 230px;
+  width: 130px;
   height: 100px;
   border-radius: 6px;
   /* ⬅️ bukan 50% */
@@ -684,7 +736,7 @@ onMounted(async () => {
 
 
 .foto-toko {
-  width: 100%;
+  /* width: 100%; */
   height: 100%;
 }
 
@@ -772,34 +824,60 @@ onMounted(async () => {
 
 
 
+/* ========================================
+   FOOTER SECTION
+   ======================================== */
 
-/* Footer Section */
+/* Main Footer Container */
 .footer-section {
   background: #6b7fdb;
   color: white;
-  padding: 50px 40px 20px;
-  margin-top: 80px;
+  margin-top: 10px;
 }
 
+/* Footer Content Grid */
+/* Footer Content Grid */
 .footer-content {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 200%;
   display: grid;
-  grid-template-columns: 1fr 1fr 1.2fr;
-  gap: 60px;
-  margin-bottom: 35px;
+  grid-template-columns: 1fr 1fr;
+  justify-items: center;
 }
 
-/* Footer Column Headings */
+/* ========================================
+   FOOTER COLUMNS
+   ======================================== */
+
+/* Column Headings */
 .footer-column h4 {
   font-size: 19px;
   font-weight: 700;
-  margin-bottom: 22px;
+  margin-top: 22px;
+  color: white;
+  letter-spacing: 0.3px;
+  text-align: center;
+  justify-content: space-between;
+}
+#h4 {
+  font-size: 19px;
+  font-weight: 700;
+  margin-top: 22px;
   color: white;
   letter-spacing: 0.3px;
 }
 
-/* Footer Links */
+#kolom {
+  font-size: 19px;
+  font-weight: 700;
+  margin-top: 22px;
+  color: white;
+  letter-spacing: 0.3px;
+}
+
+/* ========================================
+   FOOTER LINKS
+   ======================================== */
+
 .footer-links {
   list-style: none;
   padding: 0;
@@ -807,16 +885,16 @@ onMounted(async () => {
 }
 
 .footer-links li {
-  margin-bottom: 14px;
+  margin-top: 14px;
 }
 
 .footer-links a {
   color: rgba(255, 255, 255, 0.92);
   text-decoration: none;
   font-size: 15px;
-  transition: all 0.2s ease;
-  display: inline-block;
   line-height: 1.5;
+  display: inline-block;
+  transition: all 0.2s ease;
 }
 
 .footer-links a:hover {
@@ -824,18 +902,15 @@ onMounted(async () => {
   padding-left: 4px;
 }
 
-/* Contact Info */
-.contact-info {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
+/* ========================================
+   CONTACT INFO
+   ======================================== */
 
 .contact-info li {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-top: 15px;
   font-size: 15px;
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.92);
@@ -843,82 +918,14 @@ onMounted(async () => {
 
 .contact-icon {
   font-size: 18px;
-  margin-top: 2px;
+  margin-top: 10px;
 }
 
-/* Footer Bottom */
-.footer-bottom {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding-top: 25px;
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
+.footer-terakhir {
   text-align: center;
-}
-
-.footer-bottom p {
+  background: #5a6edb;
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.9);
-  margin: 6px 0;
-  letter-spacing: 0.2px;
-}
-
-.footer-credits {
-  font-weight: 500;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-  .footer-content {
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
-  }
-
-  .footer-column:last-child {
-    grid-column: 1 / -1;
-    max-width: 350px;
-  }
-}
-
-@media (max-width: 768px) {
-  .footer-section {
-    padding: 40px 25px 20px;
-  }
-
-  .footer-content {
-    grid-template-columns: 1fr;
-    gap: 35px;
-  }
-
-  .footer-column {
-    text-align: left;
-  }
-
-  .contact-info li {
-    justify-content: flex-start;
-  }
-
-  .footer-links a:hover {
-    padding-left: 4px;
-  }
-}
-
-@media (max-width: 480px) {
-  .footer-section {
-    padding: 35px 20px 18px;
-  }
-
-  .footer-content {
-    gap: 30px;
-  }
-
-  .footer-column h4 {
-    font-size: 17px;
-  }
-
-  .footer-links a,
-  .contact-info li {
-    font-size: 14px;
-  }
+  color: rgba(255, 255, 255, 0.85);
 }
 
 
@@ -929,11 +936,13 @@ onMounted(async () => {
 
 
 
+#order{
+  margin-top: 20px;
+  margin-left: 24%;
+  position: absolute;
+  /* bottom: 0; */
 
-
-
-
-
+}
 
 
 
@@ -943,6 +952,14 @@ onMounted(async () => {
   max-width: 600px;
   margin: 0 auto 48px;
   margin-top: 60px;
+}
+#status {
+  text-align: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto 48px;
+  margin-top: 60px;
+  color: black;
 }
 
 
@@ -991,6 +1008,7 @@ onMounted(async () => {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 15px;
+  position: center;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
@@ -1350,12 +1368,13 @@ html {
 }
 
 .text-center {
-  text-align: center;
   font-size: 30px;
-  font-weight: bold;
   color: #333;
-  margin-bottom: 48px;
+  text-align: center;
+  
 }
+
+
 
 .text-kecil {
   text-align: center;
@@ -1368,7 +1387,9 @@ html {
 
 #kecil {
   margin-top: -50px;
+  margin-left: 22%;
 }
+
 
 /* Hero Section */
 .hero-section {
@@ -1455,16 +1476,10 @@ html {
   margin-bottom: 48px;
 }
 
-.section-header h2 {
-  font-size: 32px;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 16px;
-}
 
 .section-desc {
   color: #666;
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
 }
@@ -1485,6 +1500,7 @@ html {
   font-size: 16px;
   outline: none;
   transition: border-color 0.3s;
+
 }
 
 .search-input:focus {
@@ -1550,7 +1566,7 @@ html {
 }
 
 .placeholder-img {
-  font-size: 64px;
+  font-size: 50px;
 }
 
 .laundry-badge {

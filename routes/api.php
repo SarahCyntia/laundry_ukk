@@ -24,6 +24,7 @@ use App\Http\Controllers\LaundryController;
 use App\Http\Controllers\PenjemputanController;
 use App\Http\Controllers\JenisLayananController;
 use App\Http\Controllers\KecamatanController;
+use App\Http\Controllers\LaporanAdminController;
 use App\Http\Controllers\LaporanKeuanganController;
 use App\Http\Controllers\LayananPrioritasController;
 use App\Http\Controllers\LayananTambahanController;
@@ -43,6 +44,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\MidtransWebhookController; // if separate
 use App\Http\Controllers\PelangganOrderController;
 use App\Http\Controllers\LaporanOrderController;
+use App\Models\Order;
 use Illuminate\Support\Facades\Password;
 
 /*
@@ -100,22 +102,22 @@ Route::post('/mitra/{id}/update-status', [AuthController::class, 'updateStatus']
 Route::post('/mitra/{id}/approve', [AuthController::class, 'approveMitra']);
 
 Route::prefix('auth')->group(function () {
-    Route::post('register/get/email/otp', [AuthController::class, 'getEmailOtp']);
     Route::post('/register/get/email/otp', [AuthController::class, 'getEmailOtp']);
     Route::post('/register/check/email/otp', [AuthController::class, 'verifyEmailOtp']);
-    // Route::post('auth/register/verify-otp ', [AuthController::class, 'verifyEmailOtp']);
-    // Route::post('/register/verify-otp', [AuthController::class, 'verifyOtp']);
     Route::post('/register/verify/email/otp', [AuthController::class, 'verifyEmailOtp']);
     Route::post('/register', [AuthController::class, 'register']);
-
     Route::post('/register-mitra', [AuthController::class, 'registerMitra']);
 });
+
+
 Route::get('/cek-status-mitra/{id}', [AuthController::class, 'cekStatusMitra']);
 Route::put('/cek-status-mitra/{id}', [AuthController::class, 'updateStatusMitra']);
 
-
 Route::post('/mitra/auth', [authController::class, 'index']);
 
+Route::post('/ping', function () {
+    return response()->json(['status' => 'API OK']);
+});
 
 
 Route::post('/mitra/verifikasi/{id}/diterima', [authController::class, 'verifikasiDiterima']);
@@ -132,7 +134,15 @@ Route::middleware(['auth', 'json'])->prefix('auth')->group(function () {
     Route::post('login', [AuthController::class, 'login'])->withoutMiddleware('auth');
     Route::delete('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
-});
+    });
+    Route::post('/_debug', function () {
+        return response()->json(['masuk' => true]);
+        });
+       
+       
+
+
+
 
 Route::prefix('setting')->group(function () {
     Route::get('', [SettingController::class, 'index']);
@@ -176,7 +186,6 @@ Route::middleware(['auth', 'verified', 'json'])->group(function () {
             Route::apiResource('users', UserController::class)
                 ->except(['index', 'store'])->scoped(['user' => 'uuid']);
         });
-        // Route::post('register-mitra', [UserController::class, 'registerMitra']);
 
         Route::middleware('can:master-role')->group(function () {
             Route::get('roles', [RoleController::class, 'get'])->withoutMiddleware('can:master-role');
@@ -465,20 +474,28 @@ Route::get('/laporan-order/export-excel', [LaporanOrderController::class, 'expor
 
 
 
-// Route::middleware('auth:sanctum')->get('/notifications', function (Request $request) {
-//     return $request->user()->unreadNotifications;
-// });
-
-// Route::post('/notifications/{id}/read', function ($id) {
-//     auth()->user()->notifications()
-//         ->where('id', $id)
-//         ->update(['read_at' => now()]);
-
-//     return response()->json(['success' => true]);
-// });
 Route::middleware('auth')->get('/notifications', function () {
-    return auth()->user()->pelanggan->notifications;
+    return auth()->user()
+        ->pelanggan
+        ->notifications()
+        ->latest()
+        ->get();
 });
+Route::middleware('auth')->post('/notifications/{id}/read', function ($id) {
+    auth()->user()
+        ->pelanggan
+        ->notifications()
+        ->where('id', $id)
+        ->firstOrFail()
+        ->markAsRead();
+
+    return response()->json(['success' => true]);
+});
+
+// Route::middleware('auth')->get('/notifications', function () {
+//     return auth()->user()->pelanggan->notifications;
+    
+// });
 
 Route::middleware('auth')->group(function () {
     // Laporan keuangan mitra
@@ -496,3 +513,33 @@ Route::middleware('auth')->group(function () {
 Route::post('/laporan-keuangan', [LaporanKeuanganController::class, 'index']);
 Route::post('/laporan-keuangan/pdf', [LaporanKeuanganController::class, 'exportPdf']);
 Route::post('/laporan-keuangan/excel', [LaporanKeuanganController::class, 'exportExcel']);
+
+
+Route::get('/laporan/summary-hari-ini', [LaporanKeuanganController::class, 'summaryHariIni']);
+
+
+
+
+Route::post('/order/{order}/konfirmasi-tunai', [PaymentController::class, 'konfirmasiTunai']);
+Route::post('/order/{order}/pilih-transfer', [PaymentController::class, 'pilihTransfer']);
+Route::get('/admin-laporan', [LaporanAdminController::class, 'index']);
+
+
+
+
+
+Route::put('/order/{order}/ambil', [OrderController::class, 'ambil']);
+
+
+
+
+// Route::post('/notifications/{id}/mark-as-read', function ($id) {
+//     $notification = auth()->user()->notifications()->where('id', $id)->first();
+
+//     if ($notification) {
+//         $notification->markAsRead();
+//         return response()->json(['message' => 'Notification marked as read.']);
+//     } else {
+//         return response()->json(['message' => 'Notification not found.'], 404);
+//     }
+// });

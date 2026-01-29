@@ -479,17 +479,29 @@ export default defineComponent({
             if (formData.value.foto_ktp) {
                 data.append("foto_ktp", formData.value.foto_ktp);
             }
+           axios.post(
+  formData.value.role === "mitra"
+    ? "/auth/register-mitra"
+    : "/auth/register",
+  data
+)
+//             axios
+//                 .post(
+//                     formData.value.role === "mitra"
+//                         ? "/auth/register-mitra"
+//                         : "/auth/register",
+//                     data,
+//                     {
+//     headers: {
+//       "Content-Type": "multipart/form-data",
+//       "Accept": "application/json",
+//     },
+//   }
 
-            axios
-                .post(
-                    formData.value.role === "mitra"
-                        ? "/auth/register-mitra"
-                        : "/auth/register",
-                    data,
-                    {
-                        headers: { "Content-Type": "multipart/form-data" },
-                    }
-                )
+                    // {
+                    //     headers: { "Content-Type": "multipart/form-data" },
+                    // }
+                // )
                 // .then((res) => {
                 //     toast.success("Akun berhasil dibuat");
 

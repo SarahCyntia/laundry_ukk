@@ -3,7 +3,7 @@
     <div class="dashboard-header">
       <div>
         <h1 class="mb-2">Dashboard Admin</h1>
-        <p class="text-muted">Kelola seluruh sistem LaundryKu</p>
+        <p class="text-muted">Kelola seluruh sistem Slaundry</p>
       </div>
       <div class="header-actions">
         <span class="date-badge">
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Transaction & Revenue -->
-    <div class="row g-4 mb-4">
+    <!-- <div class="row g-4 mb-4">
       <div class="col-md-8">
         <div class="stat-card">
           <div class="stat-header">
@@ -173,7 +173,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Quick Actions -->
     <div class="quick-actions-card">
@@ -187,25 +187,111 @@
           <i class="fas fa-users"></i>
           <span>Kelola Pelanggan</span>
         </button>
-        <button class="action-btn btn-warning" @click="goToPage('admin.transaksi')">
+        <!-- <button class="action-btn btn-warning" @click="goToPage('admin.transaksi')">
           <i class="fas fa-receipt"></i>
           <span>Lihat Transaksi</span>
-        </button>
-        <button class="action-btn btn-info" @click="goToPage('admin.laporan')">
+        </button> -->
+        <!-- <button class="action-btn btn-info" @click="goToPage('admin.laporan')">
           <i class="fas fa-chart-bar"></i>
           <span>Laporan</span>
-        </button>
-        <button class="action-btn btn-danger" @click="goToPage('admin.komplain')">
+        </button> -->
+        <!-- <button class="action-btn btn-danger" @click="goToPage('admin.komplain')">
           <i class="fas fa-comments"></i>
           <span>Komplain</span>
-        </button>
-        <button class="action-btn btn-secondary" @click="goToPage('admin.settings')">
+        </button> -->
+        <!-- <button class="action-btn btn-secondary" @click="goToPage('admin.settings')">
           <i class="fas fa-cog"></i>
           <span>Pengaturan</span>
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
+
+  <!-- LAPORAN KEUANGAN ADMIN -->
+  <!-- <div class="stat-card mt-4">
+    <div class="stat-header">
+      <h4>
+        <i class="fas fa-file-invoice-dollar me-2"></i>
+        Laporan Keuangan (Transaksi Dibayar)
+      </h4>
+
+      <select v-model="laporanPeriod" class="period-select" @change="fetchLaporanKeuangan">
+        <option value="today">Hari Ini</option>
+        <option value="week">Minggu Ini</option>
+        <option value="month">Bulan Ini</option>
+      </select>
+    </div>
+
+    <div class="stat-body">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kode Order</th>
+            <th>Pelanggan</th>
+            <th>Mitra Laundry</th>
+            <th>Metode Bayar</th>
+            <th>Status</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+
+
+        <tbody>
+          <tr v-for="(item, index) in laporanKeuangan" :key="item.id">
+            <td>{{ index + 1 }}</td>
+            <td data-label="Kode Order">{{ item.kode_order }}</td>
+            <td data-label="Pelanggan">{{ item.nama_pelanggan }}</td>
+            <td data-label="Mitra">{{ item.nama_mitra }}</td>
+            <td data-label="Metode">{{ item.metode_pembayaran }}</td>
+            <td data-label="Status">
+              <span class="badge bg-success">{{ item.status_pembayaran }}</span>
+            </td>
+            <td data-label="Total">{{ formatCurrency(item.total_harga) }}</td>
+          </tr>
+
+          LOADING
+          <tr v-if="loading">
+            <td colspan="7" class="text-center">
+              Memuat data...
+            </td>
+          </tr>
+          JIKA KOSONG
+          <tr v-if="!loading && laporanKeuangan.length === 0">
+            <td colspan="7" class="text-center text-muted">
+              Tidak ada transaksi dibayar
+            </td>
+          </tr>
+
+        </tbody> -->
+
+
+        <!-- <tbody>
+          <tr v-for="(item, index) in laporanKeuangan" :key="item.id">
+            <td>{{ index + 1 }}</td>
+            <td data-label="Kode Order">{{ item.kode_order }}</td>
+            <td data-label="Pelanggan">{{ item.nama_pelanggan }}</td>
+            <td data-label="Mitra">{{ item.nama_mitra }}</td>
+            <td data-label="Metode">{{ item.metode_pembayaran }}</td>
+            <td data-label="Status">
+              <span class="badge bg-success">{{ item.status_pembayaran }}</span>
+            </td>
+            <td data-label="Total">{{ formatCurrency(item.total_harga) }}</td>
+
+          </tr>
+
+          <tr v-if="!LaporanKeuangan.length">
+            <td colspan="7" class="text-center">
+              Tidak ada transaksi dibayar
+            </td>
+          </tr>
+        </tbody> -->
+      <!-- </table>
+    </div>
+
+
+  </div> -->
+
 </template>
 
 <script setup lang="ts">
@@ -213,6 +299,8 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import axios from "@/libs/axios";
 import type { Pelanggan } from "@/types";
+import LaporanKeuangan from "../mitra/laporan-keuangan.vue";
+import { vLoading } from "element-plus";
 
 const router = useRouter();
 
@@ -259,35 +347,54 @@ const transaksiSelesai = ref(0);
 const komplainBelumDitangani = ref(0);
 const laporanBelumDitinjau = ref(0);
 
+
+
+const laporanKeuangan = ref<any[]>([])
+const laporanPeriod = ref("today")
+
+const fetchLaporanKeuangan = async () => {
+  try {
+    const { data } = await axios.get("/admin-laporan", {
+      params: {
+        period: laporanPeriod.value,
+        status_pembayaran: "dibayar"
+      }
+    })
+
+    laporanKeuangan.value = data.data || []
+  } catch (err) {
+    console.error("Gagal mengambil laporan keuangan", err)
+  }
+}
 // Overview cards computed
 const overviewCards = computed(() => [
-  {
-    title: "Total Transaksi Hari Ini",
-    icon: "fas fa-shopping-cart",
-    value: totalTransaksiHariIni.value,
-    colorClass: "card-blue",
-    trend: 12,
-  },
-  {
-    title: "Pendapatan Hari Ini",
-    icon: "fas fa-money-bill-wave",
-    value: formatCurrency(totalPendapatanHariIni.value),
-    colorClass: "card-green",
-    trend: 8,
-  },
+  // {
+  //   title: "Total Transaksi Hari Ini",
+  //   icon: "fas fa-shopping-cart",
+  //   value: totalTransaksiHariIni.value,
+  //   colorClass: "card-blue",
+  //   trend: 12,
+  // },
+  // {
+  //   title: "Pendapatan Hari Ini",
+  //   icon: "fas fa-money-bill-wave",
+  //   value: formatCurrency(totalPendapatanHariIni.value),
+  //   colorClass: "card-green",
+  //   trend: 8,
+  // },
   {
     title: "Total Mitra",
     icon: "fas fa-store",
     value: totalMitra.value,
     colorClass: "card-purple",
-    trend: 5,
+    // trend: 5,
   },
   {
     title: "Total Pelanggan",
     icon: "fas fa-users",
     value: totalPelanggan.value,
     colorClass: "card-orange",
-    trend: 15,
+    // trend: 15,
   },
 ]);
 
@@ -305,33 +412,33 @@ const fetchAdminData = async () => {
     const { data } = await axios.get("/dashboard/admin-data", {
       params: { period: selectedPeriod.value },
     });
-//     axios.get("/dashboard/admin-data", {
-//   params: { period: selectedPeriod.value }
-// });
+    //     axios.get("/dashboard/admin-data", {
+    //   params: { period: selectedPeriod.value }
+    // });
 
-    
+
     // Update all stats
     totalTransaksiHariIni.value = data.totalTransaksiHariIni || 0;
     totalPendapatanHariIni.value = data.totalPendapatanHariIni || 0;
     totalMitra.value = data.totalMitra || 0;
     totalPelanggan.value = data.totalPelanggan || 0;
-    
+
     mitraAktif.value = data.mitraAktif || 0;
     mitraTutup.value = data.mitraTutup || 0;
     mitraPending.value = data.mitraPending || 0;
-    
+
     pelangganAktif.value = data.pelangganAktif || 0;
     penggunaBaru.value = data.penggunaBaru || 0;
     totalAdmin.value = data.totalAdmin || 0;
-    
+
     totalTransaksi.value = data.totalTransaksi || 0;
     totalPendapatan.value = data.totalPendapatanFormatted || "Rp 0";
     rataRataTransaksi.value = data.rataRataTransaksiFormatted || "Rp 0";
-    
+
     transaksiMenunggu.value = data.transaksiMenunggu || 0;
     transaksiProses.value = data.transaksiProses || 0;
     transaksiSelesai.value = data.transaksiSelesai || 0;
-    
+
     komplainBelumDitangani.value = data.komplainBelumDitangani || 0;
     laporanBelumDitinjau.value = data.laporanBelumDitinjau || 0;
   } catch (error) {
@@ -344,11 +451,17 @@ const goToPage = (routeName: string) => {
 };
 
 let interval: any = null;
-
 onMounted(() => {
-  fetchAdminData();
-  interval = setInterval(fetchAdminData, 30000); // Update every 30 seconds
-});
+  fetchAdminData()
+  fetchLaporanKeuangan()
+
+  interval = setInterval(fetchAdminData, 30000)
+})
+
+// onMounted(() => {
+//   fetchAdminData();
+//   interval = setInterval(fetchAdminData, 30000); // Update every 30 seconds
+// });
 
 onUnmounted(() => {
   clearInterval(interval);
@@ -356,6 +469,124 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ===============================
+   LAPORAN KEUANGAN ADMIN
+================================ */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.table thead th {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+}
+
+.table tbody td {
+  padding: 12px;
+  font-size: 14px;
+  color: #2c3e50;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9ff;
+}
+
+.table-striped tbody tr:nth-child(odd) {
+  background-color: #fafbff;
+}
+
+/* Status badge */
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bg-success {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: #ffffff;
+}
+
+/* Empty state */
+.table tbody tr td[colspan] {
+  padding: 25px;
+  font-style: italic;
+  color: #6c757d;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .table thead {
+    display: none;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+
+  .table tr {
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    padding: 10px;
+    background: #fff;
+  }
+
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    font-size: 13px;
+    border-bottom: 1px dashed #e0e0e0;
+  }
+
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c757d;
+  }
+
+  .table td:last-child {
+    border-bottom: none;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Container & Layout */
 .container {
   max-width: 1400px;
@@ -409,6 +640,7 @@ onUnmounted(() => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -828,7 +1060,10 @@ onUnmounted(() => {
     gap: 15px;
   }
 
-  .col-md-3, .col-md-6, .col-md-8, .col-md-4 {
+  .col-md-3,
+  .col-md-6,
+  .col-md-8,
+  .col-md-4 {
     flex: 0 0 100%;
     max-width: 100%;
   }
@@ -843,13 +1078,34 @@ onUnmounted(() => {
 }
 
 /* Utility classes */
-.me-2 { margin-right: 0.5rem; }
-.me-3 { margin-right: 1rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-3 { margin-bottom: 1rem; }
-.mb-4 { margin-bottom: 1.5rem; }
-.mt-4 { margin-top: 1.5rem; }
-.py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.me-2 {
+  margin-right: 0.5rem;
+}
+
+.me-3 {
+  margin-right: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-3 {
+  margin-bottom: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1.5rem;
+}
+
+.mt-4 {
+  margin-top: 1.5rem;
+}
+
+.py-4 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
 
 .row {
   display: flex;
@@ -857,7 +1113,7 @@ onUnmounted(() => {
   margin: -0.75rem;
 }
 
-.g-4 > * {
+.g-4>* {
   padding: 0.75rem;
 }
 

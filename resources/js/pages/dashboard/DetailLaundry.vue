@@ -104,18 +104,6 @@
   </small>
 </div>
 
-
-
-          <!-- <div class="form-group">
-            <label>Nomor Telepon</label>
-            <input 
-              v-model="noTelepon" 
-              type="tel" 
-              placeholder="Contoh: 08123456789"
-              class="form-control"
-            />
-          </div> -->
-
           <div class="form-group">
             <label>Catatan (Opsional)</label>
             <textarea 
@@ -675,7 +663,6 @@ onMounted(async () => {
 <style scoped>
 .detail-container {
   min-height: 100vh;
-  background: #f7f7f7;
   padding-bottom: 40px;
 }
 
@@ -751,7 +738,7 @@ onMounted(async () => {
 
 
 .placeholder-img {
-  width: 180px;
+  width: 130px;
   height: 110px;
   border-radius: 6px;
   /* ⬅️ bukan 50% */

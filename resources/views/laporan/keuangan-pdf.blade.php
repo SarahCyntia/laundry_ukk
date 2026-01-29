@@ -79,7 +79,7 @@
 <body>
 
 <div class="header">
-    <h1>LAPORAN ORDER LAUNDRY </h1>
+    <h1>LAPORAN KEUANGAN LAUNDRY </h1>
     <h2>Periode: {{ $periodTitle }}</h2>
 </div>
 
@@ -99,7 +99,8 @@
             <th>Layanan</th>
             <th>Berat</th>
             <th>Harga</th>
-            <th>Status</th>
+            {{-- <th>Status</th> --}}
+            <th>Metode Pembayaran</th>
             <th>Status Pembayaran</th>
         </tr>
     </thead>
@@ -117,7 +118,8 @@
             <td>{{ $item->jenis_layanan->nama_layanan ?? '-' }}</td>
             <td>{{ $item->berat_aktual ?? $item->berat_estimasi }}</td>
             <td>Rp {{ number_format($item->harga_final, 0, ',', '.') }}</td>
-            <td>{{ strtoupper($item->status) }}</td>
+            {{-- <td>{{ strtoupper($item->status) }}</td> --}}
+            <td>{{ strtoupper($item->transaksi->metode_pembayaran ?? '-') }}</td>
             <td>{{ strtoupper($item->transaksi->status_pembayaran ?? 'belum') }}</td>
         </tr>
         @empty

@@ -75,7 +75,8 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user['role_id'] = $user?->role?->id;
+        // $user['role_id'] = $user?->role?->id;
+        $user['role_id'] = optional($user->roles->first())->id;
         return response()->json([
             'user' => $user
         ]);

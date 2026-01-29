@@ -172,7 +172,7 @@ const MainMenuConfig: Array<MenuItem> = [
                 heading: "Data Order",
                 route: "/data-order",
                 name: "data-order",
-                keenthemesIcon: "bi bi-person-lines-fill",
+                keenthemesIcon: "bi bi-clipboard2-data",
             },
             
             
@@ -189,7 +189,7 @@ const MainMenuConfig: Array<MenuItem> = [
                heading: "Profil",
                route: "/mitra/profil",
                name: "profil",
-               keenthemesIcon: "setting-2",
+               keenthemesIcon: "bi bi-person-fill",
            },
             {
                 heading: "Transaksi",
@@ -201,20 +201,20 @@ const MainMenuConfig: Array<MenuItem> = [
                 heading: "Layanan",
                 route: "/mitra/layanan",
                 name: "layanan",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-list-ul",
             },
              
             {
                 heading: "Laporan Laundry",
                 route: "/mitra/laporan-laundry",
                 name: "laporan-laundry",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-receipt",
             },
             {
                 heading: "Laporan Keuangan",
                 route: "/mitra/laporan-keuangan",
                 name: "laporan-keuangan",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-currency-exchange",
             },
              
         ],
@@ -230,25 +230,25 @@ const MainMenuConfig: Array<MenuItem> = [
                heading: "Order Masuk",
                route: "/dashboard-mitra/order-masuk",
                name: "order-masuk",
-               keenthemesIcon: "setting-2",
+               keenthemesIcon: "bi bi-journal-arrow-down",
            },
             {
                 heading: "Order Proses",
                 route: "/dashboard-mitra/order-proses",
                 name: "order-proses",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-patch-exclamation",
             },
             {
                 heading: "Order Siap Diambil",
                 route: "/dashboard-mitra/order-siap-ambil",
                 name: "order-siap-ambil",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-box-seam",
             },
             {
                 heading: "Order Selesai",
                 route: "/dashboard-mitra/order-selesai",
                 name: "order-selesai",
-                keenthemesIcon: "bi bi-truck",
+                keenthemesIcon: "bi bi-journal-check",
             },
              
         ],

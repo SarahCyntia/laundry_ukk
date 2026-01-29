@@ -616,7 +616,7 @@ onMounted(() => {
 <style scoped>
 .transaksi-container {
   min-height: 100vh;
-  background: #f7f7f7;
+  /* background: #f7f7f7; */
   padding-bottom: 80px;
 }
 

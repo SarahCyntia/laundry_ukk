@@ -3,7 +3,7 @@ import { h, ref, watch } from "vue";
 import { useDelete } from "@/libs/hooks";
 import { createColumnHelper } from "@tanstack/vue-table";
 import type { mitra } from "@/types";
-import axios from "axios";
+import axios from "@/libs/axios";
 import Swal from "sweetalert2";
 
 const column = createColumnHelper<mitra>();
